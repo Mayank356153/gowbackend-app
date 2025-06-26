@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">GroceryOnWheel</string>
+    <string name="title_activity_main">GroceryOnWheel</string>
+    <string name="package_name">com.groceryonwheel.com</string>
+    <string name="custom_url_scheme">com.groceryonwheel.com</string>
+</resources>
