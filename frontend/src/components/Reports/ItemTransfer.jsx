@@ -14,6 +14,7 @@ import * as XLSX from 'xlsx';
 import autoTable from 'jspdf-autotable';
 import { BrowserMultiFormatReader } from '@zxing/library';
 export default function ItemTransfer() {
+    const link="https://pos.inspiredgrow.in/vps"
   const [showExportDropdown, setShowExportDropdown] = useState(false)
    const[isSidebarOpen,setSidebarOpen]=useState(true)
    const[loading,setLoading]=useState(true)
@@ -40,7 +41,7 @@ export default function ItemTransfer() {
    const fetchWarehouses=async()=>{
     try {
       setLoading(true)
-      const response = await axios.get('https://mybackend-l7om.onrender.com/api/warehouses', {
+      const response = await axios.get(`${link}/api/warehouses`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
         }
@@ -68,7 +69,7 @@ export default function ItemTransfer() {
    const fetchSales=async()=>{
     try {
       setLoading(true)
-      const response = await axios.get('https://mybackend-l7om.onrender.com/api/sales', {
+      const response = await axios.get(`${link}/api/sales`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
         }
@@ -86,7 +87,7 @@ export default function ItemTransfer() {
    const fetchStockTransfer=async()=>{
     try {
       setLoading(true)
-      const response = await axios.get('https://mybackend-l7om.onrender.com/api/stock-transfers', {
+      const response = await axios.get(`${link}/api/stock-transfers`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
         }

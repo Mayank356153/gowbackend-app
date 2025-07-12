@@ -5,6 +5,7 @@ import Navbar from "../Navbar";
 import Sidebar from "../Sidebar";
 
 const ProfitLossReport = () => {
+    const link="https://pos.inspiredgrow.in/vps"
   const [startDate, setStartDate] = useState("2025-01-26");
   const [endDate, setEndDate] = useState("2025-02-24");
   const [reportData, setReportData] = useState({});

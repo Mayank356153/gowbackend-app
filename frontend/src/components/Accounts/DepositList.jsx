@@ -10,6 +10,7 @@ import Sidebar from "../Sidebar.jsx";
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 const DepositList = () => {
+  const link="https://pos.inspiredgrow.in/vps"
   const navigate=useNavigate();
   // State variables for filters and data
   const [currentPage, setCurrentPage] = useState(1);
@@ -30,7 +31,7 @@ const DepositList = () => {
   },[])
   const fetchData = async () => {
     try {
-      const response = await axios.get('api/deposits', {
+      const response = await axios.get(`${link}/api/deposits`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
         }
@@ -144,7 +145,7 @@ const DepositList = () => {
       return ;
     }
     try {
-      const response = await axios.delete(`api/deposits/${id}`, {
+      const response = await axios.delete(`${link}/api/deposits/${id}`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
         },

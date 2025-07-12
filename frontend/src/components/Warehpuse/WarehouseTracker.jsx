@@ -21,10 +21,12 @@ function Recenter({ position, zoom }) {
 }
 
 export default function WarehouseTracker() {
+    const link="https://pos.inspiredgrow.in/vps"
+
   const [params]    = useSearchParams();
   const warehouseId = params.get('id');
   const token       = localStorage.getItem('token');
-  const apiUrl      = `http://localhost:5000/api/warehouse-location/${warehouseId}`;
+  const apiUrl      = `${link}/api/warehouse-location/${warehouseId}`;
 
   // default fallback to Lucknow center
   const [position, setPosition] = useState({ lat: 26.8467, lng: 80.9462 });

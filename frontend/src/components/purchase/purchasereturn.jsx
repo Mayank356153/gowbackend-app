@@ -13,7 +13,8 @@ import { BrowserMultiFormatReader } from '@zxing/library';
 import dayjs from 'dayjs';
 
 // Axios instance
-const api = axios.create({ baseURL: "vps/api" });
+const api = axios.create({ baseURL: "https://pos.inspiredgrow.in/vps/api" });
+
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem("token");
   if (token) config.headers.Authorization = `Bearer ${token}`;

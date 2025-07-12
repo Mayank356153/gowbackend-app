@@ -10,6 +10,7 @@ import LoadingScreen from "../../Loading.jsx";
 import { useSearchParams } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
 const CouponForm = () => {
+      const link="https://pos.inspiredgrow.in/vps"
   const Navigate=useNavigate()
     const[customers,setCustomers]=useState([])
     const[discountCoupon,setDiscontCoupon]=useState([])
@@ -88,7 +89,7 @@ setFormData((prev)=>({
     const fetchDiscountCoupons = async () => {
         try {
           setLoading(true)
-          const response = await  axios.get('https://mybackend-l7om.onrender.com/api/discount-coupons', {
+          const response = await  axios.get(`${link}/api/discount-coupons`, {
             headers: {
               Authorization: `Bearer ${localStorage.getItem("token")}`, // Get token from localStorage
             }
@@ -113,7 +114,7 @@ setFormData((prev)=>({
       const fetchCustomerCoupons = async () => {
         try {
           setLoading(true)
-          const response = await  axios.get('https://mybackend-l7om.onrender.com/api/customer-coupons', {
+          const response = await  axios.get(`${link}/api/customer-coupons`, {
             headers: {
               Authorization: `Bearer ${localStorage.getItem("token")}`, // Get token from localStorage
             }
@@ -134,7 +135,7 @@ setFormData((prev)=>({
  const fetchItems = async () => {
         try {
           setLoading(true)
-          const response = await  axios.get('https://mybackend-l7om.onrender.com/api/items', {
+          const response = await  axios.get(`${link}/api/items`, {
             headers: {
               Authorization: `Bearer ${localStorage.getItem("token")}`, // Get token from localStorage
             }
@@ -158,7 +159,7 @@ setFormData((prev)=>({
        const fetchCategories = async () => {
         try {
           setLoading(true)
-          const response = await  axios.get('https://mybackend-l7om.onrender.com/api/categories', {
+          const response = await  axios.get(`${link}/api/categories`, {
             headers: {
               Authorization: `Bearer ${localStorage.getItem("token")}`, // Get token from localStorage
             }
@@ -182,7 +183,7 @@ setFormData((prev)=>({
        const fetchSubCategories = async () => {
         try {
           setLoading(true)
-          const response = await  axios.get('https://mybackend-l7om.onrender.com/api/subcategories', {
+          const response = await  axios.get(`${link}/api/subcategories`, {
             headers: {
               Authorization: `Bearer ${localStorage.getItem("token")}`, // Get token from localStorage
             }
@@ -207,7 +208,7 @@ setFormData((prev)=>({
         const fetchSubSubCategories = async () => {
         try {
           setLoading(true)
-          const response = await  axios.get('https://mybackend-l7om.onrender.com/api/sub-subcategories', {
+          const response = await  axios.get(`${link}/api/sub-subcategories`, {
             headers: {
               Authorization: `Bearer ${localStorage.getItem("token")}`, // Get token from localStorage
             }
@@ -235,7 +236,7 @@ setFormData((prev)=>({
         try {
           setLoading(true)
           console.log(formData)
-          const response = await  axios.post('http://localhost:5000/api/customer-coupons/create',formData, {
+          const response = await  axios.post(`${link}/api/customer-coupons/create`,formData, {
             headers: {
               "Content-Type":"application/json",
               Authorization: `Bearer ${localStorage.getItem("token")}`, // Get token from localStorage
@@ -276,7 +277,7 @@ setFormData((prev)=>({
         try {
           setLoading(true)
           console.log(formData)
-          const response = await  axios.put(`https://mybackend-l7om.onrender.com/api/customer-coupons/${couponid}`,formData, {
+          const response = await  axios.put(`${link}/api/customer-coupons/${couponid}`,formData, {
             headers: {
               "Content-Type":"application/json",
               Authorization: `Bearer ${localStorage.getItem("token")}`, // Get token from localStorage
@@ -299,7 +300,7 @@ setFormData((prev)=>({
       const fetchCustomers=async()=>{
         try {
           setLoading(true)
-            const response = await  axios.get('https://mybackend-l7om.onrender.com/api/customer-data/all', {
+            const response = await  axios.get(`${link}/api/customer-data/all`, {
               headers: {
                 "Content-Type":"application/json",
                 Authorization: `Bearer ${localStorage.getItem("token")}`, // Get token from localStorage

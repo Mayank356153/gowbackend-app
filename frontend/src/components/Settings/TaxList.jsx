@@ -12,6 +12,7 @@ import TaxGroups from "../Settings/TaxGroups.jsx";
 
 const TaxList = () => {
   const navigate = useNavigate();
+  const link="https://pos.inspiredgrow.in/vps"
 
   /* ─────────────────── UI state ─────────────────── */
   const [isSidebarOpen, setSidebarOpen]   = useState(true);
@@ -52,7 +53,7 @@ const TaxList = () => {
     try {
       const token = localStorage.getItem("token");
       const res   = await axios.get(
-        "http://localhost:5000/api/taxes",
+        `${link}/api/taxes`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       setTaxes(res.data.data || []);
@@ -119,7 +120,7 @@ const TaxList = () => {
     try {
       const token = localStorage.getItem("token");
       await axios.delete(
-        `http://localhost:5000/api/taxes/${id}`,
+        `${link}/api/taxes/${id}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       fetchTaxes();
@@ -134,7 +135,7 @@ const TaxList = () => {
     try {
       const token = localStorage.getItem("token");
       await axios.put(
-        `http://localhost:5000/api/taxes/${id}`,
+        `${link}/api/taxes/${id}`,
         { status: newStatus },
         { headers: { Authorization: `Bearer ${token}` } }
       );

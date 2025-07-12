@@ -13,6 +13,7 @@ import axios from "axios";
 import { useId } from "react";
 
 export default function AddItem() {
+  const link="https://pos.inspiredgrow.in/vps"
   const navigate = useNavigate();
   const ID = useId();
 
@@ -81,7 +82,7 @@ export default function AddItem() {
   const fetchBrands = async () => {
     try {
       const { data } = await axios.get(
-        "api/brands",
+        `${link}/api/brands`,
         tokenHeader()
       );
       setOptions((prev) => ({ ...prev, brand: data.data }));
@@ -93,7 +94,7 @@ export default function AddItem() {
   const fetchWarehouses = async () => {
     try {
       const { data } = await axios.get(
-        "api/warehouses",
+        `${link}/api/warehouses`,
         tokenHeader()
       );
       setOptions((prev) => ({ ...prev, warehouse: data.data }));
@@ -105,7 +106,7 @@ export default function AddItem() {
   const fetchCategories = async () => {
     try {
       const { data } = await axios.get(
-        "api/categories",
+        `${link}/api/categories`,
         tokenHeader()
       );
       setOptions((prev) => ({ ...prev, category: data.data }));
@@ -118,7 +119,7 @@ export default function AddItem() {
 const fetchSubCategories = async () => {
   try {
     const res = await axios.get(
-      "api/subcategories",
+      `${link}/api/subcategories`,
       tokenHeader()
     );
 
@@ -137,7 +138,7 @@ const fetchSubCategories = async () => {
   const fetchTaxes = async () => {
     try {
       const { data } = await axios.get(
-        "api/taxes",
+        `${link}/api/taxes`,
         tokenHeader()
       );
       setOptions((prev) => ({ ...prev, tax: data.data }));
@@ -155,7 +156,7 @@ const fetchSubCategories = async () => {
   const fetchLastItemCode = async () => {
     try {
       const { data } = await axios.get(
-        "api/items",
+        `${link}/api/items`,
         tokenHeader()
       );
       const lastItem = data.data.at(-1);
@@ -217,7 +218,7 @@ const fetchSubCategories = async () => {
   /* --------------------------- form submit --------------------------- */
   const postData = async () => {
     await axios.post(
-      "api/items",
+      `${link}/api/items`,
       formData,
       tokenHeader()
     );

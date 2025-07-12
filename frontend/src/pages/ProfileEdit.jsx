@@ -50,7 +50,7 @@ const ProfileEdit = () => {
 
     try {
       const response = await axios.get(
-          `https://mybackend-l7om.onrender.com/admiaddinguser/profile`,
+          `hhttps://pos.inspiredgrow.in/vps/admiaddinguser/profile`,
         {
           headers: { Authorization: `Bearer ${token}` },
         }

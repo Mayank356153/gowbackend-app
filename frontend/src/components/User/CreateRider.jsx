@@ -9,6 +9,7 @@ import { FaTachometerAlt } from "react-icons/fa";
 import { BiChevronRight } from "react-icons/bi";
 import DocumentView from "./DocumentView";
 const CreateRider = () => {
+              const link="https://pos.inspiredgrow.in/vps"
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const editId = searchParams.get("id");      // for editing existing user
@@ -126,8 +127,8 @@ const submit = async (e) => {
     });
 
     const url = editId
-      ? `https://mybackend-l7om.onrender.com/admiaddinguser/${editId}`
-      : "http://localhost:5000/api/rider/create";
+      ? `${link}/admiaddinguser/${editId}`
+      : `${link}/api/rider/create`;
 
     const method = editId ? "put" : "post";
 
@@ -228,7 +229,7 @@ useEffect(()=>{
 
   const fetchrider=async ()=>{
  try {
-    const res=await axios.get("http://localhost:5000/api/rider/all", {
+    const res=await axios.get(`${link}/api/rider/all`, {
       headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }
     })
     
@@ -256,15 +257,15 @@ useEffect(()=>{
 
     const headers = { Authorization: `Bearer ${token}` };
 
-    axios.get("https://mybackend-l7om.onrender.com/admincreatingrole/api/roles", { headers })
+    axios.get(`${link}/admincreatingrole/api/roles`, { headers })
       .then(r => setRoles(r.data.roles || []))
       .catch(() => { /* handle auth redirect if 401 */ });
 
-    axios.get("https://mybackend-l7om.onrender.com/api/warehouses", { headers })
+    axios.get(`${link}/api/warehouses`, { headers })
       .then(r => setWarehouses(r.data.data || []))
       .catch(console.error);
 
-    axios.get("https://mybackend-l7om.onrender.com/admin/store/add/store", { headers })
+    axios.get(`${link}/admin/store/add/store`, { headers })
       .then(r => setStores(r.data.result || []))
       .catch(console.error);
       setLoading(false)
@@ -274,7 +275,7 @@ useEffect(()=>{
   useEffect(() => {
     if (!editId) return;
     setLoading(true);
-    axios.get("http://localhost:5000/api/rider/all", {
+    axios.get(`${link}/api/rider/all`, {
       headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }
     })
     .then(res => {
@@ -319,7 +320,7 @@ useEffect(()=>{
                 <FaTachometerAlt className="mr-1"/> Home
               </NavLink>
               <BiChevronRight className="mx-2"/>
-              <NavLink to="/admin/user/list" className="text-gray-500 no-underline hover:text-gray-800">Rider List</NavLink>
+              <NavLink to="/rider/list" className="text-gray-500 no-underline hover:text-gray-800">Rider List</NavLink>
             </nav>
           </header>
 

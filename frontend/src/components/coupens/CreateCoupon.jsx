@@ -5,13 +5,14 @@ import {BiHome, BiChevronRight } from "react-icons/bi";
 import { FaTachometerAlt } from "react-icons/fa";
 import axios from "axios";
 const Coupon = () => {
+      const link="https://pos.inspiredgrow.in/vps"
   const [searchTerm, setSearchTerm] = useState("");
   const [entriesPerPage, setEntriesPerPage] = useState(10);
   const [coupons,setCoupons]=useState([])
   const [isSidebarOpen, setSidebarOpen] = useState(true);
   const fetchCustomerCoupons = async () => {
     try {
-      const response = await  axios.get('https://mybackend-l7om.onrender.com/api/discount-coupons', {
+      const response = await  axios.get(`${link}/api/discount-coupons`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`, // Get token from localStorage
         }

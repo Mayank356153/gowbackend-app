@@ -5,6 +5,7 @@ import Navbar from "../Navbar";
 import Sidebar from "../Sidebar";
 
 const OrderForm = () => {
+  const link="https://pos.inspiredgrow.in/vps"
   const [isSidebarOpen, setSidebarOpen] = useState(false);
   const [formData, setFormData] = useState({
     orderNumber: '',
@@ -108,7 +109,7 @@ const OrderForm = () => {
     };
 
     try {
-      const response = await fetch('api/orders', {
+      const response = await fetch(`${link}/api/orders`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'

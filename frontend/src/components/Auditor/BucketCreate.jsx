@@ -15,6 +15,7 @@ import AuditorNavbar from './AuditorNavBar.jsx'
 
 import { useSearchParams } from 'react-router-dom'
 const  BucketCreate=()=> {
+  const link="https://pos.inspiredgrow.in/vps"
     const [searchParams] = useSearchParams();
     const id = searchParams.get("id");
     const [isSidebarOpen, setSidebarOpen] = useState(true);
@@ -39,7 +40,7 @@ const  BucketCreate=()=> {
 
      const fetchItems = async () => {
         try {
-            const response = await axios.get('http://localhost:5000/api/items/audit',{
+            const response = await axios.get(`${link}/api/items/audit`,{
                 headers: {
                     Authorization: `Bearer ${localStorage.getItem('token')}`
                   }});
@@ -55,7 +56,7 @@ const  BucketCreate=()=> {
 
       const fetchBucket=async()=>{
            try {
-            const response = await axios.get(`http://localhost:5000/api/audit/bucket/auditor/${localStorage.getItem("id")}`,{
+            const response = await axios.get(`${link}/api/audit/bucket/auditor/${localStorage.getItem("id")}`,{
                 headers: {
                     Authorization: `Bearer ${localStorage.getItem('token')}`
                   }});
@@ -288,7 +289,7 @@ const handleSubmit = async (e) => {
 
     if(!id){
 
-       const response = await axios.post("http://localhost:5000/api/audit/bucket/create", formData, {
+       const response = await axios.post(`${link}/api/audit/bucket/create`, formData, {
       headers: {
         Authorization: `Bearer ${localStorage.getItem('token')}`
       }
@@ -305,7 +306,7 @@ const handleSubmit = async (e) => {
     
 
     
-    const response = await axios.put(`http://localhost:5000/api/audit/bucket/${id}`, formData, {
+    const response = await axios.put(`${link}/api/audit/bucket/${id}`, formData, {
       headers: {
         Authorization: `Bearer ${localStorage.getItem('token')}`
       }

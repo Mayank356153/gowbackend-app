@@ -6,6 +6,7 @@ import { FaTachometerAlt } from "react-icons/fa";
 import axios from 'axios';
 import AllowedList from './AllowedList.jsx';
 const MoneyTransferList = () => {
+      const link="https://pos.inspiredgrow.in/vps"
   const [entriesPerPage, setEntriesPerPage] = useState(10);
   const [searchTerm, setSearchTerm] = useState('');
   const [coupons,setCoupons]=useState([])
@@ -14,7 +15,7 @@ const MoneyTransferList = () => {
   const[coupon,setCoupon]=useState({})
   const fetchCustomerCoupons = async () => {
     try {
-      const response = await  axios.get('http://localhost:5000/api/discount-coupons', {
+      const response = await  axios.get(`${link}/api/discount-coupons`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`, // Get token from localStorage
         }

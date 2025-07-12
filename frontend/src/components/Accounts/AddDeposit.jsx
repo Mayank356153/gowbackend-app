@@ -7,7 +7,8 @@ import Sidebar from '../Sidebar';
 import LoadingScreen from '../../Loading';
 import axios from 'axios';
 
-export default function AddDeposit() {
+export default function AddDeposit() {      
+  const link="https://pos.inspiredgrow.in/vps"
   const [searchParams]  = useSearchParams();
   const editId          = searchParams.get('id');
   const navigate        = useNavigate();
@@ -48,19 +49,19 @@ export default function AddDeposit() {
   useEffect(() => {
     if (!token) return navigate('/');
     const storeFetch = axios
-      .get('/admin/store/add/store', { headers })
+      .get(`${link}/admin/store/add/store`, { headers })
       .then(res => setStores(res.data.result || []))
       .catch(console.error);
 
     const acctFetch = axios
-      .get('/api/accounts', { headers })
+      .get(`${link}/api/accounts`, { headers })
       .then(res => setAccounts(res.data.data || []))
       .catch(console.error);
 
     let depositFetch = Promise.resolve();
     if (editId) {
       depositFetch = axios
-        .get(`/api/deposits/${editId}`, { headers })
+        .get(`${link}/api/deposits/${editId}`, { headers })
         .then(res => {
           const d = res.data.data;
           setForm({
@@ -121,8 +122,8 @@ export default function AddDeposit() {
     setSaving(true);
     try {
       const url    = editId
-        ? `/api/deposits/${editId}`
-        : `/api/deposits`;
+        ? `${link}/api/deposits/${editId}`
+        : `${link}/api/deposits`;
       const method = editId ? 'put' : 'post';
       await axios[method](url, form, { headers:{ 'Content-Type':'application/json', ...headers }});
 

@@ -7,6 +7,7 @@ import Sidebar from "./Sidebar"
 
 const AddUser = () => {
   const navigate = useNavigate();
+  const link="https://pos.inspiredgrow.in/vps"
 
   // User form state
   const [formData, setFormData] = useState({
@@ -40,7 +41,7 @@ const AddUser = () => {
       }
 
       try {
-        const response = await axios.get("https://mybackend-l7om.onrender.com/admincreatingrole/api/roles", {
+        const response = await axios.get(`${link}/admincreatingrole/api/roles`, {
           headers: { Authorization: `Bearer ${token}` },
         });
 
@@ -93,7 +94,7 @@ const AddUser = () => {
 
     try {
       const response = await axios.post(
-        "https://mybackend-l7om.onrender.com/admiaddinguser/adduserbyadmin",
+        `${link}/admiaddinguser/adduserbyadmin`,
         formData,
         {
           headers: { 

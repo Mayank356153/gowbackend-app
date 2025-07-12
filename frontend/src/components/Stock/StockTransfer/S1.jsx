@@ -1,8 +1,35 @@
-import React from 'react'
-
+import React,{useState,useEffect,useRef} from 'react'
+import { App } from "@capacitor/app";
+import { useLocation,useNavigate } from 'react-router-dom'
 export default function S1({
     formData,setFormData,warehouses,setActiveTab
 }) {
+   const location=useLocation()
+      const navigate=useNavigate()
+        const initialLocationRef = useRef(location);
+    
+      // Hardware back
+      useEffect(() => {
+        const backHandler = App.addListener('backButton', () => {
+          navigate("/dashboard")
+        });
+    
+        return () => backHandler.remove();
+      }, []);
+    
+      // Intercept swipe back or browser back
+      useEffect(() => {
+      const handlePopState = () => {
+        // Whenever browser back is triggered
+        navigate("/dashboard");
+      };
+  
+      window.addEventListener("popstate", handlePopState);
+  
+      return () => {
+        window.removeEventListener("popstate", handlePopState);
+      };
+    }, [navigate]);
   return (
  <>
   <div className="px-4 py-4 space-y-6 bg-white shadow-sm rounded-xl">

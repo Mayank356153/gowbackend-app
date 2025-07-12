@@ -9,6 +9,7 @@ import { BiChevronRight } from "react-icons/bi";
 import { FaTachometerAlt } from "react-icons/fa";
 
 export default function AddState() {
+  const link="https://pos.inspiredgrow.in/vps"
   // Hooks
   const { stateId } = useParams();
   const navigate = useNavigate();
@@ -32,7 +33,7 @@ export default function AddState() {
       try {
         const token = localStorage.getItem("token");
         const res = await axios.get(
-          "https://mybackend-l7om.onrender.com/api/countries",
+          `${link}/api/countries`,
           { headers: { Authorization: `Bearer ${token}` } }
         );
         setCountries(res.data.data || []);
@@ -49,7 +50,7 @@ export default function AddState() {
         try {
           const token = localStorage.getItem("token");
           const res = await axios.get(
-            `https://mybackend-l7om.onrender.com/api/states/${id}`,
+            `${link}/api/states/${id}`,
             { headers: { Authorization: `Bearer ${token}` } }
           );
           const data = res.data.data;
@@ -87,14 +88,14 @@ export default function AddState() {
       const headers = { Authorization: `Bearer ${token}` };
       if (stateId) {
         await axios.put(
-          `https://mybackend-l7om.onrender.com/api/states/${stateId}`,
+          `${link}/api/states/${stateId}`,
           formData,
           { headers }
         );
         alert("State updated successfully!");
       } else {
         await axios.post(
-          "https://mybackend-l7om.onrender.com/api/states",
+          `${link}/api/states`,
           formData,
           { headers }
         );

@@ -12,6 +12,7 @@ import autoTable from "jspdf-autotable";
 import * as XLSX from "xlsx";
 
 export default function SubCategoryList() {
+  const link="https://pos.inspiredgrow.in/vps"
   const [isSidebarOpen, setSidebarOpen]     = useState(true);
   const [subCategories, setSubCategories]   = useState([]);
   const [loading, setLoading]               = useState(false);
@@ -34,7 +35,7 @@ export default function SubCategoryList() {
     setLoading(true);
     try {
       const res = await axios.get(
-        "api/subcategories",
+        `${link}/api/subcategories`,
         { headers: { Authorization: `Bearer ${localStorage.getItem("token")}` } }
       );
       const arr = Array.isArray(res.data)
@@ -107,7 +108,7 @@ export default function SubCategoryList() {
     setLoading(true);
     try {
       await axios.put(
-        `api/subcategories/${id}`,
+        `${link}/api/subcategories/${id}`,
         upd,
         { headers: { Authorization: `Bearer ${localStorage.getItem("token")}` } }
       );
@@ -124,7 +125,7 @@ export default function SubCategoryList() {
     setLoading(true);
     try {
       await axios.delete(
-        `api/subcategories/${id}`,
+        `${link}/api/subcategories/${id}`,
         { headers: { Authorization: `Bearer ${localStorage.getItem("token")}` } }
       );
       fetchSubCategories();

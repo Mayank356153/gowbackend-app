@@ -8,6 +8,7 @@ import LoadingScreen from "../../Loading";
 import { Link } from "react-router-dom";
 
 function PrintLabels() {
+  const link="https://pos.inspiredgrow.in/vps"
   const [isSidebarOpen, setSidebarOpen] = useState(true);
 
   const [warehouses, setWarehouses] = useState([]);
@@ -25,7 +26,7 @@ function PrintLabels() {
     try {
       setLoading(true);
       const token = localStorage.getItem("token");
-      const res = await axios.get("api/warehouses", {
+      const res = await axios.get(`${link}/api/warehouses`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       const list = res.data.data || [];
@@ -59,7 +60,7 @@ function PrintLabels() {
       setLoading(true);
       const token = localStorage.getItem("token");
       // We assume your backend supports `search` to match itemName, itemCode, or barcodes
-      const res = await axios.get("api/items", {
+      const res = await axios.get(`${link}/api/items`, {
         headers: { Authorization: `Bearer ${token}` },
         params: {
           warehouse: warehouseId,

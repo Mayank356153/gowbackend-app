@@ -9,6 +9,7 @@ import LoadingScreen from '../../Loading';
 import { NavLink } from 'react-router-dom';
 
 const SubCategoryForm = () => {
+  const link="https://pos.inspiredgrow.in/vps";
   const [isSidebarOpen, setSidebarOpen] = useState(true);
   const [loading, setLoading] = useState(false);
   const [searchParams] = useSearchParams();
@@ -35,7 +36,7 @@ const SubCategoryForm = () => {
     try {
       // e.g. GET /api/subcategories/:id
       const response = await axios.get(
-        `api/subcategories/${id}`,
+        `${link}/api/subcategories/${id}`,
         {
           headers: {
             Authorization: `Bearer ${localStorage.getItem('token')}`,
@@ -76,7 +77,7 @@ const SubCategoryForm = () => {
     try {
       // POST /api/categories/sub
       const response = await axios.post(
-        'api/categories/sub',
+        `api/categories/sub`,
         formData,
         {
           headers: {
@@ -100,7 +101,7 @@ const SubCategoryForm = () => {
     try {
       // e.g. PUT /api/subcategories/:id
       const response = await axios.put(
-        `api/subcategories/${id}`,
+        `${link}/api/subcategories/${id}`,
         formData,
         {
           headers: {

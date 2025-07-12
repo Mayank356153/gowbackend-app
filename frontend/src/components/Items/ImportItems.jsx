@@ -8,9 +8,10 @@ import * as XLSX from "xlsx";
 import LoadingScreen from "../../Loading.jsx";
 import { useNavigate } from "react-router-dom";
 
-const BASE_URL = "";
+const BASE_URL = "https://pos.inspiredgrow.in/vps";
 
 export default function ImportItems() {
+         const link="https://pos.inspiredgrow.in/vps"
   /* ─────────────────────────────── STATE ───────────────────────────── */
   const [file, setFile]                 = useState(null);
   const [imageFiles, setImageFiles]     = useState([]);      // uploads

@@ -8,6 +8,7 @@ import { BiChevronRight } from "react-icons/bi";
 import { FaTachometerAlt } from "react-icons/fa";
 
 function VariantAdd() {
+  const link="https://pos.inspiredgrow.in/vps"
   const [isSidebarOpen, setSidebarOpen] = useState(true);
   const [loading, setLoading] = useState(false);
   const [searchParams] = useSearchParams();
@@ -32,7 +33,7 @@ function VariantAdd() {
         try {
           const token = localStorage.getItem("token");
           const res = await axios.get(
-            `api/variants/${variantId}`,
+            `${link}/api/variants/${variantId}`,
             { headers: { Authorization: `Bearer ${token}` } }
           );
           const data = res.data.data;
@@ -66,7 +67,7 @@ function VariantAdd() {
       if (variantId) {
         // Update variant
         await axios.put(
-          `api/variants/${variantId}`,
+          `${link}/api/variants/${variantId}`,
           formData,
           { headers }
         );
@@ -74,7 +75,7 @@ function VariantAdd() {
       } else {
         // Create new variant
         await axios.post(
-          "api/variants",
+          `${link}/api/variants`,
           formData,
           { headers }
         );

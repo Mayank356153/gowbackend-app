@@ -11,7 +11,8 @@ import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 import LoadingScreen from '../../Loading';
 export default function Customerlist() {
-  
+  const link="https://pos.inspiredgrow.in/vps"
+
   // Configuration options for table display
   const entries_options = [10, 20, 30, 40, 50]; // Options for entries per page dropdown
   const button = ["Copy", "Excel", "PDF", "Print", "CSV", "Columns"]; // Export/action button labels
@@ -41,7 +42,7 @@ const[previousDue,setPreviousDue]=useState(0)
  const fetchData = async () => {
   setLoading(true)
   try {
-    const response = await  axios.get('https://mybackend-l7om.onrender.com/api/customer-data/all', {
+    const response = await  axios.get(`${link}/api/customer-data/all`, {
       headers: {
         Authorization: `Bearer ${localStorage.getItem("token")}`, // Get token from localStorage
       }
@@ -160,7 +161,7 @@ useEffect(()=>{
     setLoading(true)
    
     try {
-      const response = await axios.delete(`https://mybackend-l7om.onrender.com/api/customer-data/${id}`, {
+      const response = await axios.delete(`${link}/api/customer-data/${id}`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
         },

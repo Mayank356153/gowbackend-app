@@ -4,6 +4,7 @@ export default function ItemsCompare({ audit, onClose, sidebarOpen = true }) {
   const [items, setUpdateItems] = useState(audit.finalUnit);
   const [isDirty, setIsDirty] = useState(false);
 
+  const link="https://pos.inspiredgrow.in/vps"
   const handleChange = (e, id) => {
     const { name, value } = e.target;
     const numericValue = Number(value);
@@ -27,7 +28,7 @@ export default function ItemsCompare({ audit, onClose, sidebarOpen = true }) {
   const handleSave =async () => {
              try {
                 console.log(items)
-            const response = await axios.put('http://localhost:5000/api/audit/update-quantity-db',{
+            const response = await axios.put(`${link}/api/audit/update-quantity-db`,{
                 auditId:audit.auditId,
                 finalUnit:items
             },{

@@ -8,6 +8,7 @@ import LoadingScreen from "../../Loading";
 import { useNavigate } from "react-router-dom";
 import { useSearchParams } from 'react-router-dom';
 const BrandForm = () => {
+         const link="https://pos.inspiredgrow.in/vps"
   const [isSidebarOpen, setSidebarOpen] = useState(true);
 const[loading,setLoading]=useState(false)
   const Navigate=useNavigate()
@@ -25,7 +26,7 @@ const[loading,setLoading]=useState(false)
  const fetchCategory = async () => {
   setLoading(true)
   try {
-    const response = await axios.get('api/brands', {
+    const response = await axios.get(`${link}/api/brands`, {
       headers: {
         Authorization: `Bearer ${localStorage.getItem("token")}`,
       }
@@ -54,7 +55,7 @@ const postData = async () => {
   try {
     console.log("Sending FormData:", formData);
     const response = await axios.post(
-      "api/brands",
+      `${link}/api/brands`,
       formData,
       {
         headers: {
@@ -77,7 +78,7 @@ const updateData = async () => {
   setLoading(true)
       try {
         const response = await axios.put(
-          `api/brands/${id}`,
+          `${link}/api/brands/${id}`,
           formData,
           {
             headers: {

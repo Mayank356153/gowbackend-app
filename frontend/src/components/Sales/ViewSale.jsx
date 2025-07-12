@@ -19,6 +19,7 @@ const formatAddress = (address) => {
 };
 
 const ViewSale = () => {
+      const link="https://pos.inspiredgrow.in/vps"
   const navigate = useNavigate();
   const location = useLocation();
   const queryParams = new URLSearchParams(location.search);
@@ -70,7 +71,7 @@ const ViewSale = () => {
     try {
       const token = localStorage.getItem("token");
       if (!token) return;
-      const response = await axios.get("api/items", {
+      const response = await axios.get(`${link}/api/items`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       const rawItems = response.data.data || [];
@@ -105,7 +106,7 @@ const ViewSale = () => {
     if (!token) return;
     setLoading(true);
     try {
-      const endpoint = source === "POS" ? `api/pos/${id}` : `api/sales/${id}`;
+      const endpoint = source === "POS" ? `${link}/api/pos/${id}` : `${link}/api/sales/${id}`;
       const response = await axios.get(endpoint, {
         headers: { Authorization: `Bearer ${token}` },
       });

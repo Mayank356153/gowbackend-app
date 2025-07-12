@@ -11,6 +11,7 @@ import Sidebar from "../Sidebar.jsx";
 import Loading from "../../Loading.jsx";
 
 const AddAccount = () => {
+        const link="https://pos.inspiredgrow.in/vps"
   /* ────────────── basics */
   const navigate = useNavigate();
   const [params] = useSearchParams();
@@ -50,7 +51,7 @@ const AddAccount = () => {
   useEffect(() => {
     let alive = true;
     axios
-      .get("api/accounts", { headers })
+      .get(`${link}/api/accounts`, { headers })
       .then((res) => {
         if (!alive) return;
         const all = res.data.data ?? [];
@@ -77,7 +78,7 @@ const AddAccount = () => {
     if (role === "admin") return;
     let alive = true;
     axios
-      .get("admin/store/add/store", { headers })
+      .get(`${link}/admin/store/add/store`, { headers })
       .then((res) => alive && setStores(res.data.result ?? []))
       .catch(console.error);
     return () => {
@@ -91,7 +92,7 @@ const AddAccount = () => {
     setLoading(true);
 
     axios
-      .get(`api/accounts/${accountId}`, { headers })
+      .get(`${link}/api/accounts/${accountId}`, { headers })
       .then((res) => {
         const a = res.data.data;
         if (!a) return;
@@ -148,13 +149,13 @@ const AddAccount = () => {
 
       if (accountId) {
         await axios.put(
-          `api/accounts/${accountId}`,
+          `${link}/api/accounts/${accountId}`,
           payload,
           { headers }
         );
         alert("Account updated!");
       } else {
-        await axios.post("api/accounts", payload, {
+        await axios.post(`${link}/api/accounts`, payload, {
           headers
         });
         alert("Account created!");

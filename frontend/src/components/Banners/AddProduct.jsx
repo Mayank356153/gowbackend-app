@@ -8,6 +8,7 @@ import PreviewGallery from './ProductImagePreview.jsx'
 import axios from 'axios'
 import LoadingScreen from '../../Loading.jsx'
 export default function AddProduct() {
+  const link="https://pos.inspiredgrow.in/vps"
     const[isSidebarOpen,setSidebarOpen]=useState(true)
     function generateNewProductId(oldProductId) {
       
@@ -69,7 +70,7 @@ const handleSubmit = async () => {
   try {
     setLoading(true)
     const response = await axios.post(
-      "http://localhost:5000/api/product/add",
+      `${link}/api/product/add`,
       formDataToSend
     );
     alert("created successfully")
@@ -92,7 +93,7 @@ useEffect(()=>{
   const fetchData = async () => {
     try {
       setLoading(true);
-      const response = await axios.get('http://localhost:5000/api/product/all', {
+      const response = await axios.get(`${link}/api/product/all`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
         },

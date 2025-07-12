@@ -9,6 +9,7 @@ import { FaTachometerAlt } from "react-icons/fa";
 import { BiChevronRight } from "react-icons/bi";
 import Select from 'react-select'
 const CreateRiderCommission = () => {
+            const link="https://pos.inspiredgrow.in/vps"
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const editId = searchParams.get("id"); 
@@ -31,7 +32,7 @@ const CreateRiderCommission = () => {
     }
 
     try {
-      const response = await fetch("http://localhost:5000/api/rider-commission/all", {
+      const response = await fetch(`${link}/api/rider-commission/all`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       const payload = await response.json();
@@ -125,7 +126,7 @@ const CreateRiderCommission = () => {
       if (editId) {
         // Update existing warehouse
         await axios.put(
-          `http://localhost:5000/api/rider-commission/${editId}`,
+          `${link}/api/rider-commission/${editId}`,
           formData,
           {
             headers: {
@@ -138,7 +139,7 @@ const CreateRiderCommission = () => {
         // Create new warehouse
         console.log(formData)
         const res=await axios.post(
-          "http://localhost:5000/api/rider-commission/create",
+          `${link}/api/rider-commission/create`,
           formData,
           {
             headers: {
@@ -173,7 +174,7 @@ const CreateRiderCommission = () => {
 
     const headers = { Authorization: `Bearer ${token}` };
 
-    axios.get("https://mybackend-l7om.onrender.com/admin/store/add/store", { headers })
+    axios.get(`${link}/admin/store/add/store`, { headers })
       .then(r => setStores(r.data.result || []))
       .catch(console.error);
       setLoading(false)

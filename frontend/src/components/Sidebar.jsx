@@ -205,6 +205,13 @@ const Sidebar = ({ isSidebarOpen }) => {
                   <FaList />
                   <span>Rider List</span>
                 </li>
+                <li
+                  className="flex items-center gap-2 p-2 text-sm cursor-pointer hover:bg-gray-700"
+                  onClick={() => navigate("/rider-commission/view")}
+                >
+                  <FaList />
+                  <span>Rider Commission List</span>
+                </li>
               </ul>
             </Transition>
           </li>
@@ -611,7 +618,8 @@ const Sidebar = ({ isSidebarOpen }) => {
 
 
           {/* image management  */}
-  {(isAdmin || hasPermissionFor("image_management", "View")) && (
+  {/* {(isAdmin || hasPermissionFor("image_management", "View")) && ( */}
+  {true && (
           <li>
             <div
               className="flex items-center justify-between p-2 cursor-pointer hover:bg-gray-700"
@@ -633,7 +641,8 @@ const Sidebar = ({ isSidebarOpen }) => {
               leaveTo="transform opacity-0 -translate-y-2"
             >
               <ul className="pl-4">
-                {hasPermissionFor("ImageManagement", "Add") && (
+                {true && (
+                // {hasPermissionFor("ImageManagement", "Add") && (
                   <li
                     className="flex items-center p-2 text-sm cursor-pointer hover:bg-gray-700"
                     onClick={() => navigate("/item/image-management ")}
@@ -642,7 +651,8 @@ const Sidebar = ({ isSidebarOpen }) => {
                     <span>Item Image Management</span>
                   </li>
                 )}
-                {hasPermissionFor("CategoryImageManagemnt", "View") && (
+                {/* {hasPermissionFor("CategoryImageManagemnt", "View") && ( */}
+                {true && (
                   <li
                     className="flex items-center p-2 text-sm cursor-pointer hover:bg-gray-700"
                     onClick={() => navigate("/category/image-management")}
@@ -651,7 +661,8 @@ const Sidebar = ({ isSidebarOpen }) => {
                     <span>Category Image Management</span>
                   </li>
                 )}
-                {hasPermissionFor("CategoryImageManagemnt", "View") && (
+                {/* {hasPermissionFor("CategoryImageManagemnt", "View") && ( */}
+                {true && (
                   <li
                     className="flex items-center p-2 text-sm cursor-pointer hover:bg-gray-700"
                     onClick={() => navigate("/subcategory/image-management")}
@@ -660,7 +671,8 @@ const Sidebar = ({ isSidebarOpen }) => {
                     <span>SubCategory Image Management</span>
                   </li>
                 )}
-                 {hasPermissionFor("CategoryImageManagemnt", "View") && (
+                 {/* {hasPermissionFor("CategoryImageManagemnt", "View") && ( */}
+                 {true && (
                   <li
                     className="flex items-center p-2 text-sm cursor-pointer hover:bg-gray-700"
                     onClick={() => navigate("/subsubcategory/image-management")}

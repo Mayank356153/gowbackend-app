@@ -1,11 +1,41 @@
-import React from 'react'
+import React ,{useState,useEffect,useRef}from 'react'
 import { Select } from 'antd'
 import dayjs from 'dayjs'
 import { FaFileInvoice } from 'react-icons/fa';
+import { App } from "@capacitor/app";
+import { useLocation,useNavigate } from 'react-router-dom'
 import { FaPlus,FaChevronRight,FaCalendarAlt } from 'react-icons/fa';
 export default function Purchase1({
     options,handleSelectChange,setActiveTab
 ,formData,setShowSupplierPop,handleChange}) {
+
+ const location=useLocation()
+    const navigate=useNavigate()
+      const initialLocationRef = useRef(location);
+  
+    // Hardware back
+    useEffect(() => {
+      const backHandler = App.addListener('backButton', () => {
+        navigate("/dashboard")
+      });
+  
+      return () => backHandler.remove();
+    }, []);
+  
+    // Intercept swipe back or browser back
+    useEffect(() => {
+    const handlePopState = () => {
+      // Whenever browser back is triggered
+      navigate("/dashboard");
+    };
+
+    window.addEventListener("popstate", handlePopState);
+
+    return () => {
+      window.removeEventListener("popstate", handlePopState);
+    };
+  }, [navigate]);
+  
    React.useEffect(() => {
   // Auto-select if only one supplier
   if (options.suppliers.length === 1 && !formData.supplier) {

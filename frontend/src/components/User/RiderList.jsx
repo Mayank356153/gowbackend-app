@@ -1,353 +1,173 @@
-// import React, { useState, useEffect } from "react";
-// import { useNavigate } from "react-router-dom";
-// import Navbar from "../Navbar";
-// import Sidebar from "../Sidebar";
-// import axios from "axios";
-// import { jsPDF } from "jspdf";
-// import autoTable from 'jspdf-autotable';
-// import * as XLSX from 'xlsx';
-// import { BiChevronRight } from 'react-icons/bi';
-// import { FaTachometerAlt } from 'react-icons/fa';
-// import { Link} from "react-router-dom";
-// import LoadingScreen from "../../Loading";
-// const RoleList = () => {
-//   const navigate = useNavigate();
-//   const [roles, setRoles] = useState([]);
-//   const [currentPage, setCurrentPage] = useState(1);
-//   const [itemsPerPage, setItemsPerPage] = useState(10);
-//   const [isSidebarOpen, setSidebarOpen] = useState(false);
-//   const [permissions, setPermissions] = useState([]);
-//  const [actionMenu,setActionMenu]=useState(null)
-//  const[loading,setLoading]=useState(false)
-//   // Load permissions from localStorage
-//   useEffect(() => {
-//     const storedPermissions = localStorage.getItem("permissions");
-//     if (storedPermissions) {
-//       try {
-//         setPermissions(JSON.parse(storedPermissions));
-//       } catch (error) {
-//         console.error("Error parsing permissions:", error);
-//         setPermissions([]);
-//       }
-//     } else {
-//       setPermissions([]);
-//     }
-//   }, []);
-
-//   // Helper function: check if user has a specific permission for a module.
-//   const hasPermissionFor = (module, action) => {
-//     const userRole = (localStorage.getItem("role") || "guest").toLowerCase();
-//     // Admin bypass: admin gets full access
-//     if (userRole === "admin") return true;
-//     return permissions.some(
-//       (perm) =>
-//         perm.module.toLowerCase() === module.toLowerCase() &&
-//         perm.actions.map((a) => a.toLowerCase()).includes(action.toLowerCase())
-//     );
-//   };
-
-//   // Compute permission flags once
-//   const canViewRoles = hasPermissionFor("roles", "view");
-//   const canAddRole = hasPermissionFor("roles", "add");
-  
-//   const fetchRoles = async () => {
-//     const token = localStorage.getItem("token");
-//     if (!token) {
-//       console.error("No token found. Redirecting to login...");
-//       navigate("/");
-//       return;
-//     }
-//     setLoading(true)
-//     try {
-//       const response = await axios.get(
-//         "admincreatingrole/api/roles",
-//         {
-//           headers: { Authorization: `Bearer ${token}` },
-//         }
-//       );
-//       console.log("API Response:", response.data);
-//       if (response.data && Array.isArray(response.data.roles)) {
-//         setRoles(response.data.roles);
-//       } else {
-//         console.error("Unexpected API response:", response.data);
-//         setRoles([]);
-//       }
-//     } catch (error) {
-//       console.error(
-//         "Error fetching roles:",
-//         error.response?.data || error.message
-//       );
-//       if (error.response?.status === 401) {
-//         console.error("Unauthorized. Redirecting to login...");
-//         localStorage.clear();
-//         navigate("/");
-//       }
-//       setRoles([]);
-//     }
-//     finally{
-//       setLoading(false)
-//     }
-//   };
-  
-//   // Fetch roles on component mount
-//   useEffect(() => {
-//     fetchRoles();
-//   }, [navigate]);
-
-//   const indexOfLastItem = currentPage * itemsPerPage;
-//   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-//   const currentRoles = roles.slice(indexOfFirstItem, indexOfLastItem);
-//   const totalPages = Math.ceil(roles.length / itemsPerPage);
-
-//   const handlePageChange = (pageNumber) => setCurrentPage(pageNumber);
-//   const deleteRole=async(id)=>{
-//     const conf=window.confirm("Are U sure")
-//     if(!conf){
-//       return;
-//     }
-//        const token = localStorage.getItem("token");
-//     if (!token) {
-//       console.error("No token found. Redirecting to login...");
-//       navigate("/");
-//       return;
-//     }
-//   setLoading(true)
-//     try {
-//       const response = await axios.delete(
-//         `admincreatingrole/${id}`,
-//         {
-//           headers: { Authorization: `Bearer ${token}` },
-//         }
-//       );
-//      fetchRoles();
-//     } catch (error) {
-//       alert("Unable to delete")
-//     }
-//     finally{
-//       setLoading(false)
-//     }
-//   }
-//   if(loading) return(<LoadingScreen />)
-//   return (
-//     <div className="flex flex-col h-screen">
-//       <Navbar isSidebarOpen={isSidebarOpen} setSidebarOpen={setSidebarOpen} />
-//       <div className="flex flex-grow mt-20">
-//         <div className="w-64">
-//           <Sidebar isSidebarOpen={isSidebarOpen} />
-//         </div>
-//         <div className="container p-10 py-10 mx-auto">
-//           {!canViewRoles ? (
-//             <div>Insufficient permissions to view this page.</div>
-//           ) : (
-//             <>
-//               <div className="flex items-center justify-between mb-4">
-//                 <h1 className="text-2xl font-bold">Role List</h1>
-//                 {canAddRole && (
-//                   <button
-//                     className="px-4 py-2 font-bold text-white bg-blue-500 rounded hover:bg-blue-700"
-//                     onClick={() => navigate("/admin/create/list")}
-//                   >
-//                     + Create Role
-//                   </button>
-//                 )}
-//               </div>
-//               <table className="w-full border border-collapse border-black">
-//                 <thead>
-//                   <tr className="bg-gray-200 border border-black">
-//                     <th className="px-4 py-2 border border-black">#</th>
-//                     <th className="px-4 py-2 border border-black">Store Name</th>
-//                     <th className="px-4 py-2 border border-black">Role Name</th>
-//                     <th className="px-4 py-2 border border-black">Description</th>
-//                     <th className="px-4 py-2 border border-black">Permissions</th>
-//                     <th className="px-4 py-2 border border-black">Action</th>
-//                   </tr>
-//                 </thead>
-//                 <tbody>
-//                   {currentRoles.length > 0 ? (
-//                     currentRoles.map((role, index) => (
-//                       <tr key={role._id} className="border-b">
-//                         <td className="px-4 py-2 border border-black">
-//                           {(currentPage - 1) * itemsPerPage + index + 1}
-//                         </td>
-//                         <td className="px-4 py-2 border border-black">
-//                           {role.storeName || "N/A"}
-//                         </td>
-//                         <td className="px-4 py-2 border border-black">
-//                           {role.roleName || "N/A"}
-//                         </td>
-//                         <td className="px-4 py-2 border border-black">
-//                           {role.description || "No description"}
-//                         </td>
-//                         <td className="px-4 py-2 border border-black">
-//                           {role.permissions && role.permissions.length > 0 ? (
-//                             role.permissions.map((perm, permIndex) => (
-//                               <div key={permIndex}>
-//                                 <strong>{perm.module}:</strong> {perm.actions.join(", ")}
-//                               </div>
-//                             ))
-//                           ) : (
-//                             <span>No Permissions</span>
-//                           )}
-//                         </td>
-//                         <td className="px-4 py-2 border border-black">
-//                           <button
-//                                                    className="px-2 py-1 text-sm text-white bg-cyan-500"
-//                                                    onClick={() => setActionMenu(role._id)}
-//                                                  >
-//                                                    Action ▼
-//                                                  </button>
-//                                                  {actionMenu===role._id &&(
-//                                                    <div className="absolute z-40 bg-white border shadow-lg w-28">
-//                                                    <Link to={`/admin/create/list?id=${role._id}`} className="w-full px-2 py-0 text-left no-underline hover:bg-gray-100">
-//                                                      ✏️ Edit
-//                                                    </Link>
-//                                                    <button
-//                                                      className="w-full px-1 py-0 text-left text-red-500 hover:bg-gray-100"
-//                                                      onClick={() => deleteRole(role._id)}
-//                                                    >
-//                                                      🗑️ Delete
-//                                                    </button>
-//                                                  </div>
-//                                                  )}
-                                                   
-//                         </td>
-//                       </tr>
-//                     ))
-//                   ) : (
-//                     <tr>
-//                       <td colSpan={6} className="px-4 py-2 text-center">
-//                         No roles available
-//                       </td>
-//                     </tr>
-//                   )}
-//                 </tbody>
-//               </table>
-//               <div className="flex justify-center mt-4">
-//                 {Array.from({ length: totalPages }, (_, index) => index + 1).map(
-//                   (pageNumber) => (
-//                     <button
-//                       key={pageNumber}
-//                       className={`mx-2 px-4 py-2 rounded ${
-//                         currentPage === pageNumber
-//                           ? "bg-blue-500 text-white"
-//                           : "bg-gray-200 text-gray-700"
-//                       }`}
-//                       onClick={() => handlePageChange(pageNumber)}
-//                     >
-//                       {pageNumber}
-//                     </button>
-//                   )
-//                 )}
-//               </div>
-//             </>
-//           )}
-//         </div>
-//       </div>
-//     </div>
-//   );
-// };
-
-// export default RoleList;
-
 import React, { useEffect, useState } from 'react';
-import { jsPDF } from "jspdf";
-import autoTable from 'jspdf-autotable';
-import * as XLSX from 'xlsx';
-import { BiChevronRight } from 'react-icons/bi';
-import { FaTachometerAlt } from 'react-icons/fa';
-import Navbar from "../Navbar.jsx";
-import Sidebar from "../Sidebar.jsx";
 import { Link, useNavigate, NavLink } from 'react-router-dom';
-import axios from 'axios';
-import LoadingScreen from '../../Loading.jsx';
-const RoleList = () => {
-  const navigate=useNavigate();  
-  const [entries, setEntries] = useState(10);
-    const [currentPage, setCurrentPage] = useState(1);
-    const [isSidebarOpen, setSidebarOpen] = useState(true);
-    const[status,setStatus]=useState([])
-    const[loading,setLoading]=useState(false)
-    const [expenses, setExpenses] = useState([]);
-    const[searchTerm,setSearchTerm]=useState("")
-     useEffect(()=>{
-        if(window.innerWidth < 768){
-          setSidebarOpen(false)
-        }
-      },[])
-const fetchRoles=async ()=> {
-  const token = localStorage.getItem("token");
-  if (!token) {
-    console.error("No token found. Redirecting to login...");
-    navigate("/");
-    return;
-  }
-setLoading(true)
-  try {
-    const response = await axios.get(
-      "/admincreatingrole/api/roles",
-      {
+import Navbar from "../Navbar";
+import Sidebar from "../Sidebar";
+import { FaTachometerAlt } from 'react-icons/fa';
+import LoadingScreen from "../../Loading";
+import axios from "axios";
+import RiderImagesView from "./RiderImagesView"
+import { utils, writeFile } from 'xlsx';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
+const RiderList = () => {
+    const link="https://pos.inspiredgrow.in/vps"
+
+  const [loading, setLoading] = useState(false);
+  const [actionMenu, setActionMenu] = useState(null);
+  const [isSidebarOpen, setSidebarOpen] = useState(true);
+  const [status, setStatus] = useState([]);
+  const [users, setUsers] = useState([]); // User state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [permissions, setPermissions] = useState([]);
+  const navigate = useNavigate();
+  const [searchTerm, setSearchTerm] = useState('');
+  const[data,setData]=useState([])
+  const[view,setView]=useState(false)
+  // load sidebar open/closed
+  useEffect(() => {
+    if (window.innerWidth < 768) setSidebarOpen(false);
+  }, []);
+
+  // load permissions
+  useEffect(() => {
+    const stored = localStorage.getItem("permissions");
+    setPermissions(stored ? JSON.parse(stored) : []);
+  }, []);
+
+  const fetchusers = async () => {
+    setLoading(true);
+    const token = localStorage.getItem("token");
+    if (!token) {
+      navigate("/");
+      return;
+    }
+
+    try {
+      const response = await fetch(`${link}/api/rider/all`, {
         headers: { Authorization: `Bearer ${token}` },
-      }
+      });
+      const payload = await response.json();
+        
+      // unwrap into a flat array
+      const all = Array.isArray(payload)
+        ? payload
+        : Array.isArray(payload.data)
+          ? payload.data
+          : [];
+         console.log(all)
+      // **now just use what the backend sent you**
+      setUsers(all);
+    } catch (err) {
+      console.error("Error fetching users:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // delete
+  const deleteUser = async (id) => {
+    if (!window.confirm("Delete this user?")) return;
+    setLoading(true);
+    try {
+      await axios.delete(`${link}/api/rider/${id}`, {
+        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+      });
+      fetchusers();
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchusers();
+  }, []);
+
+  // filtering & paging
+ const filtered = users.filter(u => {
+    if (!searchTerm) return true;
+    const term = searchTerm.toLowerCase();
+    return (
+        u.username.toLowerCase().includes(term) ||
+        u.email.toLowerCase().includes(term)
     );
-
-    console.log("API Response:", response.data);
-   setExpenses(response.data.roles)
-   
-  } catch (error) {
-    console.error("Error fetching roles:", error.response?.data || error.message);
-  } finally {
-    setLoading(false);
-  }
-}
-useEffect(()=>{
-  fetchRoles();
-  console.log(expenses)
-},[])
-const filteredData = expenses.filter(item => {
-  const searchTermLower = searchTerm.toLowerCase().trim(); // Ensure no spaces cause issues
-
-  // Make sure these fields exist before calling toLowerCase()
-  const userNameMatch = item.roleName.toLowerCase().includes(searchTermLower) ?? false;
-  
-  // Return true if any match
-  return searchTermLower === "" || userNameMatch
 });
+  const totalPages = Math.ceil(filtered.length / itemsPerPage);
+  const start = (currentPage - 1) * itemsPerPage;
+  const current = filtered.slice(start, start + itemsPerPage);
 
-   
-    const [showActions, setShowActions] = useState(null);
+  
+// Excel Export
+const exportToExcel = () => {
+  const data = current.map(user => ({
+    '#': start + current.indexOf(user) + 1,
+    'Store Name': Array.isArray(user.store) 
+      ? user.store.map(s => s.StoreName).join(", ") 
+      : user.store?.StoreName ?? "N/A",
+    'Username': user.username,
+    'Name': `${user.firstname} ${user.lastname}`,
+    'Mobile': user.mobile,
+    'Email': user.email,
+    'Role': user.role?.roleName,
+    'Created On': new Date(user.createdAt).toDateString(),
+    'Status': status.includes(user._id) ? 'Inactive' : 'Active'
+  }));
 
-    const totalPages = Math.ceil(filteredData.length / entries);
+  const worksheet = utils.json_to_sheet(data);
+  const workbook = utils.book_new();
+  utils.book_append_sheet(workbook, worksheet, "Users");
+  writeFile(workbook, "users_data.xlsx");
+};
 
-    const handleCopy = () => {
-        const data = filteredData.map(exp => `${exp.roleName}, ${exp.description}, ${status.find((item)=>item===exp._id)? 'Active' : 'InActive'}`).join('\n');
-        navigator.clipboard.writeText(data);
-        alert("Data copied to clipboard!");
-    };
+// PDF Export
+const exportToPDF = () => {
+  const doc = new jsPDF();
+  
+  // Title
+  doc.text("Riders Report", 14, 15);
+  
+  // Table data
+  const data = current.map(user => [
+    start + current.indexOf(user) + 1,
+    Array.isArray(user.store) 
+      ? user.store.map(s => s.StoreName).join(", ") 
+      : user.store?.StoreName ?? "N/A",
+    user.username,
+    `${user.firstname} ${user.lastname}`,
+    user.mobile,
+    user.email,
+    user.role?.roleName,
+    new Date(user.createdAt).toDateString(),
+    status.includes(user._id) ? 'Inactive' : 'Active'
+  ]);
 
-    const handleExcelDownload = () => {
-        const ws = XLSX.utils.json_to_sheet(filteredData);
-        const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, "roles");
-        XLSX.writeFile(wb, "roleslist.xlsx");
-    };
+  // Table headers
+  const headers = [
+    "#", "Store Name", "Username", "Name", "Mobile", 
+    "Email", "Role", "Created On", "Status"
+  ];
 
-    const handlePdfDownload = () => {
-        const doc = new jsPDF();
-        doc.text("Roles List", 20, 20);
-        const tableData = filteredData.map(exp => [exp.roleName, exp.description, status.find((item)=>item ===exp._id) ? 'InActive' : 'Active']);
-        autoTable(doc, {
-            head: [['Role Name', 'Description', 'Status']],
-            body: tableData,
-        });
-        doc.save('roles.pdf');
-    };
+  // Generate table
+  autoTable(doc,{
+    head: [headers],
+    body: data,
+    startY: 20,
+    styles: { fontSize: 8 },
+    headStyles: { fillColor: [220, 220, 220] }
+  });
 
-    const handlePrint = () => {
+  doc.save("rider_list.pdf");
+};
+  
+const handlePrint = () => {
         window.print();
     };
 
-    const handleCsvDownload = () => {
-        const csvContent = "data:text/csv;charset=utf-8," + filteredData.map(exp => Object.values(exp).join(",")).join("\n");
+    
+      const handleCsvDownload = () => {
+        const csvContent = "data:text/csv;charset=utf-8," + filtered.map(exp => Object.values(exp).join(",")).join("\n");
         const encodedUri = encodeURI(csvContent);
         const link = document.createElement("a");
         link.setAttribute("href", encodedUri);
@@ -357,151 +177,216 @@ const filteredData = expenses.filter(item => {
         document.body.removeChild(link);
     };
 
+    const copyToClipboard = () => {
+  // Prepare headers
+  const headers = [
+    "#", "Store Name", "Username", "Name", "Mobile", 
+    "Email", "Role", "Created On", "Status"
+  ].join("\t");
 
-    const handleDeleteClick =async (id) => {
-      const conf= window.confirm("Do u want to delete ")
-      if(!conf){
-        return ;
-      }
-      setLoading(true)
-      try {
-        const response = await axios.delete(`/admincreatingrole/${id}`, {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-        });
-      
-       alert("Deleted Successfully")
-      fetchRoles();
-      } catch (error) {
-        console.error( error.message);
-      }
-      finally{
-        setLoading(false)
-      }
-    };
+  // Prepare rows
+  const rows = current.map(user => [
+    start + current.indexOf(user) + 1,
+    Array.isArray(user.store) 
+      ? user.store.map(s => s.StoreName).join(", ") 
+      : user.store?.StoreName ?? "N/A",
+    user.username,
+    `${user.firstname} ${user.lastname}`,
+    user.mobile,
+    user.email,
+    user.role?.roleName,
+    new Date(user.createdAt).toDateString(),
+    status.includes(user._id) ? 'Inactive' : 'Active'
+  ].join("\t")).join("\n");
 
-    const toggleShowActions = (id) => {
-        setShowActions(showActions === id ? null : id);
-    };
+  // Combine headers and rows
+  const clipboardData = `${headers}\n${rows}`;
 
-    if(loading) return(<LoadingScreen />)
-    return (
-        <div className="flex flex-col h-screen">
-            <Navbar isSidebarOpen={isSidebarOpen} setSidebarOpen={setSidebarOpen} />
-            <div className="flex flex-grow">
-                <Sidebar isSidebarOpen={isSidebarOpen} />
-                <main className={`flex-grow  flex flex-col p-2 md:p-2 min-h-screen overflow-x-hidden`}>
-                    <header className="flex items-center justify-between p-4 mb-2 bg-gray-100 rounded-md shadow sm:flex-row">
-                     <div className="flex flex-col items-center gap-1 text-center sm:flex-row sm:text-left">
-                     <h1 className="text-lg font-semibold truncate sm:text-xl">Roles List</h1>
-                     <span className="text-xs text-gray-600 sm:text-sm">View/Search Items Category</span>
-               </div>
-                        <nav className="flex items-center justify-start text-xs text-gray-500 sm:text-sm">
-                        <NavLink to="/dashboard" className="flex items-center text-gray-700 no-underline hover:text-cyan-600">
-                <FaTachometerAlt className="mr-2 text-gray-500 hover:text-cyan-600" /> Home
+  // Copy to clipboard
+  navigator.clipboard.writeText(clipboardData)
+    .then(() => {
+      alert('Table data copied to clipboard!');
+    })
+    .catch(err => {
+      console.error('Failed to copy: ', err);
+      // Fallback for older browsers
+      const textarea = document.createElement('textarea');
+      textarea.value = clipboardData;
+      document.body.appendChild(textarea);
+      textarea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textarea);
+      alert('Table data copied to clipboard!');
+    });
+};
+const exportToCSV = () => {
+  // Prepare headers
+  const headers = [
+    "#", "Store Name", "Username", "Name", "Mobile", 
+    "Email", "Role", "Created On", "Status"
+  ];
+
+  // Prepare rows
+  const rows = current.map(user => [
+    start + current.indexOf(user) + 1,
+    Array.isArray(user.store) 
+      ? `"${user.store.map(s => s.StoreName).join(", ")}"` 
+      : user.store?.StoreName ?? "N/A",
+    user.username,
+    `"${user.firstname} ${user.lastname}"`,
+    user.mobile,
+    user.email,
+    user.role?.roleName,
+    new Date(user.createdAt).toDateString(),
+    status.includes(user._id) ? 'Inactive' : 'Active'
+  ]);
+
+  // Combine headers and rows
+  const csvContent = [
+    headers.join(","),
+    ...rows.map(row => row.join(","))
+  ].join("\n");
+
+  // Create download link
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.setAttribute('href', url);
+  link.setAttribute('download', 'riders_data.csv');
+  link.style.visibility = 'hidden';
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+};
+  if (loading) return <LoadingScreen />;
+
+  return (
+    <div className="flex flex-col ">
+      <Navbar isSidebarOpen={isSidebarOpen} setSidebarOpen={setSidebarOpen} />
+      <div className="box-border flex min-h-screen">
+        <div className='w-auto'>
+          <Sidebar isSidebarOpen={isSidebarOpen} />
+        </div>
+        
+        <div className="flex flex-col w-full p-2 mx-auto overflow-x-auto transition-all duration-300">
+          <header className="flex flex-col items-center justify-start px-2 py-2 mb-2 bg-gray-100 rounded-md shadow md:justify-between md:flex-row">
+            <div className="flex items-baseline gap-2 sm:text-left">
+              <h1 className="text-lg font-semibold">Rider List</h1>
+              <span className="text-xs text-gray-600">View/Search Riders</span>
+            </div>
+            <nav className="flex gap-2 text-xs text-gray-500">
+              <NavLink to="/dashboard" className="flex items-center text-gray-500 no-underline hover:text-gray-800">
+                <FaTachometerAlt /> Home
               </NavLink>
-                            <BiChevronRight className="inline mx-1 sm:mx-2" />
-                            <a href="#" className="text-gray-700 no-underline hover:text-cyan-600">Roles List</a>
-                        </nav>
-                    </header>
-                    <section className="p-1 bg-white border-t-4 rounded-lg shadow-md border-cyan-500">
-                    <header className="flex items-center justify-between mb-4">
-                <div></div>
-                 <Link to='/admin/create/list'>
-                <button className="px-4 py-2 mt-2 text-white rounded bg-cyan-500">+ Create Role</button>
+              <NavLink to="/admin/user/list" className="text-gray-500 no-underline hover:text-gray-800">
+                &gt; Riders List
+              </NavLink>
+            </nav>
+          </header>
+          {
+            view && <RiderImagesView setView={setView} data={data}/>
+          }
+
+          <div className="p-4 bg-white border rounded-lg shadow-md">
+            <header className="flex items-center justify-between mb-4">
+              <div>Riders List</div>
+              <Link to='/rider/add'>
+                <button className="px-4 py-2 text-white rounded bg-cyan-500">+ New Rider</button>
               </Link>
             </header>
-                        <div className="flex flex-col justify-between mb-2 space-y-1 md:flex-row md:space-y-0 md:items-center">
-                            <div className="flex items-center space-x-2">
+
+            {/* controls */}
+            <div className="flex flex-col justify-between mb-2 space-y-1 md:flex-row md:space-y-0 md:items-center">
+                            <div className="flex items-center w-full space-x-2">
                                 <span className="text-sm">Show</span>
-                                <select className="p-2 text-sm border border-gray-300" value={entries} onChange={(e) => setEntries(Number(e.target.value))}>
+                                <select className="p-2 text-sm border border-gray-300" value={itemsPerPage} onChange={(e) => setItemsPerPage(Number(e.target.value))}>
                                     <option>10</option>
                                     <option>20</option>
                                     <option>50</option>
                                 </select>
                                 <span className="text-sm">Entries</span>
                             </div>
+                            
                             <div className="flex justify-end flex-1 gap-1 mt-2 mb-2 ">
-                            <button onClick={handleCopy} className="w-full px-3 py-2 text-sm text-white bg-cyan-500 lg:w-auto">Copy</button>
-                <button onClick={handleExcelDownload} className="w-full px-3 py-2 text-sm text-white bg-cyan-500 lg:w-auto">Excel</button>
-                <button onClick={handlePdfDownload} className="w-full px-3 py-2 text-sm text-white bg-cyan-500 lg:w-auto">PDF</button>
+                            <button onClick={copyToClipboard} className="w-full px-3 py-2 text-sm text-white bg-cyan-500 lg:w-auto">Copy</button>
+                <button onClick={exportToExcel} className="w-full px-3 py-2 text-sm text-white bg-cyan-500 lg:w-auto">Excel</button>
+                <button onClick={exportToPDF} className="w-full px-3 py-2 text-sm text-white bg-cyan-500 lg:w-auto">PDF</button>
                 <button onClick={handlePrint} className="w-full px-3 py-2 text-sm text-white bg-cyan-500 lg:w-auto">Print</button>
-                <button onClick={handleCsvDownload} className="w-full px-3 py-2 text-sm text-white bg-cyan-500 lg:w-auto">CSV</button>
-                                <input type="text" placeholder="Search" className="w-full p-2 text-sm border border-gray-300 " onChange={(e)=>setSearchTerm(e.target.value)}/>
+                <button onClick={exportToCSV} className="w-full px-3 py-2 text-sm text-white bg-cyan-500 lg:w-auto">CSV</button>
+                                <input type="text" placeholder="Search" className="w-full p-2 text-sm border border-gray-300 md:w-auto" onChange={(e)=>setSearchTerm(e.target.value)}/>
                             </div>
-                        </div>
-                        <div className="overflow-x-auto">
-                            <table className="min-w-full bg-white border border-gray-300">
-                                <thead className="bg-gray-200">
-                                    <tr>
-                                        <th className="px-3 py-2 text-sm text-center border">#</th>
-                                        <th className="px-3 py-2 text-sm text-center border">Role Name</th>
-                                        <th className="px-3 py-2 text-sm text-center border">Description</th>
-                                        <th className="px-3 py-2 text-sm text-center border">Status</th>
-                                        <th className="py-2 text-sm text-center border ">Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {filteredData.length === 0 ? (
-                                        <tr>
-                                            <td colSpan="5" className="py-4 text-center">No data available in table</td>
-                                        </tr>
-                                    ) : (
-                                        filteredData.slice((currentPage - 1) * entries, currentPage * entries).map((expense, index) => (
-                                            <tr key={expense._id} className="hover:bg-gray-100">
-                                                <td className="text-sm text-center border ">{index+1}</td>
-                                                <td className="text-sm text-center border ">{expense.roleName}</td>
-                                                <td className="text-sm text-center border ">{expense.description}</td>
-                                                <td
-                                                               className="text-center border cursor-pointer sm:px-4 sm:py-2"
-                                                               onClick={() =>
-                                                     setStatus((prev) =>
-                                                    prev.includes(expense._id)
-                                                    ? prev.filter((id) => id !== expense._id) // Remove if already present
-                                                 : [...prev, expense._id] // Add if not present
-                                                   )
-                                                      }
-                                                                >
-                                                             {status.includes(expense._id) ? (
-                                                                <span className="p-1 text-white bg-red-700 rounded-md">Inactive</span>
-                                                                  ) : (
-                                                        <span className="p-1 text-white bg-green-400 rounded-md">Active</span>
-                                                        )}
-                                                  </td>
+         </div>
 
-                                                  <td className="relative flex items-center justify-center py-2 text-sm text-center border">
-  {/* Action Button */}
+            <div className="overflow-x-auto">
+              <table className="w-full border border-collapse">
+                <thead className="bg-gray-200">
+                  <tr>
+                    {["#","Store Name"," UserName","Name","Mobile","Email","Role","Created On","Images","Status","Action"]
+                      .map(h => <th key={h} className="p-1 border">{h}</th>)}
+                  </tr>
+                </thead>
+                <tbody>
+                  {current.length === 0
+                    ? <tr><td colSpan="10" className="p-2 text-center">No data Available</td></tr>
+                    : current.map((u,i) => (
+                      <tr key={u._id} className="text-sm">
+                        <td className="p-1 border">{start + i + 1}</td>
+                        <td className="p-1 border">
+                          {Array.isArray(u.store)
+                            ? u.store.map(s => s.StoreName).join(", ")
+                            : u.store?.StoreName ?? "N/A"}
+                        </td>
+                        <td className="p-1 border">{u.username}</td>
+                        <td className="p-1 border">{u.firstname} {u.lastname}</td>
+                        <td className="p-1 border">{u.mobile}</td>
+                        <td className="p-1 border">{u.email}</td>
+                        <td className="p-1 border">{u.role?.roleName}</td>
+                        <td className="p-1 border">{new Date(u.createdAt).toDateString()}</td>
+                        <td className="p-1 border">
+                          <button className='px-3 bg-gray-300 rounded-2xl' onClick={()=>{
+                            setView(true);
+                            setData({ProfileImage:u.profileImage,AddharCardImage:u.addharCardImage,PanCardImage:u.panCardImage,DrivingLicenseImage:u.drivingLicenseImage})
+                          }}>View</button>
+                        </td>
+                        <td
+  className="p-1 text-center transition duration-300 ease-in-out border cursor-pointer hover:bg-gray-100"
+  onClick={() =>
+    setStatus(st => st.includes(u._id)
+      ? st.filter(x => x !== u._id)
+      : [...st, u._id]
+    )
+  }
+>
+  {status.includes(u._id) ? (
+    <span className="inline-block px-3 py-1 text-sm font-medium text-white transition duration-300 bg-red-600 rounded-full">
+      Inactive
+    </span>
+  ) : (
+    <span className="inline-block px-3 py-1 text-sm font-medium text-white transition duration-300 bg-green-500 rounded-full">
+      Active
+    </span>
+  )}
+</td>
+
+<td className="relative p-1 border">
   <button
-    className="flex items-center gap-1 px-4 py-2 text-sm font-medium text-white transition-all duration-200 ease-in-out rounded-full shadow bg-cyan-600 hover:bg-cyan-700 active:scale-95 focus:outline-none focus:ring-2 focus:ring-cyan-400"
-    onClick={() => toggleShowActions(expense._id)}
+    className="px-3 py-1 text-white transition duration-300 rounded-full bg-cyan-600 hover:bg-cyan-700"
+    onClick={() => setActionMenu(am => am === u._id ? null : u._id)}
   >
-    Actions
-    <svg
-      className={`w-4 h-4 transition-transform duration-200 ${
-        showActions === expense._id ? "rotate-180" : ""
-      }`}
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={2}
-      viewBox="0 0 24 24"
-    >
-      <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-    </svg>
+    Action ⏷
   </button>
 
-  {/* Dropdown */}
-  {showActions === expense._id && (
-    <div className="absolute right-0 z-50 w-32 mt-2 overflow-hidden bg-white border border-gray-200 rounded-md shadow-md animate-fade-in">
-      <Link
-        to={`/admin/create/list?id=${expense._id}`}
-        className="block px-4 py-2 text-sm text-left text-gray-700 no-underline transition-colors hover:bg-gray-100"
+  {actionMenu === u._id && (
+    <div className="absolute right-0 z-10 w-32 mt-2 bg-white border rounded-md shadow-lg animate-fade-in">
+      <button
+        className="w-full px-3 py-2 text-sm text-left text-green-600 transition hover:bg-gray-100"
+        onClick={() => navigate(`/rider/add?id=${u._id}`)}
       >
         ✏️ Edit
-      </Link>
+      </button>
       <button
-        onClick={() => handleDeleteClick(expense._id)}
-        className="w-full px-4 py-2 text-sm text-left text-red-600 transition-colors hover:bg-gray-100"
+        className="w-full px-3 py-2 text-sm text-left text-red-600 transition hover:bg-gray-100"
+        onClick={() => deleteUser(u._id)}
       >
         🗑️ Delete
       </button>
@@ -509,29 +394,40 @@ const filteredData = expenses.filter(item => {
   )}
 </td>
 
-                                            </tr>
-                                        ))
-                                    )}
-                                </tbody>
-                            </table>
-                        </div>
-                        <div className="flex flex-col items-center justify-between mt-4 md:flex-row">
-                            <span>Showing {entries * (currentPage - 1) + 1} to {Math.min(entries * currentPage, expenses.length)} of {expenses.length} entries</span>
-                            <div>
-                                <button onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))} className="px-4 py-2 mr-2 text-gray-600 bg-gray-300 disabled:opacity-50" disabled={currentPage === 1}>
-                                    Previous
-                                </button>
-                                <button onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))} className="px-4 py-2 text-gray-600 bg-gray-300 disabled:opacity-50" disabled={currentPage === totalPages}>
-                                    Next
-                                </button>
-                            </div>
-                        </div>
-                       
-                    </section>
-                </main>
+                      </tr>
+                    ))
+                  }
+                </tbody>
+              </table>
             </div>
+
+            {/* pagination */}
+            <div className="flex flex-col items-center gap-2 p-2 md:flex-row md:justify-between">
+              <span>
+                Showing {start+1} to {Math.min(start+itemsPerPage, filtered.length)} of {filtered.length} entries
+              </span>
+              <div className="flex gap-2">
+                <button
+                  className={`px-3 py-1 rounded ${currentPage===1 ? "bg-gray-300" : "bg-blue-500 text-white"}`}
+                  disabled={currentPage===1}
+                  onClick={() => setCurrentPage(p => p-1)}
+                >
+                  Previous
+                </button>
+                <button
+                  className={`px-3 py-1 rounded ${currentPage===totalPages ? "bg-gray-300" : "bg-blue-500 text-white"}`}
+                  disabled={currentPage===totalPages}
+                  onClick={() => setCurrentPage(p => p+1)}
+                >
+                  Next
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
-    );
+      </div>
+    </div>
+  );
 };
 
-export default RoleList;
+export default RiderList;

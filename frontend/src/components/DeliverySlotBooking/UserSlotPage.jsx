@@ -3,6 +3,7 @@ import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
 const UserSlotPage = () => {
+  const link="https://pos.inspiredgrow.in/vps"
   const [selectedDateIndex, setSelectedDateIndex] = useState(null);
   const [selectedSlotIndex, setSelectedSlotIndex] = useState(null);
   const [selectedInstantDelivery, setSelectedInstantDelivery] = useState(null);
@@ -70,7 +71,7 @@ const UserSlotPage = () => {
     };
 
     try {
-      const response = await fetch("api/userslot/booking", {
+      const response = await fetch(`${link}/api/userslot/booking`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

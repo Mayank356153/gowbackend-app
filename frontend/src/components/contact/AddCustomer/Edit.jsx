@@ -8,7 +8,7 @@ import { useNavigate } from 'react-router-dom';
 import LoadingScreen from '../../../Loading';
 export default function Edit({formData,setFormData,setActiveTab ,id}) {
         
-     
+     const link="https://pos.inspiredgrow.in/vps"
 const navigate=useNavigate()
    const[copy,setCopy]=useState(false)
     const[loaidng,setLoading]=useState(false)
@@ -58,7 +58,7 @@ const navigate=useNavigate()
             try {
               console.log("Sending FormData:", formData);
               const response = await axios.post(
-                "http://localhost:5000/api/customer-data/create",
+                `${link}/api/customer-data/create`,
                 formData,
                 {
                   headers: {
@@ -124,7 +124,7 @@ const navigate=useNavigate()
                       try {
                         console.log("Updating FormData:", formData);
                         const response = await axios.put(
-                          `https://mybackend-l7om.onrender.com/api/customer-data/${id}`,
+                          `${link}/api/customer-data/${id}`,
                           formData,
                           {
                             headers: {

@@ -13,7 +13,7 @@ import {
 } from "react-icons/fa";
 import PurchaseScanner from './PurchaseScanner';
 import dayjs from 'dayjs';
-import { FaTrashAlt,FaArrowRight,FaBoxOpen,FaTimes ,FaInfoCircle} from 'react-icons/fa';
+import { FaTrashAlt} from 'react-icons/fa';
 import { App } from "@capacitor/app";
 import { useLocation,useNavigate } from 'react-router-dom'
 import Swal from "sweetalert2"
@@ -74,10 +74,7 @@ const handleViewInfo = (item) => {
   setShowInfoModal(true);
 };
 
-    console.log(allItems)
-     console.log(items)
      const[itemScan,setItemScan]=useState(false)
-
      
   const handleQuanity=(id,type)=>{
     const itemformat=items.map(item=>
@@ -87,7 +84,7 @@ const handleViewInfo = (item) => {
       }:item
     )
     // setItems(itemformat)
-    setFormData((prev)=>({...prev,items:itemformat}))
+    setFormData((prev)=>({...prev,items:itemformat.filter(it=>it.quantity!==0)}))
   }
   if(itemScan) return <PurchaseScanner startScanner={startScanner} matchedItems={matchedItems} setMatchedItems={setMatchedItems} stopScanner={stopScanner} allItems={allItems} handleQuanity={handleQuanity}  videoRef={videoRef}  addItem={addItem} setItemScan={setItemScan}/>
   return (
@@ -208,7 +205,7 @@ const handleViewInfo = (item) => {
           >
             {/* Floating Action Menu (Contextual) */}
             <div className="absolute flex gap-1 top-3 ">
-              <button 
+              <button  type="button"
                 onClick={() => handleQuanity(it._id, "remove")}
                 className="p-1.5  text-gray-400 hover:text-red-500 rounded-full transition-colors"
               >
@@ -252,7 +249,7 @@ const handleViewInfo = (item) => {
                   </span>
 
                   <div className="flex items-center gap-2 bg-gray-100/70 rounded-full p-0.5">
-                    <button
+                    <button type='button'
                       onClick={() => handleQuanity(it._id, "minus")}
                       className="p-1.5 text-gray-600 hover:text-purple-600 rounded-full active:bg-gray-200 transition-colors"
                       disabled={item.quantity <= 0}
@@ -262,7 +259,7 @@ const handleViewInfo = (item) => {
                     <span className="text-sm font-medium text-gray-800 min-w-[20px] text-center">
                       {item.quantity}
                     </span>
-                    <button
+                    <button type='button'
                       onClick={() => handleQuanity(it._id, "plus")}
                       className="p-1.5 text-gray-600 hover:text-purple-600 rounded-full active:bg-gray-200 transition-colors"
                       disabled={it.currentStock <= item.quantity}

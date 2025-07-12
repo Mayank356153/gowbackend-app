@@ -10,6 +10,7 @@ import axios from 'axios';
 import LoadingScreen from '../../Loading.jsx';
 import { useNavigate } from 'react-router-dom';
 const ExpenseCategoryList = () => {
+  const link="https://pos.inspiredgrow.in/vps"
   const navigate = useNavigate();
     const [entriesPerPage, setEntriesPerPage] = useState(10);
     const [currentPage, setCurrentPage] = useState(1);
@@ -42,7 +43,7 @@ function hasPermissionFor(module, action) {
     try {
         setLoading(true)
       const token = localStorage.getItem("token");
-      const response = await axios.get(`api/expenses`, {
+      const response = await axios.get(`${link}/api/expenses`, {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
@@ -124,7 +125,7 @@ function hasPermissionFor(module, action) {
         
         try {
           const response = await axios.put(
-            `api/expenses/${id}`,
+            `${link}/api/expenses/${id}`,
              newStatus , // ✅ Send status as an object
             {
               headers: {
@@ -154,7 +155,7 @@ function hasPermissionFor(module, action) {
         setLoading(true)
        
         try {
-          const response = await axios.delete(`api/expenses/${id}`, {
+          const response = await axios.delete(`${link}/api/expenses/${id}`, {
             headers: {
               Authorization: `Bearer ${localStorage.getItem("token")}`,
             },

@@ -2,13 +2,43 @@ import React,{useState,useEffect,useRef} from 'react'
 import dayjs from 'dayjs';
 import { Select } from 'antd';
 import { FaTrashAlt,FaBoxOpen,FaInfoCircle } from 'react-icons/fa';
-import { FaChevronLeft,FaPlus,FaTrash,FaMinus,FaTimes ,FaBox} from 'react-icons/fa';
+import { FaChevronLeft,FaPlus,FaTrash,FaMinus,FaTimes ,FaBox ,FaEdit} from 'react-icons/fa';
 import { useLocation,useNavigate } from 'react-router-dom'
 import {App} from '@capacitor/app'
+import ItemEditPage from './ItemEditPage';
 export default function Purchase3({setActiveTab,allItems,
     options,formData,handleItemFieldChange,setFormData,handleRemoveItem,handleChange,setOtherCharges,discount,setDiscount,setDiscountType,discountType,subtotal,discountMoney,
     grandtotal,handlePayment,handlePaymentSelect,isCash,cashAccounts,isBank,id,navigate,items,updateItem,removeItem
 }) {
+  const [edit,setEdit]=useState(false)
+  const [itemEdit,setItemEdit]=useState(null)
+  const [itemEditIndex,setItemEditIndex]=useState(null)
+  const handleQuanity=(e,id,type)=>{
+    
+    if(type==="delete"){
+      setFormData((prev)=>({...prev,items:prev.items.filter(it=>it._id!==id)}))
+       return;
+    }
+      if(type==="change"){
+        const itemformat=items.map(item=>
+      (item.item===id)?{
+        ...item,
+        quantity:Number(e.target.value)
+      }:item
+    )
+       setFormData((prev)=>({...prev,items:itemformat}))
+       return;
+    }
+    
+    const itemformat=items.map(item=>
+      (item.item===id)?{
+        ...item,
+        quantity:type==="plus"?item.quantity+1:item.quantity-1
+      }:item
+    )
+    // setItems(itemformat)
+    setFormData((prev)=>({...prev,items:itemformat.filter(it=>it.quantity!==0)}))
+  }
 
  const location=useLocation()
     const initialLocationRef = useRef(location);
@@ -47,10 +77,13 @@ export default function Purchase3({setActiveTab,allItems,
   return (
    <div className="min-h-screen bg-gray-50">
   {/* Header */}
+  {
+    edit  && <ItemEditPage edit={edit} setEdit={setEdit} setFormData={setFormData} formData={formData}  item={itemEdit} id={itemEditIndex} />
+  }
   <div className="sticky top-0 z-10 bg-white border-b border-gray-200 shadow-sm">
     <div className="flex items-center justify-between">
       <button type="button"
-        onClick={() => navigate(-1)}
+        onClick={() => setActiveTab("p2")}
         className="p-1 text-gray-600 rounded-full hover:bg-gray-100"
       >
         <FaChevronLeft className="w-5 h-5" />
@@ -66,23 +99,25 @@ export default function Purchase3({setActiveTab,allItems,
     {/* Summary Card */}
    
 
-       <div className="p-4 space-y-4 bg-white ">
-              <div className="grid grid-cols-2 gap-4 text-sm">
+       <div className="p-4 bg-white ">
+              <div className="grid grid-cols-2 text-sm">
                <InfoField label="Warehouse" value={options.warehouse.find(opt => opt.value === formData.warehouse)?.label} required />
         <InfoField label="Supplier" value={options.suppliers.find(opt => opt.value === formData.supplier)?.label} required />
         <InfoField label="Reference No." value={formData.referenceNo} />
         <InfoField label="Purchase Date" value={formData.purchaseDate ? dayjs(formData.purchaseDate).format("DD/MM/YYYY") : ""} />
               </div>
     
-              <div className='flex justify-end'>
-                <button className='flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white rounded-lg bg-cyan-600 hover:bg-cyan-700' onClick={()=>setActiveTab("p2")} type="button">
+              <div className='flex justify-end mb-1'>
+                <button className='flex items-center px-2 text-sm font-semibold text-white rounded-lg bg-cyan-600 hover:bg-cyan-700' onClick={()=>setActiveTab("p2")} type="button">
                   <FaPlus /> Add Item
                 </button>
               </div>
     
-              <ItemsTable items={items} updateItem={updateItem} removeItem={removeItem} setSelectedItem={setSelectedItem} />
+              <ItemsTable items={formData.items}  setEdit={setEdit} setItemEdit={setItemEdit}  setItemEditIndex={setItemEditIndex} updateItem={handleQuanity} removeItem={handleQuanity} setSelectedItem={setSelectedItem} />
               {selectedItem && (
-      <ItemInfoPage 
+      <ItemInfoPage  setEdit={setEdit}
+         setItemEdit={setItemEdit}
+        setItemEditIndex={setItemEditIndex}
       allItems={options.items}
         selectedItem={selectedItem}
         onClose={() => setSelectedItem(null)}
@@ -249,7 +284,7 @@ export default function Purchase3({setActiveTab,allItems,
     {/* Action Buttons */}
     <div className="sticky bottom-0 left-0 right-0 p-4 bg-white border-t border-gray-200 shadow-lg">
       <div className="flex space-x-3">
-        <button
+        <button type="button"
           onClick={() => navigate("/purchase-list")}
           className="flex-1 px-4 py-3 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200"
         >
@@ -271,7 +306,7 @@ export default function Purchase3({setActiveTab,allItems,
       <div className="w-full max-w-md p-6 bg-white rounded-lg shadow-xl">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-bold text-gray-800">Item Details</h2>
-          <button 
+          <button  type="button"
             onClick={() => setShowInfoModal(false)} type="button"
             className="p-1 text-gray-400 rounded-full hover:bg-gray-100"
           >
@@ -290,7 +325,6 @@ export default function Purchase3({setActiveTab,allItems,
     </div>
   )}
 </div>
-
   )
 }
 
@@ -319,7 +353,7 @@ const ItemInfoPage = ({ selectedItem, onClose, onAddToInvoice ,allItems}) => {
     <div className="fixed inset-0 z-50 overflow-y-auto bg-gray-100">
       {/* Header */}
       <div className="sticky top-0 z-10 flex items-center justify-between p-4 bg-white border-b border-gray-200 shadow-sm">
-        <button 
+        <button  type="button"
           onClick={onClose}
           className="p-1 text-gray-500 rounded-full hover:bg-gray-100"
         >
@@ -402,77 +436,104 @@ const ItemInfoPage = ({ selectedItem, onClose, onAddToInvoice ,allItems}) => {
   );
 };
 
+ 
 
-
-const ItemsTable = ({ items, updateItem, removeItem, setSelectedItem }) => (
-  <div className="relative space-y-3 overflow-y-auto max-h-56">
+const ItemsTable = ({ items, updateItem, removeItem, setSelectedItem, setEdit,setItemEdit,setItemEditIndex }) => (
+  <div className="flex flex-col max-h-[80vh] px-2">
     {items.length > 0 ? (
-      <div className="overflow-hidden border border-gray-200 divide-y divide-gray-200 rounded-lg">
+      <div className="overflow-y-auto border border-gray-100 rounded-xl shadow-sm max-h-[70vh]">
         {items.map((item, index) => (
-          <div key={index} className="p-3 transition-colors bg-white hover:bg-gray-50">
-            <div className="flex items-start justify-between">
+          <div
+            key={index}
+            className="p-3 transition-all duration-200 bg-white border-b border-gray-100 hover:bg-gray-50 last:border-b-0"
+          >
+            <div className="flex items-start justify-between gap-2">
               {/* Item Info */}
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center">
-                  <div className="flex items-center justify-center flex-shrink-0 w-10 h-10 mr-3 bg-gray-100 rounded-md">
-                    <FaBox className="text-lg text-gray-400" />
-                  </div>
-                  <div className="truncate">
-                    <p className="text-sm font-medium text-gray-900 truncate">{item.itemName}</p>
-                    {item.sku && (
-                      <p className="text-xs text-gray-500 truncate">SKU: {item.sku}</p>
-                    )}
-                  </div>
+              <div className="flex items-center gap-2.5 flex-1 min-w-0">
+                <div className="flex items-center justify-center flex-shrink-0 text-base font-bold text-white rounded-lg w-9 h-9 bg-gradient-to-br from-purple-600 to-indigo-600">
+                  {item.itemName?.charAt(0)?.toUpperCase() || '?'}
+                </div>
+                <div className="truncate">
+                  <p className="text-sm font-semibold text-gray-900 truncate">{item.itemName}</p>
+                  {item.sku && (
+                    <p className="text-xs text-gray-500 truncate">SKU: {item.sku}</p>
+                  )}
                 </div>
               </div>
 
               {/* Quantity Control */}
-              <div className="flex-shrink-0 ml-2">
-                <div className="relative">
+              <div className="flex-shrink-0">
+                <div className="flex items-center gap-1 bg-gray-100 rounded-full p-0.5">
+                  <button
+                    type="button"
+                    onClick={(e) => updateItem(e, item._id, 'minus')}
+                    className="p-1.5 text-gray-600 hover:text-purple-600 rounded-full active:bg-gray-200 transition-colors duration-200 disabled:opacity-50"
+                    disabled={item.quantity <= 0}
+                  >
+                    <FaMinus className="w-3 h-3" />
+                  </button>
                   <input
                     type="number"
-                    min="1"
                     value={item.quantity}
-                    onChange={(e) => updateItem(index, 'quantity', e.target.value)}
-                    className="block w-20 px-3 py-1 text-sm border border-gray-300 rounded-md shadow-sm focus:ring-cyan-500 focus:border-cyan-500"
+                    onChange={(e) => updateItem(e, item._id, 'change')}
+                    className="w-12 px-1 py-0.5 text-sm text-center bg-transparent border-none focus:ring-0"
+                    min="0"
                   />
-                  <div className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
-                    <span className="text-xs text-gray-500">Qty</span>
-                  </div>
+                  <button
+                    type="button"
+                    onClick={(e) => updateItem(e, item._id, 'plus')}
+                    className="p-1.5 text-gray-600 hover:text-purple-600 rounded-full active:bg-gray-200 transition-colors duration-200 disabled:opacity-50"
+                    disabled={item.currentStock <= item.quantity}
+                  >
+                    <FaPlus className="w-3 h-3" />
+                  </button>
                 </div>
               </div>
             </div>
 
             {/* Action Buttons */}
-            <div className="flex justify-end mt-2 space-x-2">
-              <button 
-                onClick={() => setSelectedItem(item)} type="button"
-                className="inline-flex items-center px-2.5 py-1 text-xs font-medium text-cyan-700 bg-cyan-50 rounded hover:bg-cyan-100"
+            <div className="flex justify-end mt-2 gap-1.5">
+              <button
+                onClick={() => setSelectedItem(item)}
+                type="button"
+                className="inline-flex items-center px-2 py-1 text-xs font-medium transition-colors duration-200 rounded-lg text-cyan-700 bg-cyan-50 hover:bg-cyan-100"
               >
-                <FaInfoCircle className="mr-1" /> Details
+                <FaInfoCircle className="w-3 h-3 mr-1" /> Details
               </button>
               <button
-                onClick={() => removeItem(index)} type="button"
-                className="p-2 text-gray-400 rounded-full hover:text-red-500 hover:bg-red-50"
+                onClick={() =>{
+                  setEdit(true);
+                  setItemEdit(item);
+                  setItemEditIndex(index);
+                }}
+                type="button"
+                className="inline-flex items-center px-2 py-1 text-xs font-medium text-blue-700 transition-colors duration-200 rounded-lg bg-blue-50 hover:bg-blue-100"
+              >
+                <FaEdit className="w-3 h-3 mr-1" /> Edit
+              </button>
+              <button
+                onClick={() => removeItem('delete', item._id)}
+                type="button"
+                className="p-1.5 text-gray-400 hover:text-red-500 bg-white rounded-full hover:bg-red-50 transition-colors duration-200"
                 aria-label="Remove item"
               >
-                <FaTrash className="text-sm" />
+                <FaTrash className="w-3 h-3" />
               </button>
             </div>
           </div>
         ))}
       </div>
     ) : (
-      <div className="p-6 text-center border-2 border-gray-300 border-dashed rounded-lg">
-        <FaBoxOpen className="w-12 h-12 mx-auto text-gray-400" />
-        <h3 className="mt-2 text-sm font-medium text-gray-900">No items</h3>
-        <p className="mt-1 text-sm text-gray-500">Add items to create an invoice</p>
+      <div className="p-4 m-2 text-center border-2 border-gray-200 border-dashed rounded-xl bg-gray-50">
+        <FaBoxOpen className="w-10 h-10 mx-auto text-gray-400" />
+        <h3 className="mt-2 text-sm font-semibold text-gray-900">No items</h3>
+        <p className="mt-1 text-xs text-gray-500">Add items to create an invoice</p>
       </div>
     )}
 
     {items.length > 0 && (
-      <div className="px-3 py-2 text-center rounded-lg bg-gray-50">
-        <p className="text-sm text-gray-700">
+      <div className="px-3 py-2 m-2 text-center rounded-lg shadow-sm bg-gray-50">
+        <p className="text-xs font-medium text-gray-700">
           {items.length} item{items.length !== 1 ? 's' : ''} in this invoice
         </p>
       </div>

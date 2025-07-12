@@ -10,6 +10,7 @@ import Sidebar from '../Sidebar';
 import { FaTachometerAlt } from 'react-icons/fa';
 import { NavLink } from 'react-router-dom';
 export default function Customer() {
+  const link="https://pos.inspiredgrow.in/vps"
    const[isSidebarOpen,setSidebarOpen]=useState(true)
   
 
@@ -20,7 +21,7 @@ export default function Customer() {
         const { latitude, longitude } = pos.coords;
 
         try {
-          const res = await fetch('http://localhost:5000/api/get-location', {
+          const res = await fetch(`${link}/api/get-location`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ latitude, longitude })
@@ -72,7 +73,7 @@ export default function Customer() {
             try {
               console.log("Sending FormData:", formData);
               const response = await axios.post(
-                "http://localhost:5000/api/customer/add",
+                `${link}/api/customer/add`,
                 formData
               );
               console.log("Response:", response.data);

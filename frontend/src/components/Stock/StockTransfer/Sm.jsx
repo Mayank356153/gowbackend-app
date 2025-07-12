@@ -12,6 +12,7 @@ import S3 from "./S3.jsx";
 import { BrowserMultiFormatReader } from '@zxing/browser';
 import { useRef } from "react";
 import { Camera } from "@capacitor/camera";
+import playSound from "../../../utility/sound.js";
 /* Change this if your base URL differs */
 const API = "";
 
@@ -35,7 +36,7 @@ const[matchedItems,setMatchedItems]=useState([])
   const [searchParams] = useSearchParams();
   const id = searchParams.get("id"); // editing?
 
-  const [isSidebarOpen, setSidebarOpen] = useState(true);
+  const [isSidebarOpen, setSidebarOpen] = useState(false);
   const [loading, setLoading] = useState(false);
 
   // Collapse sidebar on small screens
@@ -225,83 +226,97 @@ const startScanner = async () => {
     alert("Please select a warehouse before scanning");
     return;
   }
-
-  if (!videoRef.current) return;
+ const permission = await Camera.requestPermissions(); // or checkPermissions()
+  console.log(permission)
+  if (permission.camera !== 'granted') {
+    alert('Camera permission is required');
+    return ;
+  }
 
   const codeReader = new BrowserMultiFormatReader();
   codeReaderRef.current = codeReader;
 
-  // List available cameras
-  const devices = await codeReader.listVideoInputDevices();
-  const backCamera = devices.find((d) =>
-    d.label.toLowerCase().includes("back")
-  ) || devices[0]; // fallback to any camera
+  const decode = (facingMode) =>
+    
+    codeReader.decodeFromConstraints(
+      { video: { facingMode } },
+      videoRef.current,
+      async (result, err) => {
+        if (result) {
+           const text = result.getText();
+        console.log("Scanned barcode:", text);
 
-  if (!backCamera) {
-    alert("No camera found.");
-    return;
+        const match = allItems.find(
+          (i) =>
+            i.itemCode === text ||
+            i.barcodes?.includes(text) ||
+            i.itemName.toLowerCase() === text.toLowerCase()
+        );
+
+        if (match) {
+          setMatchedItems((prev) => {
+  const existingIndex = prev.findIndex((item) => item.item === match._id);
+
+  if (existingIndex !== -1) {
+    // Existing item: increment quantity and play different sound
+    const updatedItems = [...prev];
+    updatedItems[existingIndex] = {
+      ...updatedItems[existingIndex],
+      quantity: updatedItems[existingIndex].quantity + 1,
+    };
+    playSound("/sounds/item-exists.mp3");
+    return updatedItems;
+  } else {
+    // New item: add and play add sound
+    playSound("/sounds/item-added.mp3");
+    return [
+      ...prev,
+      {
+        ...match,
+        quantity: 1,
+        item: match._id,
+      },
+    ];
   }
+});
 
-  const scannedRecently = new Set(); // optional: avoid spam scanning
+         // Wait a bit then scan again
+            setTimeout(() => {
+              codeReader.reset(); // very important to reset before new scan
+              decode(facingMode); // recursively call decode
+            }, 5000); // 800ms delay before next scan
+        }}
 
-  codeReader.decodeFromVideoDevice(backCamera.deviceId, videoRef.current, (result, error) => {
-    if (result) {
-      const text = result.getText();
-      console.log("Scanned barcode:", text);
-
-      if (scannedRecently.has(text)) return; // prevent duplicate in short time
-      scannedRecently.add(text);
-      setTimeout(() => scannedRecently.delete(text), 3000); // reset after 3s
-
-      const match = filteredItems.find(
-        (i) =>
-          i.itemCode === text ||
-          i.barcodes?.includes(text) ||
-          i.itemName.toLowerCase() === text.toLowerCase()
-      );
-
-      console.log("Matched item:", match);
-
-      if (match) {
-        setMatchedItems((prev) => {
-          const existingIndex = prev.findIndex((item) => item._id === match._id);
-          if (existingIndex !== -1) {
-            const updated = [...prev];
-            updated[existingIndex].quantity += 1;
-            return updated;
-          } else {
-            return [...prev, { ...match, quantity: 1 }];
-          }
-        });
-        setSearchQuery("");
-        navigator.vibrate?.(100);
-        try {
-          new Audio("/beep.mp3").play();
-        } catch {}
-      } else {
-        alert("No item found for scanned code: " + text);
+        if (err && err.name !== 'NotFoundException') {
+          console.error("Scan error:", err);
+        }
       }
+    );
+    
+   console.log(videoRef)
+  try {
+    await decode({ exact: "environment" }); // Try back camera first
+  } catch {
+    try {
+      await decode("user"); // Fallback to front camera
+    } catch (e) {
+      console.error("Camera error:", e);
+      stopScanner();
     }
-
-    if (error && error.name !== "NotFoundException") {
-      console.error("Scan error:", error);
-    }
-  });
+  }
 };
 
 
 
 
  const stopScanner = () => {
-  const reader = codeReaderRef.current;
-  if (reader?.reset) reader.reset();
-
-  if (videoRef.current?.srcObject) {
-    videoRef.current.srcObject.getTracks().forEach((track) => track.stop());
-    videoRef.current.srcObject = null;
+  // Stop camera tracks
+  const tracks = videoRef.current?.srcObject?.getTracks();
+  if (tracks) {
+    tracks.forEach((t) => t.stop());
   }
 
-  setScanning(false);
+  codeReaderRef.current?.reset?.();
   setMatchedItems([]);
 };
 
@@ -319,24 +334,41 @@ const startScanner = async () => {
 
   // ─── ADD ITEM TO SELECTED LIST ────────────────────────────────────────
   const handleAddItem = (targetItem) => {
-    if (!targetItem) return;
-    if (selectedItems.some((it) => it.itemId === targetItem._id)) {
-      alert("This item is already added.");
-      setSearchQuery("");
-      return;
+  if (!targetItem) return;
+
+  setSelectedItems((prevItems) => {
+    const existingIndex = prevItems.findIndex(
+      (item) => item.itemId === targetItem._id
+    );
+
+    if (existingIndex !== -1) {
+      // If item exists, increase quantity
+      const updatedItems = [...prevItems];
+      updatedItems[existingIndex] = {
+        ...updatedItems[existingIndex],
+        quantity: updatedItems[existingIndex].quantity + 1,
+      };
+      return updatedItems;
+    } else {
+      // New item, add it
+      return [
+        ...prevItems,
+        {
+          itemId: targetItem._id,
+          itemName: targetItem.displayName,
+          quantity: 1,
+          isVariant: targetItem.isVariant,
+          variantName: targetItem.variantName,
+        },
+      ];
     }
-    setSelectedItems([
-      ...selectedItems,
-      {
-        itemId: targetItem._id,
-        itemName: targetItem.displayName,
-        quantity: 1,
-        isVariant: targetItem.isVariant,
-        variantName: targetItem.variantName,
-      },
-    ]);
-    setSearchQuery("");
-  };
+  });
+
+  setSearchQuery("");
+};
+
+
+
 
   // ─── REMOVE ITEM FROM SELECTED ────────────────────────────────────────
   const handleRemoveItem = (id) => {
@@ -344,12 +376,35 @@ const startScanner = async () => {
   };
 
   // ─── UPDATE QUANTITY IN SELECTED ──────────────────────────────────────
-  const handleItemChange = (id, val) => {
-    setSelectedItems(
-      selectedItems.map((it) =>
-        it.itemId === id ? { ...it, quantity: parseInt(val, 10) || 1 } : it
-      )
-    );
+  const handleItemChange = (idx, field, val) => {
+    alert("l")
+    const numericVal = Number(val);
+  const row = selectedItems[idx];
+
+  // ❗ Block salesPrice from ever exceeding MRP
+  if (field === "salesPrice" && numericVal > row.mrp) {
+    alert(`❗ Sales Price (${numericVal}) cannot exceed the MRP (${row.mrp})`);
+    return;
+  }
+
+  // your existing non-zero check
+  if ((field === "salesPrice") && numericVal <= 0) {
+    alert(`${field.charAt(0).toUpperCase() + field.slice(1)} must be greater than zero.`);
+    return;
+  }
+
+  setSelectedItems((prev) =>
+    prev.map((r, i) =>
+      i === idx
+        ? {
+            ...r,
+             
+                 [field]:val
+              
+          }
+        : r
+    )
+  );
   };
 
   // ─── SUBMIT TRANSFER ───────────────────────────────────────────────────

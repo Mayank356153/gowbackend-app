@@ -11,7 +11,8 @@ import autoTable from "jspdf-autotable";
 import * as XLSX from "xlsx";
 
 function CountryList() {
-  const navigate = useNavigate();
+    const link="https://pos.inspiredgrow.in/vps"
+const navigate = useNavigate();
   const [isSidebarOpen, setSidebarOpen] = useState(true);
   const [countries, setCountries] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
@@ -28,7 +29,7 @@ function CountryList() {
     try {
       const token = localStorage.getItem("token");
       const res = await axios.get(
-        "https://mybackend-l7om.onrender.com/api/countries",
+        `${link}/api/countries`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       setCountries(res.data.data || []);
@@ -53,7 +54,7 @@ function CountryList() {
     try {
       const token = localStorage.getItem("token");
       await axios.put(
-        `https://mybackend-l7om.onrender.com/api/countries/${id}`,
+        `${link}/api/countries/${id}`,
         { status: newStatus },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -118,7 +119,7 @@ function CountryList() {
     try {
       const token = localStorage.getItem("token");
       await axios.delete(
-        `https://mybackend-l7om.onrender.com/api/countries/${id}`,
+        `${link}/api/countries/${id}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       alert("Deleted");

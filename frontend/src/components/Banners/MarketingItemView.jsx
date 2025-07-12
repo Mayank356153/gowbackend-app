@@ -11,6 +11,7 @@ import { FaEdit, FaTrash } from "react-icons/fa";
 import Select from 'react-select'
 import ItemsImageView from './ItemsImageView.jsx';
 const MarketingItemView = () => {
+  const link="https://pos.inspiredgrow.in/vps"
   const [isSidebarOpen, setSidebarOpen] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [entriesPerPage, setEntriesPerPage] = useState(10);
@@ -42,7 +43,7 @@ const MarketingItemView = () => {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const response = await axios.get('http://localhost:5000/api/marketing-item/all', {
+      const response = await axios.get(`${link}/api/marketing-item/all`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
@@ -76,7 +77,7 @@ const MarketingItemView = () => {
     if (!window.confirm("Do you want to delete this ?")) return;
     setLoading(true);
     try {
-      await axios.delete(`http://localhost:5000/api/marketing-item/${id}`, {
+      await axios.delete(`${link}/api/marketing-item/${id}`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
         },

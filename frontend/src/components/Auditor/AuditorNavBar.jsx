@@ -5,6 +5,7 @@ import { FaBars, FaPlus } from "react-icons/fa";
 import { motion, AnimatePresence } from "framer-motion";
 
 const AuditorNavbar = ({ isSidebarOpen, setSidebarOpen }) => {
+  const link="https://pos.inspiredgrow.in/vps"
   const navigate = useNavigate();
   const [showDropdown, setShowDropdown] = useState(false);
   const [user, setUser] = useState(null);
@@ -30,7 +31,7 @@ const AuditorNavbar = ({ isSidebarOpen, setSidebarOpen }) => {
         return;
       }
 
-      const url ="http://localhost:5000/api/audit/profile"
+      const url =`${link}/api/audit/profile`
         
 
       const { data } = await axios.get(url, {

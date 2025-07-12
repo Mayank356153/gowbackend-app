@@ -4,6 +4,7 @@ import 'react-toastify/dist/ReactToastify.css';
 import { Link } from 'react-router-dom';
 
 const BookingSlot = () => {
+    const link="https://pos.inspiredgrow.in/vps"
     const [selectedDate, setSelectedDate] = useState('');
     const [selectedTimeSlot, setSelectedTimeSlot] = useState(null);
     const [isInstant, setIsInstant] = useState(false);
@@ -100,8 +101,8 @@ const BookingSlot = () => {
 
         try {
             const url = editing
-                ? `api/booking-slot-update/${bookingId}`
-                : 'api/booking-slot';
+                ? `${link}/api/booking-slot-update/${bookingId}`
+                : `${link}/api/booking-slot`;
 
             const method = editing ? 'PUT' : 'POST';
 

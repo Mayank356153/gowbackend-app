@@ -14,6 +14,7 @@ import * as XLSX from 'xlsx';
 import { jsPDF } from "jspdf";
 
 const SalesReturnList = () => {
+      const link="https://pos.inspiredgrow.in/vps"
   const navigate = useNavigate();
   const [warehouses, setWarehouses] = useState([]);
   const [isSidebarOpen, setSidebarOpen] = useState(true);
@@ -65,7 +66,7 @@ const SalesReturnList = () => {
     }
     setLoading(true);
     try {
-      const response = await axios.get("api/sales-return", authHeaders());
+      const response = await axios.get(`${link}/api/sales-return`, authHeaders());
       setSalesReturns(response.data.returns || []);
       setSummary(response.data.summary || { totalCount: 0, totalRefunded: 0 });
     } catch (error) {
@@ -85,7 +86,7 @@ const SalesReturnList = () => {
     }
     setLoading(true);
     try {
-      const response = await axios.get("api/warehouses", authHeaders());
+      const response = await axios.get(`${link}/api/warehouses`, authHeaders());
       const newWarehouses = [
         { label: "All Warehouses", value: "all" },
         ...response.data.data.map(wh => ({
@@ -127,7 +128,7 @@ const SalesReturnList = () => {
     if (!confirmDelete) return;
     setLoading(true);
     try {
-      await axios.delete(`api/sales-return/${id}`, authHeaders());
+      await axios.delete(`${link}/api/sales-return/${id}`, authHeaders());
       fetchSalesReturnList();
     } catch (error) {
       alert("Failed to delete return: " + error.message);

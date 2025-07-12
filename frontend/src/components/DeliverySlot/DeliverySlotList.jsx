@@ -12,7 +12,8 @@ import Select from 'react-select'
 
 const DeliverySlotList = () => {
   const [isSidebarOpen, setSidebarOpen] = useState(true);
-  
+  const link="https://pos.inspiredgrow.in/vps"
+
 
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
@@ -35,7 +36,7 @@ const DeliverySlotList = () => {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const response = await axios.get('http://localhost:5000/api/delivery/slot/all-slot', {
+      const response = await axios.get(`${link}/api/delivery/slot/all-slot`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
@@ -60,7 +61,7 @@ const DeliverySlotList = () => {
     if (!window.confirm("Do you want to delete this ?")) return;
     setLoading(true);
     try {
-      await axios.delete(`http://localhost:5000/api/delivery/slot/${id}`, {
+      await axios.delete(`${link}/api/delivery/slot/${id}`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
         },

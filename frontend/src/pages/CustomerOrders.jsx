@@ -23,7 +23,7 @@ const CustomerOrders = () => {
       setError("");
 
       // Make API request to backend
-      const response = await axios.get("http://localhost:5000/api/orders", {
+      const response = await axios.get("https://pos.inspiredgrow.in/vps/api/orders", {
         params: {
           customerName: customerName || undefined,
           tillDate: tillDate || undefined,

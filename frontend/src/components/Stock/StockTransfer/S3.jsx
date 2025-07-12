@@ -46,8 +46,35 @@ export default function S3({
           setSelectedItem(allItems.find(it=> it._id===item.itemId));
           setShowInfoModal(true);
         };
+
         
-         const handleQuanity=(id,type)=>{
+        
+         const handleQuanity=(e,id,type)=>{
+          console.log(selectedItems)
+  
+
+
+
+
+    
+    if(type==="delete"){
+      alert("p")
+      const itemformat=selectedItems.filter(it=>it.itemId!==id)
+      setSelectedItems(itemformat)
+       return;
+    }
+    
+      if(type==="change"){
+        const itemformat=selectedItems.map(item=>
+      (item.itemId===id)?{
+        ...item,
+        quantity:Number(e.target.value)
+      }:item
+    )
+       setSelectedItems(itemformat)
+       return;
+    }
+    
     const itemformat=selectedItems.map(item=>
       (item.itemId===id)?{
         ...item,
@@ -57,27 +84,28 @@ export default function S3({
     // setItems(itemformat)
     setSelectedItems(itemformat.filter(it=>it.quantity!==0))
   }
+  
   return (
  <div>
   
   <div className="sticky top-0 z-10 bg-white">
      <div className="flex items-center justify-between">
        <button type="button"
-         onClick={() => navigate(-1)}
+         onClick={() => setActiveTab("s2")}
          className="p-1 text-gray-600 rounded-full hover:bg-gray-100"
        >
          <FaChevronLeft className="w-5 h-5" />
        </button>
        <h1 className="text-lg font-bold text-gray-800">
-         {id ? "Edit Purchase" : "New Purchase"}
+         {id ? "Edit Stock Transfer" : "New Stock Transfer"}
        </h1>
        <div className="w-6"></div> {/* Spacer */}
      </div>
    </div>
   
 
-<div className="p-4 space-y-4 bg-white ">
-              <div className="grid grid-cols-2 gap-4 text-sm">
+<div className="p-4 bg-white ">
+              <div className="grid grid-cols-2 text-sm">
                <InfoField label="Transfer Date" value={formData.transferDate}  />
         <InfoField label="From Warehouse" value={warehouses.find(wr => wr._id === formData.fromWarehouse)?.warehouseName || "Not Selected"} required />
         <InfoField label="To Warehouse" value={warehouses.find(wr => wr._id === formData.toWarehouse)?.warehouseName || "Not Selected"} />
@@ -85,13 +113,13 @@ export default function S3({
         <InfoField label="Note" value={formData.note || "—"} />
               </div>
     
-              <div className='flex justify-end'>
-                <button className='flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white rounded-lg bg-cyan-600 hover:bg-cyan-700' onClick={()=>setActiveTab("s2")} type="button">
+              <div className='flex justify-end mb-1'>
+                <button className='flex items-center gap-2 px-2 text-sm font-semibold text-white rounded-lg bg-cyan-600 hover:bg-cyan-700' onClick={()=>setActiveTab("s2")} type="button">
                   <FaPlus /> Add Item
                 </button>
               </div>
     
-              <ItemsTable items={selectedItems} updateItem={handleQuanity} removeItem={handleRemoveItem} setSelectedItem={setSelectedItem} />
+              <ItemsTable items={selectedItems} updateItem={handleQuanity} removeItem={handleQuanity} setSelectedItem={setSelectedItem} />
               {selectedItem && (
       <ItemInfoPage 
       allItems={allItems}
@@ -104,6 +132,7 @@ export default function S3({
       />
     )}
             </div>
+            
   {/* Info Modal */}
   {showInfoModal && selectedItem && (
     <div className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-black bg-opacity-50">
@@ -261,9 +290,9 @@ const ItemInfoPage = ({ selectedItem, onClose, onAddToInvoice ,allItems}) => {
 
 
 const ItemsTable = ({ items, updateItem, removeItem, setSelectedItem }) => (
-  <div className="relative space-y-3 overflow-y-auto max-h-56">
+  <div className="flex flex-col max-h-80">
     {items.length > 0 ? (
-      <div className="overflow-hidden border border-gray-200 divide-y divide-gray-200 rounded-lg">
+      <div className="overflow-y-auto border border-gray-200 divide-y divide-gray-200 rounded-lg max-h-80">
         {items.map((item, index) => (
           <div key={index} className="p-3 transition-colors bg-white hover:bg-gray-50">
             <div className="flex items-start justify-between">
@@ -285,16 +314,33 @@ const ItemsTable = ({ items, updateItem, removeItem, setSelectedItem }) => (
               {/* Quantity Control */}
               <div className="flex-shrink-0 ml-2">
                 <div className="relative">
-                  <input
-                    type="number"
-                    min="1"
-                    value={item.quantity}
-                    onChange={(e) => updateItem(index, 'quantity', e.target.value)}
-                    className="block w-20 px-3 py-1 text-sm border border-gray-300 rounded-md shadow-sm focus:ring-cyan-500 focus:border-cyan-500"
-                  />
-                  <div className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
-                    <span className="text-xs text-gray-500">Qty</span>
-                  </div>
+                 <div className="flex items-center space-x-1">
+  <button type="button"
+    onClick={(e) =>
+      updateItem(e,item.itemId, "minus")
+    }
+    className="px-2 py-1 text-sm font-semibold text-gray-600 bg-gray-100 rounded hover:bg-gray-200"
+  >
+    -
+  </button>
+  <input
+    type="number"
+    value={item.quantity}
+    onChange={(e) =>
+      updateItem(e,item.itemId,"change")
+    }
+    className="w-16 px-2 py-1 text-sm text-center border border-gray-300 rounded"
+  />
+  <button type="button"
+    onClick={(e) =>
+      updateItem(e,item.itemId, "plus")
+    }
+    className="px-2 py-1 text-sm font-semibold text-gray-600 bg-gray-100 rounded hover:bg-gray-200"
+  >
+    +
+  </button>
+</div>
+                  
                 </div>
               </div>
             </div>
@@ -308,7 +354,7 @@ const ItemsTable = ({ items, updateItem, removeItem, setSelectedItem }) => (
                 <FaInfoCircle className="mr-1" /> Details
               </button>
               <button
-                onClick={() => removeItem(index)} type="button"
+                onClick={(e) => removeItem(e,item.itemId, "delete")} type="button"
                 className="p-2 text-gray-400 rounded-full hover:text-red-500 hover:bg-red-50"
                 aria-label="Remove item"
               >

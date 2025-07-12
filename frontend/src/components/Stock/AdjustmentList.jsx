@@ -11,6 +11,7 @@ import LoadingScreen from '../../Loading.jsx';
 import { Link } from 'react-router-dom';
 import { useNavigate } from 'react-router-dom';
 const StockAdjustmentList = () => {
+    const link="https://pos.inspiredgrow.in/vps"
   const navigate=useNavigate()
   const [currentPage, setCurrentPage] = useState(1);
   const [entriesPerPage,setEntriesPerPage] = useState(10);
@@ -40,7 +41,7 @@ const[dropdownIndex,setDropdownIndex]=useState(null)
     try {
       setLoading(true)
       const token = localStorage.getItem("token");
-      const response = await axios.get(`http://localhost:5000/api/stock-adjustments`, {
+      const response = await axios.get(`${link}/api/stock-adjustments`, {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
@@ -82,7 +83,7 @@ const[dropdownIndex,setDropdownIndex]=useState(null)
     try {
       setLoading(true)
       const token = localStorage.getItem("token");
-      const response = await axios.get("http://localhost:5000/api/warehouses", {
+      const response = await axios.get(`${link}/api/warehouses`, {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
@@ -172,7 +173,7 @@ const[dropdownIndex,setDropdownIndex]=useState(null)
   if (!conf) return;
   
   try {
-      const response = await fetch(`http://localhost:5000/api/stock-adjustments/${id}`, {
+      const response = await fetch(`${link}/api/stock-adjustments/${id}`, {
           method: "DELETE",
           headers: {
               "Content-Type": "application/json",

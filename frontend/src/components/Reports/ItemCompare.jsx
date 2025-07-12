@@ -14,6 +14,7 @@ import * as XLSX from 'xlsx';
 import autoTable from 'jspdf-autotable';
 
 export default function ItemCompare() {
+    const link="https://pos.inspiredgrow.in/vps"
   const [showExportDropdown, setShowExportDropdown] = useState(false)
    const[isSidebarOpen,setSidebarOpen]=useState(true)
    const[loading,setLoading]=useState(true)
@@ -34,7 +35,7 @@ export default function ItemCompare() {
    const fetchWarehouses=async()=>{
     try {
       setLoading(true)
-      const response = await axios.get('https://mybackend-l7om.onrender.com/api/warehouses', {
+      const response = await axios.get(`${link}/api/warehouses`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
         }
@@ -61,7 +62,7 @@ export default function ItemCompare() {
    const fetchItems=async()=>{
     try {
       setLoading(true)
-      const response = await axios.get('https://mybackend-l7om.onrender.com/api/items', {
+      const response = await axios.get(`${link}/api/items`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
         }

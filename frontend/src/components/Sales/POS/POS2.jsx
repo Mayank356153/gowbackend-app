@@ -51,6 +51,7 @@ export default function POS2({
     // Hardware back
     useEffect(() => {
       const backHandler = App.addListener('backButton', () => {
+       
         confirmBack()
       });
   
@@ -61,6 +62,7 @@ export default function POS2({
     useEffect(() => {
       const unblock = navigate((_, action) => {
         if (action === 'POP') {
+          
 confirmBack();
           return false; // Prevent actual navigation
         }
@@ -70,6 +72,7 @@ confirmBack();
     }, [navigate]);
     
   const[itemScan,setItemScan]=useState(false)
+  
   const handleQuanity=(id,type)=>{
     if(type==="remove"){
       setItems(prev=> prev.filter(it => it.item!==id))
@@ -81,9 +84,10 @@ confirmBack();
         quantity:type==="plus"?item.quantity+1:item.quantity-1
       }:item
     )
-    setItems(itemformat)
+    setItems(itemformat.filter(it=>it.quantity!==0))
   }
-  if(itemScan) return <POSScanner canvasRef={canvasRef} startScanner={startScanner} matchedItems={matchedItems} setMatchedItems={setMatchedItems} stopScanner={stopScanner} allItems={allItems} handleQuanity={handleQuanity}  videoRef={videoRef} codeRedaerRef={codeRedaerRef} addItem={addItem} setItemScan={setItemScan}/>
+  useEffect(()=>{console.log(items)},[items])
+  if(itemScan) return <POSScanner  allItems={allItems} handleQuanity={handleQuanity}  addItem={addItem} setItemScan={setItemScan}/>
   return (
 
     

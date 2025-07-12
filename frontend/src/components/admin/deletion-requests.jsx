@@ -4,6 +4,7 @@ import Navbar from "../Navbar.jsx";
 import Sidebar from "../Sidebar.jsx";
 
 export default function DeletionRequests() {
+  const link="https://pos.inspiredgrow.in/vps"
   const [list, setList] = useState([]);
   const [loading, setLoading] = useState(false);
   const [isSidebarOpen, setSidebarOpen] = useState(true);
@@ -13,7 +14,7 @@ export default function DeletionRequests() {
     setLoading(true);
     try {
       const { data } = await axios.get(
-        "api/deletion-requests?status=PENDING",
+        `${link}/api/deletion-requests?status=PENDING`,
         {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token") || ""}`
@@ -39,7 +40,7 @@ export default function DeletionRequests() {
     setLoading(true);
     try {
       const url =
-        `api/deletion-requests/${id}` +
+        `${link}/api/deletion-requests/${id}` +
         (approve ? "/approve" : "/reject");
       await axios.put(
         url,

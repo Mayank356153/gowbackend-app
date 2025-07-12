@@ -7,14 +7,14 @@ const AssignRider = ({ orderId, onClose, setSidebarOpen,fetchusers }) => {
   const [assigned, setAssigned] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [success, setSuccess] = useState(false);
-   
+   const link="https://pos.inspiredgrow.in/vps"
   const headers = { Authorization: `Bearer ${localStorage.getItem("token")}` };
   useEffect(() => {
     if (setSidebarOpen) setSidebarOpen(false);
     const fetchRiders = async () => {
       try {
 
-        const res = await axios.get('http://localhost:5000/api/rider/all',
+        const res = await axios.get(`${link}/api/rider/all`,
           {headers}
         );
         const activeRiders = res.data.data.filter(rider => rider.status.toLowerCase() === "active");
@@ -32,7 +32,7 @@ const AssignRider = ({ orderId, onClose, setSidebarOpen,fetchusers }) => {
 
   const handleAssign = async (riderId) => {
     try {
-      const res = await axios.put(`http://localhost:5000/api/order/assign-order/${orderId}`,{
+      const res = await axios.put(`${link}/api/order/assign-order/${orderId}`,{
         deliveryAgent:riderId,
         deliveryAgentModel:"Rider"
       },{headers});

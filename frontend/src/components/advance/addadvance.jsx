@@ -8,6 +8,7 @@ import Select from 'react-select'
 import { useSearchParams,NavLink } from 'react-router-dom';
 import LoadingScreen from "../../Loading.jsx";
 const AdvanceForm = () => {
+  const link="https://pos.inspiredgrow.in/vps"
   const[loading,setLoading]=useState(false)
   const [activeTab, setActiveTab] = useState("addadvance");
   const [isSidebarOpen, setSidebarOpen] = useState(true);
@@ -31,7 +32,7 @@ const AdvanceForm = () => {
   const fetchCustomer = async () => {
     try {
       setLoading(true)
-      const response = await  axios.get('api/customer-data/all', {
+      const response = await  axios.get(`${link}/api/customer-data/all`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`, // Get token from localStorage
         }
@@ -60,7 +61,7 @@ const AdvanceForm = () => {
   const fetchPaymentType = async () => {
     try {
       setLoading(true)
-      const response = await  axios.get('api/payment-types', {
+      const response = await  axios.get(`${link}/api/payment-types`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`, // Get token from localStorage
         }
@@ -90,7 +91,7 @@ const AdvanceForm = () => {
   const fetchData = async () => {
     try {
       setLoading(true)
-      const response = await  axios.get('api/advance-payments', {
+      const response = await  axios.get(`${link}/api/advance-payments`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`, // Get token from localStorage
         }
@@ -117,7 +118,7 @@ const updateData = async (id) => {
   setLoading(true)
       try {
         const response = await axios.put(
-          `api/advance-payments/${id}`,
+          `${link}/api/advance-payments/${id}`,
           FormData,
           {
             headers: {
@@ -145,7 +146,7 @@ const updateData = async (id) => {
   const sendAdvance = async () => {
     try {
       setLoading(true)
-      const response = await  axios.post('api/advance-payments',FormData, {
+      const response = await  axios.post(`${link}/api/advance-payments`,FormData, {
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${localStorage.getItem("token")}`, // Get token from localStorage

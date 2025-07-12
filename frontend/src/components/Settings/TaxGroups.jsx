@@ -7,6 +7,7 @@ import { useNavigate } from 'react-router-dom';
 
 const TaxGroups = () => {
   const navigate = useNavigate();
+  const link="https://pos.inspiredgrow.in/vps"
 
   const [entries, setEntries] = useState(10);
   const [currentPage, setCurrentPage] = useState(1);
@@ -17,7 +18,7 @@ const TaxGroups = () => {
   const fetchTaxGroups = async () => {
     try {
       const token = localStorage.getItem("token");
-      const res = await axios.get("https://mybackend-l7om.onrender.com/api/tax-groups", {
+      const res = await axios.get(`${link}/api/tax-groups`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setTaxGroups(res.data.data || []);
@@ -100,7 +101,7 @@ const TaxGroups = () => {
     if (!window.confirm("Are you sure you want to delete this tax group?")) return;
     try {
       const token = localStorage.getItem("token");
-      await axios.delete(`https://mybackend-l7om.onrender.com/api/tax-groups/${id}`, {
+      await axios.delete(`${link}/api/tax-groups/${id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       alert("Tax Group deleted successfully!");
@@ -116,7 +117,7 @@ const TaxGroups = () => {
     try {
       const token = localStorage.getItem("token");
       await axios.put(
-        `https://mybackend-l7om.onrender.com/api/tax-groups/${groupId}`,
+        `${link}/api/tax-groups/${groupId}`,
         { status: newStatus },
         { headers: { Authorization: `Bearer ${token}` } }
       );

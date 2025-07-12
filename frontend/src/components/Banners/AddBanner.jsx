@@ -14,6 +14,7 @@ import { useRef } from "react";
 import SingleProductView from "./SingleProductBanner.jsx";
 import MultiProductView from "./MultiProductView.jsx";
 const AddBanner = () => {
+  const link="https://pos.inspiredgrow.in/vps"
   const[isSidebarOpen,setSidebarOpen]=useState(true)
   const[loading,setLoading]=useState(false)
   const[items,setItems]=useState([])
@@ -47,7 +48,7 @@ const AddBanner = () => {
    const fetchItems=async()=>{
     try {
       setLoading(true)
-      const response = await axios.get("https://mybackend-l7om.onrender.com/api/items", {
+      const response = await axios.get(`${link}/api/items`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
@@ -226,7 +227,7 @@ const AddBanner = () => {
   const sendData=async()=>{
     try {
       setLoading(true)
-      const response = await axios.put(`https://mybackend-l7om.onrender.com/api/items/${id}`,sendingData, {
+      const response = await axios.put(`${link}/api/items/${id}`,sendingData, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
         },

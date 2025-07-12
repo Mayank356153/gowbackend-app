@@ -1,11 +1,43 @@
 import { useState,useEffect } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import { Preferences } from '@capacitor/preferences';
+
+const storeToken = async (name,token) => {
+  await Preferences.set({
+    key: name,
+    value: token,
+  });
+};
 
 const UserLogin = () => {
   const [user, setUser] = useState({ email: "", password: "" });
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+
+  useEffect(() => {
+  const checkToken = async () => {
+    const { value: token } = await Preferences.get({ key: "token" });
+    const { value: role } = await Preferences.get({ key: "role" });
+    const { value: permissions } = await Preferences.get({ key: "permissions" });
+    const { value: userId } = await Preferences.get({ key: "userId" });
+    const { value: roleId } = await Preferences.get({ key: "roleId" });
+    const { value: stores } = await Preferences.get({ key: "stores" });
+    const { value: storeId } = await Preferences.get({ key: "storeId" });
+
+    if (token) {
+      localStorage.setItem("token", token);
+      localStorage.setItem("role", role);
+      localStorage.setItem("permissions", permissions);
+       localStorage.setItem("userId", userId);
+      localStorage.setItem("roleId", roleId);
+      localStorage.setItem("storeId", storeId);
+      localStorage.setItem("stores", stores || []);
+      navigate("/dashboard");
+    }
+  };
+  checkToken();
+}, []);
 
   const handleChange = (e) => {
     setUser({ ...user, [e.target.name]: e.target.value });
@@ -29,7 +61,8 @@ const UserLogin = () => {
 
       // 1) Save JWT
       localStorage.setItem("token", token);
-
+     await storeToken("token", token)
+     
       // 2) Decode token to pull out id, role id, and stores[]
       const decoded = JSON.parse(window.atob(token.split(".")[1]));
       localStorage.setItem("role", decoded.role.toLowerCase());
@@ -39,11 +72,18 @@ const UserLogin = () => {
       // If exactly one store, save a convenience storeId
       if (decoded.stores?.length === 1) {
         localStorage.setItem("storeId", decoded.stores[0]);
+        await storeToken("storeId", decoded.stores[0])
       }
 
       // 3) Save permissions array
       localStorage.setItem("permissions", JSON.stringify(permissions || []));
+      await storeToken("permissions", JSON.stringify(permissions || []))
 
+      // store for long login
+      await storeToken("role", decoded.role.toLowerCase());
+      await storeToken("userId", decoded.id)
+      await storeToken("roleId", decoded.role)
+      await storeToken("stores", JSON.stringify(decoded.stores || []))
       alert("User logged in successfully!");
       navigate("/dashboard");
     } catch (err) {

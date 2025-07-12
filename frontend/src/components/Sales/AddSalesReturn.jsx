@@ -16,6 +16,7 @@ function generateReturnCode(lastReturnCode) {
 }
 
 export default function AddSalesReturn() {
+      const link="https://pos.inspiredgrow.in/vps"
   const navigate = useNavigate();
   const { id } = useParams();
   const isEdit = Boolean(id);
@@ -98,12 +99,12 @@ export default function AddSalesReturn() {
     const fetchData = async () => {
       try {
         const [whRes, cuRes, ptRes, acRes, termRes, retRes] = await Promise.all([
-          axios.get("http://localhost:5000/api/warehouses", authHeaders()),
-          axios.get("http://localhost:5000/api/customer-data/all", authHeaders()),
-          axios.get("http://localhost:5000/api/payment-types", authHeaders()),
-          axios.get("http://localhost:5000/api/accounts", authHeaders()),
-          axios.get("http://localhost:5000/api/terminals", authHeaders()),
-          axios.get("http://localhost:5000/api/sales-return", authHeaders()),
+          axios.get(`${link}/api/warehouses`, authHeaders()),
+          axios.get(`${link}/api/customer-data/all`, authHeaders()),
+          axios.get(`${link}/api/payment-types`, authHeaders()),
+          axios.get(`${link}/api/accounts`, authHeaders()),
+          axios.get(`${link}/api/terminals`, authHeaders()),
+          axios.get(`${link}/api/sales-return`, authHeaders()),
         ]);
 
         setWarehouses((whRes.data.data || []).map(w => ({
@@ -155,7 +156,7 @@ export default function AddSalesReturn() {
       }
       try {
         const resp = await axios.get(
-          "http://localhost:5000/api/items",
+          `${link}/api/items`,
           {
             ...authHeaders(),
             params: { warehouse: selectedWarehouse.value }
@@ -268,7 +269,7 @@ export default function AddSalesReturn() {
   useEffect(() => {
     if (!id) return;
 
-    axios.get(`http://localhost:5000/api/sales-return/${id}`, authHeaders())
+    axios.get(`${link}/api/sales-return/${id}`, authHeaders())
       .then(({ data }) => {
         const ret = data.return || data;
 
@@ -316,8 +317,8 @@ export default function AddSalesReturn() {
           const fetchOriginalSale = async () => {
             try {
               const [salesRes, posRes] = await Promise.all([
-                axios.get("http://localhost:5000/api/sales", authHeaders()),
-                axios.get("http://localhost:5000/api/pos", authHeaders()),
+                axios.get(`${link}/api/sales`, authHeaders()),
+                axios.get(`${link}/api/pos`, authHeaders()),
               ]);
               const sales = salesRes.data.sales || salesRes.data || [];
               const posOrders = posRes.data.data || posRes.data || [];
@@ -377,8 +378,8 @@ export default function AddSalesReturn() {
       }
       try {
         const [salesRes, posRes] = await Promise.all([
-          axios.get("http://localhost:5000/api/sales", authHeaders()),
-          axios.get("http://localhost:5000/api/pos", authHeaders()),
+          axios.get(`${link}/api/sales`, authHeaders()),
+          axios.get(`${link}/api/pos`, authHeaders()),
         ]);
         const sales = (salesRes.data.sales || salesRes.data || []).filter(s =>
           s.referenceNo?.toLowerCase().includes(originalSaleRef.toLowerCase())
@@ -593,13 +594,13 @@ export default function AddSalesReturn() {
 
       if (isEdit) {
         await axios.put(
-          `http://localhost:5000/api/sales-return/${id}`,
+          `${link}/api/sales-return/${id}`,
           payload,
           authHeaders()
         );
       } else {
         await axios.post(
-          "http://localhost:5000/api/sales-return",
+          `${link}/api/sales-return`,
           payload,
           authHeaders()
         );

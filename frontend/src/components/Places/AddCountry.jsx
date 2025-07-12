@@ -10,6 +10,7 @@ import { FaTachometerAlt } from "react-icons/fa";
 
 function AddCountry() {
   // Hooks
+  const link="https://pos.inspiredgrow.in/vps";
   const { countryId } = useParams();
   const navigate = useNavigate();
   const [isSidebarOpen, setSidebarOpen] = useState(true);
@@ -33,7 +34,7 @@ function AddCountry() {
       try {
         const token = localStorage.getItem("token");
         const res = await axios.get(
-          `https://mybackend-l7om.onrender.com/api/countries/${countryId}`,
+          `${link}/api/countries/${countryId}`,
           { headers: { Authorization: `Bearer ${token}` } }
         );
         const data = res.data.data;
@@ -70,14 +71,14 @@ function AddCountry() {
       const headers = { Authorization: `Bearer ${token}` };
       if (countryId) {
         await axios.put(
-          `https://mybackend-l7om.onrender.com/api/countries/${countryId}`,
+          `${link}/api/countries/${countryId}`,
           formData,
           { headers }
         );
         alert("Country updated successfully!");
       } else {
         await axios.post(
-          `https://mybackend-l7om.onrender.com/api/countries`,
+          `${link}/api/countries`,
           formData,
           { headers }
         );

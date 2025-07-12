@@ -11,6 +11,7 @@ import { useSearchParams } from 'react-router-dom';
 import LoadingScreen from '../../../Loading';
 import axios from 'axios';
 export default function Addcustomer() {
+  const link="https://pos.inspiredgrow.in/vps"
   // State to manage the active tab (Edit or Advanced)
   const[activeTab,setActiveTab]=useState("Edit");
   // State to manage the sidebar open/close status
@@ -68,7 +69,7 @@ export default function Addcustomer() {
       const fetchData = async () => {
         setLoading(true)
         try {
-          const response = await  axios.get(`https://mybackend-l7om.onrender.com/api/customer-data/all`, {
+          const response = await  axios.get(`${link}/api/customer-data/all`, {
             headers: {
               Authorization: `Bearer ${localStorage.getItem("token")}`, // Get token from localStorage
             }

@@ -15,6 +15,7 @@ import RiderOrderList from './RiderOrderView.jsx';
 import RiderAddMoney from './RiderAddMoney.jsx';
 // import { useNavigate } from 'react-router-dom';
 const RiderAccountList = () => {
+  const link="https://pos.inspiredgrow.in/vps"
     const navigate=useNavigate()
     const [accounts, setAccounts] = useState([]);
     const [error, setError] = useState('');
@@ -43,7 +44,7 @@ const RiderAccountList = () => {
     const fetchAccounts = async () => {
         try {
             setLoading(true)
-          const response = await  axios.get('http://localhost:5000/api/rider/all', {
+          const response = await  axios.get(`${link}/api/rider/all`, {
             headers: {
               Authorization: `Bearer ${localStorage.getItem("token")}`, // Get token from localStorage
             }
@@ -99,7 +100,7 @@ const handlePageChange = (newPage) =>  {
         setLoading(true)
        
         try {
-          const response = await axios.delete(`https://mybackend-l7om.onrender.com/api/accounts/${id}`, {
+          const response = await axios.delete(`${link}/api/accounts/${id}`, {
             headers: {
               Authorization: `Bearer ${localStorage.getItem("token")}`,
             },

@@ -13,6 +13,7 @@ import AuditorNavbar from './AuditorNavBar.jsx'
 
 
 const  Audit=()=> {
+      const link="https://pos.inspiredgrow.in/vps"
     const [isSidebarOpen, setSidebarOpen] = useState(true);
      useEffect(()=>{
         if(window.innerWidth < 768){
@@ -38,7 +39,7 @@ const  Audit=()=> {
 
      const fetchStores = async () => {
         try {
-            const response = await axios.get('https://mybackend-l7om.onrender.com/admin/store/add/store',{
+            const response = await axios.get(`${link}/admin/store/add/store`,{
                 headers: {
                     'Content-Type': 'application/json',
                     Authorization: `Bearer ${localStorage.getItem('token')}`
@@ -58,7 +59,7 @@ const  Audit=()=> {
 
      const fetchWarehouses = async () => {
         try {
-            const response = await axios.get('https://mybackend-l7om.onrender.com/api/warehouses',{
+            const response = await axios.get(`${link}/api/warehouses`,{
                 headers: {
                     'Content-Type': 'application/json',
                     Authorization: `Bearer ${localStorage.getItem('token')}`
@@ -127,7 +128,7 @@ const handleSubmit = async (e) => {
   e.preventDefault();
    try {
     console.log("Submitting audit with data:", formData);
-    const response = await axios.post('http://localhost:5000/api/audit/create', formData, {
+    const response = await axios.post(  `${link}/api/audit/create`, formData, {
       headers: {
         Authorization: `Bearer ${localStorage.getItem('token')}`
       }

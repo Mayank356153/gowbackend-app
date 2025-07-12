@@ -8,6 +8,7 @@ import Select from 'react-select';
 import { useNavigate, useParams } from 'react-router-dom';
 
 const QuotationForm = () => {
+    const link="https://pos.inspiredgrow.in/vps"
   const navigate = useNavigate();
   const { id } = useParams();
   const [isEditing, setIsEditing] = useState(!!id);
@@ -57,7 +58,7 @@ const QuotationForm = () => {
   const fetchWarehouses = async () => {
     try {
       const token = localStorage.getItem("token");
-      const response = await axios.get("api/warehouses", {
+      const response = await axios.get(`${link}/api/warehouses`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setWarehouses(response.data.data.map(w => ({
@@ -72,7 +73,7 @@ const QuotationForm = () => {
   const fetchCustomers = async () => {
     try {
       const token = localStorage.getItem("token");
-      const response = await axios.get("api/customer-data/all", {
+      const response = await axios.get(`${link}/api/customer-data/all`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       const customerOptions = response.data.map(c => ({
@@ -89,7 +90,7 @@ const QuotationForm = () => {
   const fetchAllItems = async () => {
     try {
       const token = localStorage.getItem("token");
-      const response = await axios.get("api/items", {
+      const response = await axios.get(`${link}/api/items`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setAllItems(response.data.data);
@@ -101,7 +102,7 @@ const QuotationForm = () => {
   const fetchQuotation = async (quotationId) => {
     try {
       const token = localStorage.getItem("token");
-      const response = await axios.get(`api/quotation/${quotationId}`, {
+      const response = await axios.get(`${link}/api/quotation/${quotationId}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       const quotation = response.data;
@@ -220,7 +221,7 @@ const QuotationForm = () => {
       if (isEditing) {
         // Update existing quotation
         const response = await axios.put(
-          `api/quotation/${id}`,
+          `${link}/api/quotation/${id}`,
           payload,
           { headers: { Authorization: `Bearer ${token}` } }
         );
@@ -228,7 +229,7 @@ const QuotationForm = () => {
       } else {
         // Create new quotation
         const response = await axios.post(
-          "api/quotation",
+          `${link}/api/quotation`,
           payload,
           { headers: { Authorization: `Bearer ${token}` } }
         );

@@ -12,6 +12,7 @@ import Select from 'react-select'
 import { useSearchParams } from 'react-router-dom';
 import LoadingScreen from '../../Loading';
 export default function AddSupplier() {
+  const link="https://pos.inspiredgrow.in/vps"
   // State management for sidebar toggle and form data
   const[isSidebarOpen,setSidebarOpen]=useState(true)
   const id=useId();
@@ -49,7 +50,7 @@ const[countryOptions,setCountryOptions]=useState([])
   const fetchCountry = async () => {
     try {
       const response = await axios.get(
-        'https://mybackend-l7om.onrender.com/api/countries',
+        `${link}/api/countries`,
         {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -71,7 +72,7 @@ const[countryOptions,setCountryOptions]=useState([])
    const fetchState = async () => {
           try {
             const response = await axios.get(
-              'https://mybackend-l7om.onrender.com/api/states',
+              `${link}/api/states`,
               {
                 headers: {
                   Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -95,7 +96,7 @@ const[countryOptions,setCountryOptions]=useState([])
   const fetchData = async (ID) => {
     setLoading(true)
     try {
-      const response = await  axios.get(`https://mybackend-l7om.onrender.com/api/suppliers`, {
+      const response = await  axios.get(`${link}/api/suppliers`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`, // Get token from localStorage
         }
@@ -143,7 +144,7 @@ useEffect(()=>{
         try {
           console.log("Updating FormData:", formData);
           const response = await axios.put(
-            `https://mybackend-l7om.onrender.com/api/suppliers/${ID}`,
+            `${link}/api/suppliers/${ID}`,
             formData,
             {
               headers: {
@@ -175,7 +176,7 @@ useEffect(()=>{
    else{ 
     try {
       const response = await axios.post(
-        "https://mybackend-l7om.onrender.com/api/suppliers",
+        `${link}/api/suppliers`,
         formData,{
           headers: {
             "Content-Type": "application/json",

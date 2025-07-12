@@ -16,6 +16,7 @@ import axios from 'axios';
 import LoadingScreen from "../../Loading";
 
 const PurchaseOverview = () => {
+      const link="https://pos.inspiredgrow.in/vps"
   const navigate = useNavigate();
   const [warehouses, setWarehouses] = useState([]);
   const [warehouse, setWarehouse] = useState("all");
@@ -48,7 +49,7 @@ const PurchaseOverview = () => {
       return;
     }
     try {
-      const response = await axios.get("api/payment-types", {
+      const response = await axios.get(`${link}/api/payment-types`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (response.data.data) {
@@ -61,7 +62,6 @@ const PurchaseOverview = () => {
       }
     } catch (error) {
       console.error("Error fetching payment types:", error.message);
-      alert(`Failed to load payment types: ${error.message}`);
     }
   };
 
@@ -108,8 +108,8 @@ const PurchaseOverview = () => {
     try {
       const token = localStorage.getItem("token");
       const endpoint = selectedInvoice.source === "Sale"
-        ? `api/sales/${selectedInvoice._id}/paymentType`
-        : `api/pos/${selectedInvoice._id}/paymentType`;
+        ? `${link}/api/sales/${selectedInvoice._id}/paymentType`
+        : `${link}/api/pos/${selectedInvoice._id}/paymentType`;
       await axios.put(endpoint, { paymentType: newPaymentType.value }, {
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -148,13 +148,13 @@ const PurchaseOverview = () => {
       }
 
       const endpoint = inv.source === "Sale" 
-        ? `api/sales/${inv._id}` 
-        : `api/pos/${inv._id}`;
+        ? `${link}/api/sales/${inv._id}` 
+        : `${link}/api/pos/${inv._id}`;
       const { data } = await axios.get(endpoint, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      const paymentsResponse = await axios.get(`api/payments/${inv._id}`, {
+      const paymentsResponse = await axios.get(`${link}/api/payments/${inv._id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       const payments = paymentsResponse.data.payments || [];
@@ -286,7 +286,7 @@ const PurchaseOverview = () => {
     }
     setLoading(true);
     try {
-      const response = await axios.get("api/warehouses", {
+      const response = await axios.get(`${link}/api/warehouses`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (response.data.data) {
@@ -316,7 +316,7 @@ const PurchaseOverview = () => {
     setLoading(true);
     try {
       const { data } = await axios.get(
-        "api/pos/invoices",
+        `${link}/api/pos/invoices`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       setSalesList(data);
@@ -334,7 +334,7 @@ const PurchaseOverview = () => {
     }
     setLoading(true);
     try {
-      const endpoint = source === "POS" ? `api/pos/${id}` : `api/sales/${id}`;
+      const endpoint = source === "POS" ? `${link}/api/pos/${id}` : `${link}/api/sales/${id}`;
       await axios.delete(endpoint, {
         headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
       });

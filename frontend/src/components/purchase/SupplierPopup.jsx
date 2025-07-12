@@ -16,6 +16,7 @@ const toOpt = (label) => (o) => ({
 });
 
 export default function SupplierPopup({ open, onClose, onCreated }) {
+  const link="https://pos.inspiredgrow.in/vps"
   /* ────── 1. Hooks (always defined) ────── */
   const empty = {
     supplierName: "",
@@ -52,8 +53,8 @@ export default function SupplierPopup({ open, onClose, onCreated }) {
     const hdr   = { headers:{ Authorization:`Bearer ${token}` } };
 
     Promise.all([
-      axios.get("api/countries", hdr),
-      axios.get("api/states",    hdr),
+      axios.get(`${link}/api/countries`, hdr),
+      axios.get(`${link}/api/states`,    hdr),
     ])
       .then(([cRes, sRes]) => {
         setCountries(
@@ -86,7 +87,7 @@ export default function SupplierPopup({ open, onClose, onCreated }) {
     setSaving(true); setErrorMsg("");
     try {
       const { data } = await axios.post(
-        "api/suppliers",
+        `${link}/api/suppliers`,
         form,
         {
           headers: {

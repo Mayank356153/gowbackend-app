@@ -5,6 +5,8 @@ import Sidebar from "../Sidebar";
 import axios from "axios";
 
 function AddUnit() {
+    const link="https://pos.inspiredgrow.in/vps"
+
   const navigate = useNavigate();
   const { unitId } = useParams(); // If present, we are editing
 
@@ -31,7 +33,7 @@ function AddUnit() {
     setLoading(true);
     try {
       const token = localStorage.getItem("token");
-      const res = await axios.get(`http://localhost:5000/api/units/${id}`, {
+      const res = await axios.get(`${link}/api/units/${id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = res.data.data;
@@ -62,14 +64,14 @@ function AddUnit() {
       if (unitId) {
         // Update existing unit
         await axios.put(
-          `http://localhost:5000/api/units/${unitId}`,
+          `${link}/api/units/${unitId}`,
           formData,
           { headers }
         );
         alert("Unit updated successfully!");
       } else {
         // Create new unit
-        await axios.post("http://localhost:5000/api/units", formData, {
+        await axios.post(`${link}/api/units`, formData, {
           headers,
         });
         alert("Unit created successfully!");

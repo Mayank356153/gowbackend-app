@@ -8,6 +8,7 @@ import LoadingScreen from "../../Loading";
 import { useNavigate } from "react-router-dom";
 
 function VariantsList() {
+  const link="https://pos.inspiredgrow.in/vps"
   const navigate = useNavigate();
   const [isSidebarOpen, setSidebarOpen] = useState(true);
   const [variants, setVariants] = useState([]);
@@ -26,7 +27,7 @@ function VariantsList() {
   const fetchVariants = async () => {
     try {
       setLoading(true);
-      const res = await axios.get("api/variants", {
+      const res = await axios.get(`${link}/api/variants`, {
         headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
       });
       setVariants(res.data.data);
@@ -45,7 +46,7 @@ function VariantsList() {
   const deleteVariant = async (id) => {
     if (!window.confirm("Do you want to delete this variant?")) return;
     try {
-      await axios.delete(`api/variants/${id}`, {
+      await axios.delete(`${link}/api/variants/${id}`, {
         headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
       });
       alert("Deleted Successfully");
@@ -62,7 +63,7 @@ function VariantsList() {
     const newStatus = currentStatus === "active" ? "inactive" : "active";
     try {
       await axios.put(
-        `api/variants/${id}`,
+        `${link}/api/variants/${id}`,
         { status: newStatus },
         { headers: { Authorization: `Bearer ${token}` } }
       );

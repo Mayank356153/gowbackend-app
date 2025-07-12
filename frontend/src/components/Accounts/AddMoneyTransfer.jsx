@@ -8,6 +8,7 @@ import LoadingScreen from "../../Loading";
 import axios from "axios";
 
 export default function AddMoneyTransfer() {
+        const link="https://pos.inspiredgrow.in/vps"
   const [isSidebarOpen, setSidebarOpen] = useState(window.innerWidth >= 768);
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -43,7 +44,7 @@ export default function AddMoneyTransfer() {
   // 2) Fetch ALL accounts once
   useEffect(() => {
     axios
-      .get("api/accounts", { headers })
+      .get(`${link}/api/accounts`, { headers })
       .then(res => setAccounts(res.data.data || []))
       .catch(console.error);
   }, []);
@@ -55,7 +56,7 @@ export default function AddMoneyTransfer() {
 
     // If you only have the "get all stores" endpoint:
     axios
-      .get("admin/store/add/store", { headers })
+      .get(`${link}/admin/store/add/store`, { headers })
       .then(res => {
         const allStores = res.data.result || [];
         const store = allStores.find(s => s._id === storeId);
@@ -108,7 +109,7 @@ export default function AddMoneyTransfer() {
     if (!editId) return;
     setLoading(true);
     axios
-      .get("api/money-transfers", { headers })
+      .get(`${link}/api/money-transfers`, { headers })
       .then(res => {
         const found = res.data.data.find(t => t._id === editId);
         if (found) {
@@ -149,8 +150,8 @@ export default function AddMoneyTransfer() {
     try {
       if (!token) throw new Error("Not logged in");
       const url = editId
-        ? `api/money-transfers/${editId}`
-        : "api/money-transfers";
+        ? `${link}/api/money-transfers/${editId}`
+        : `${link}/api/money-transfers`;
       const method = editId ? "put" : "post";
       await axios[method](url, formData, { headers: { ...headers, "Content-Type": "application/json" } });
       alert(editId ? "Updated!" : "Created!");

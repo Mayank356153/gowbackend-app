@@ -9,6 +9,7 @@ import * as XLSX from "xlsx";
 const BASE_URL = "";
 
 export default function ImportEntity({ entity: propEntity }) {
+         const link="https://pos.inspiredgrow.in/vps"
   const { entity: paramEntity } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
@@ -45,7 +46,7 @@ export default function ImportEntity({ entity: propEntity }) {
     setLoading(true);
     try {
       const res = await axios.get(
-        `/api/${entity}/${id}`,
+        `${link}/api/${entity}/${id}`,
         { headers: { Authorization: `Bearer ${localStorage.getItem("token")}` } }
       );
       const data = res.data.data;
@@ -70,9 +71,9 @@ export default function ImportEntity({ entity: propEntity }) {
     "sub-subcategories": "Sub-SubCategory",
   };
   const listRouteMap = {
-    categories: "/categories-list",
-    subcategories: "/subcategories-list",
-    "sub-subcategories": "/sub-subcategory-list",
+    categories: `${link}/categories-list`,
+    subcategories: `${link}/subcategories-list`,
+    "sub-subcategories": `${link}/sub-subcategory-list`,
   };
   const title = titleMap[entity] || "Entity";
   const listRoute = listRouteMap[entity] || "/";
@@ -90,7 +91,7 @@ export default function ImportEntity({ entity: propEntity }) {
     try {
       setLoading(true);
       const { data } = await axios.post(
-        `/api/${entity}/upload-images`,
+        `${link}/api/${entity}/upload-images`,
         fd,
         {
           headers: {
@@ -118,7 +119,7 @@ export default function ImportEntity({ entity: propEntity }) {
     try {
       setLoading(true);
       const { data } = await axios.post(
-        `/api/${entity}/upload-images`,
+        `${link}/api/${entity}/upload-images`,
         fd,
         {
           headers: {
@@ -160,14 +161,14 @@ export default function ImportEntity({ entity: propEntity }) {
     try {
       if (isEditing) {
         await axios.put(
-          `/api/${entity}/${entityId}`,
+          `${link}/api/${entity}/${entityId}`,
           payload,
           { headers: { "Content-Type": "application/json", Authorization: `Bearer ${localStorage.getItem("token")}` } }
         );
         alert(`${title} updated`);
       } else {
         await axios.post(
-          `/api/${entity}`,
+          `${link}/api/${entity}`,
           payload,
           { headers: { "Content-Type": "application/json", Authorization: `Bearer ${localStorage.getItem("token")}` } }
         );
@@ -191,7 +192,7 @@ export default function ImportEntity({ entity: propEntity }) {
         const fd = new FormData();
         imageFiles.forEach((f) => fd.append("images", f));
         const { data } = await axios.post(
-          `/api/${entity}/upload-images`,
+          `${link}/api/${entity}/upload-images`,
           fd,
           { headers: { Authorization: `Bearer ${localStorage.getItem("token")}`, "Content-Type": "multipart/form-data" } }
         );
@@ -228,7 +229,7 @@ export default function ImportEntity({ entity: propEntity }) {
           return obj;
         });
         await axios.post(
-          `/api/${entity}/bulk`,
+          `${link}/api/${entity}/bulk`,
           payload,
           { headers: { "Content-Type": "application/json", Authorization: `Bearer ${localStorage.getItem("token")}` } }
         );

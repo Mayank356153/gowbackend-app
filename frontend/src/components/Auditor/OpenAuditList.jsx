@@ -12,6 +12,7 @@ import { FiEdit, FiTrash2 } from 'react-icons/fi'
 import ItemsCompare from './ItemsCompare.jsx'
 
 const  OpenAuditList=()=> {
+  const link="https://pos.inspiredgrow.in/vps"
     const [isSidebarOpen, setSidebarOpen] = useState(true);
     const [comparison,setComparison]=useState(false)
     const[items,setItems]=useState([])
@@ -28,7 +29,7 @@ const  OpenAuditList=()=> {
     const fetchData = async () => {
       try {
         const token = localStorage.getItem("token");
-        const response = await axios.get("http://localhost:5000/api/audit/compare-items", {
+        const response = await axios.get(`${link}/api/audit/compare-items`, {
           headers: {
             Authorization: `Bearer ${token}`,
           }
@@ -46,7 +47,7 @@ const  OpenAuditList=()=> {
    const fetchData = async () => {
       try {
         const token = localStorage.getItem("token");
-        const response = await axios.get("http://localhost:5000/api/audit/compare-items", {
+        const response = await axios.get(`${link}/api/audit/compare-items`, {
           headers: {
             Authorization: `Bearer ${token}`,
           }
@@ -66,7 +67,7 @@ const  OpenAuditList=()=> {
   
    
     try {
-     const response = await axios.delete(`http://localhost:5000/api/audit/delete/${id}`,{
+     const response = await axios.delete(`${link}/api/audit/delete/${id}`,{
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
@@ -86,7 +87,7 @@ const  OpenAuditList=()=> {
   const handleAuditEnd=async(id)=>{
     try {
         const token = localStorage.getItem("token");
-        const response = await axios.put("http://localhost:5000/api/audit/end",{
+        const response = await axios.put(`${link}/api/audit/end`,{
             auditId:id
         }, {
           headers: {
@@ -112,7 +113,7 @@ const  OpenAuditList=()=> {
   
    
     try {
-      const response = await axios.delete(`https://localhost:5000/audit/delete`, {
+      const response = await axios.delete(`${link}/api/audit/delete`, {
         id:id
       },{
         headers: {

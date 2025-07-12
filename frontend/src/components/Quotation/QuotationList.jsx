@@ -12,7 +12,8 @@ import { useNavigate } from 'react-router-dom';
 import LoadingScreen from '../../Loading.jsx';
 
 const QuotationList = () => {
-  const navigate = useNavigate();
+   const link="https://pos.inspiredgrow.in/vps"
+ const navigate = useNavigate();
   const [users, setUsers] = useState('All');
   const [entriesPerPage, setEntriesPerPage] = useState(10);
   const [searchTerm, setSearchTerm] = useState('');
@@ -41,7 +42,7 @@ const QuotationList = () => {
     }
     setLoading(true);
     try {
-      const response = await axios.get("api/warehouses", {
+      const response = await axios.get(`${link}/api/warehouses`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (response.data.data) {
@@ -69,7 +70,7 @@ const QuotationList = () => {
     }
     try {
       setLoading(true);
-      const response = await axios.get("api/quotation", {
+      const response = await axios.get(`${link}/api/quotation`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setQoutation(response.data);
@@ -167,7 +168,7 @@ const QuotationList = () => {
     if (!conf) return;
     setLoading(true);
     try {
-      await axios.delete(`api/quotation/${id}`, {
+      await axios.delete(`${link}/api/quotation/${id}`, {
         headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
       });
       alert("Deleted Successfully");

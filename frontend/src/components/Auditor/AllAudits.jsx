@@ -13,6 +13,7 @@ import ViewItems from './ViewItems.jsx'
 import { IdcardFilled } from '@ant-design/icons'
 
 const  AllAudits=()=> {
+      const link="https://pos.inspiredgrow.in/vps"
     const [isSidebarOpen, setSidebarOpen] = useState(true);
     const [comparison,setComparison]=useState(false)
     const[items,setItems]=useState([])
@@ -29,7 +30,7 @@ const  AllAudits=()=> {
     const fetchData = async () => {
       try {
         const token = localStorage.getItem("token");
-        const response = await axios.get("http://localhost:5000/api/audit/all", {
+        const response = await axios.get(`${link}/api/audit/all`, {
           headers: {
             Authorization: `Bearer ${token}`,
           }
@@ -47,7 +48,7 @@ const  AllAudits=()=> {
    const fetchData = async () => {
       try {
         const token = localStorage.getItem("token");
-        const response = await axios.get("http://localhost:5000/api/audit/all", {
+        const response = await axios.get(`${link}/api/audit/all`, {
           headers: {
             Authorization: `Bearer ${token}`,
           }
@@ -67,19 +68,16 @@ const  AllAudits=()=> {
   
    
     try {
-      const response = await axios.delete(`http://localhost:5000/api/audit/delete/${id}`,{
+      const response = await axios.delete(`${link}/api/audit/delete/${id}`,{
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
       });
     console.log(response)
-     alert("Deleted Successfully")
-    
     } catch (error) {
       console.error( error.message);
     }
     finally{
-
       fetchData()
     }
   };

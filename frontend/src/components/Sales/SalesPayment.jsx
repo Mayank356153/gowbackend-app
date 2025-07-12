@@ -11,6 +11,7 @@ import { jsPDF } from "jspdf";
 import LoadingScreen from '../../Loading.jsx';
 import { useNavigate } from 'react-router-dom';
 const PurchaseOverview = () => {
+      const link="https://pos.inspiredgrow.in/vps"
   const navigate=useNavigate();
   const [isSidebarOpen, setSidebarOpen] = useState(true);
  const [searchTerm, setSearchTerm] = useState("");
@@ -36,7 +37,7 @@ const[actionMenu,setActionMenu]=useState(null)
     }
     setLoading(true)
     try {
-      const response = await axios.get("api/payments", {
+      const response = await axios.get(`${link}/api/payments`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -64,7 +65,7 @@ const[actionMenu,setActionMenu]=useState(null)
     }
     setLoading(true)
     try {
-      const response = await axios.get("api/payment-types", {
+      const response = await axios.get(`${link}/api/payment-types`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -110,7 +111,7 @@ const[actionMenu,setActionMenu]=useState(null)
     }
     setLoading(true)
     try {
-      const response = await axios.delete(`api/sales/${id}`, {
+      const response = await axios.delete(`${link}/api/sales/${id}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },

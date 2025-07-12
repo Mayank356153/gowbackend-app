@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import axios from "axios";
 
 const OneSubCategoryMaster = ({ onClose, subcategoryId }) => {
+  const link="https://pos.inspiredgrow.in/vps"
   const [category, setCategory] = useState(null);
   const [masterImages, setMasterImages] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -15,7 +16,7 @@ const OneSubCategoryMaster = ({ onClose, subcategoryId }) => {
 
         // Fetch specific category details
         const catRes = await axios.get(
-          `https://mybackend-l7om.onrender.com/api/subcategories/${subcategoryId}`,
+          `${link}/api/subcategories/${subcategoryId}`,
           { headers: { Authorization: `Bearer ${localStorage.getItem("token")}` } }
         );
         setCategory(catRes.data?.data || catRes.data);

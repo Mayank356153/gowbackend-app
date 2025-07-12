@@ -13,6 +13,7 @@ import Select from 'react-select'
 import { useNavigate } from 'react-router-dom';
 import LoadingScreen from '../../Loading.jsx';
 const PurchaseOverview = () => {
+  const link="https://pos.inspiredgrow.in/vps"
   const[loading,setLoading]=useState(false)
   const[warehouse,setWarehouse]=useState([])
   const[show,setShow]=useState(null)
@@ -56,7 +57,7 @@ const fetchPurchaseReturnList = async ()=>{
     return ;
   }
   try {
-    const response = await axios.get("api/purchases/purchase-returns", {
+    const response = await axios.get(`${link}/api/purchases/purchase-returns`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
@@ -83,7 +84,7 @@ const fetchWarehouses=async ()=>{
     return ;
   }
   try {
-    const response = await axios.get("api/warehouses", {
+    const response = await axios.get(`${link}/api/warehouses`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
@@ -157,7 +158,7 @@ const handledelete = async (id) => {
   if (!conf) return;
  setLoading(true)
   try {
-      const response = await fetch(`api/purchases/${id}`, {
+      const response = await fetch(`${link}/api/purchases/${id}`, {
           method: "DELETE",
           headers: {
               "Content-Type": "application/json",

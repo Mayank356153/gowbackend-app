@@ -9,9 +9,10 @@ const config: CapacitorConfig = {
     captureInput: true,
     backgroundColor: '#ffffff'
   },
-  server: {
-    cleartext: true // allows HTTP if needed (e.g., for testing or local APIs)
-  },
+  // server:{
+  //   url:"http://192.168.1.5:3000",
+  //   cleartext: true,
+  // },
   plugins: {
   CameraPreview: {
     parent: 'camera-container',

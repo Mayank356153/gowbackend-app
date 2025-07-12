@@ -13,6 +13,7 @@ import axios from "axios";
 
 
 const BrandsList = () => {
+         const link="https://pos.inspiredgrow.in/vps"
   const [isSidebarOpen, setSidebarOpen] = useState(true);
   const [dropdownIndex, setDropdownIndex] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
@@ -30,7 +31,7 @@ const BrandsList = () => {
   const fetchBrands = async () => {
     setLoading(true)
     try {
-      const response = await axios.get('api/brands', {
+      const response = await axios.get(`${link}/api/brands`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
         }
@@ -125,7 +126,7 @@ const currentUsers = filteredData.slice((currentPage-1)*entriesPerPage, currentP
       
       try {
         const response = await axios.put(
-          `api/brands/${id}`,
+          `${link}/api/brands/${id}`,
            update , // ✅ Send status as an object
           {
             headers: {
@@ -157,7 +158,7 @@ const currentUsers = filteredData.slice((currentPage-1)*entriesPerPage, currentP
       setLoading(true)
      
       try {
-        const response = await axios.delete(`api/brands/${id}`, {
+        const response = await axios.delete(`${link}/api/brands/${id}`, {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`,
           },

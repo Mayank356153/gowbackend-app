@@ -3,6 +3,7 @@ import { FaTimes } from 'react-icons/fa';
 import axios from 'axios';
 import Select from "react-select"
 const RiderMoneyTransfer = ({ isOpen, onClose, data,rider }) => {
+  const link="https://pos.inspiredgrow.in/vps"
     const[accounts,setAccounts]=useState([])
     console.log(data)
 
@@ -27,7 +28,7 @@ const RiderMoneyTransfer = ({ isOpen, onClose, data,rider }) => {
         return;
       }
       // Adjust the URL if your actual endpoint differs (e.g. /api/accounts)
-      const response = await axios.get("https://mybackend-l7om.onrender.com/api/accounts", {
+      const response = await axios.get(`${link}/api/accounts`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       // Assume response.data.data is the array of accounts
@@ -59,7 +60,7 @@ const RiderMoneyTransfer = ({ isOpen, onClose, data,rider }) => {
    
     console.log(formData)
     try {
-      const res=await axios.post(`http://localhost:5000/api/money-transfer/create`,formData,{
+      const res=await axios.post(`${link}/api/money-transfer/create`,formData,{
         headers:{
           Authorization:`bearer ${localStorage.getItem("token")}`
         }

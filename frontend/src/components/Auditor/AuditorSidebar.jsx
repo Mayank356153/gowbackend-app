@@ -98,13 +98,7 @@ const AuditorSidebar = ({ isSidebarOpen }) => {
    
     
 
-          <li
-            className="flex items-center p-2 space-x-2 text-sm cursor-pointer hover:bg-gray-700"
-            onClick={() => navigate("/audit")}
-          >
-            <FaPlusSquare /> {/* Changed from FaCashRegister */}
-            <span>Start Audit</span>
-          </li>
+          
         
          <li
             className="flex items-center p-2 space-x-2 text-sm cursor-pointer hover:bg-gray-700"

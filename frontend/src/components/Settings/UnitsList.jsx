@@ -11,6 +11,7 @@ import { useNavigate } from "react-router-dom";
 
 const UnitsList = () => {
   const navigate = useNavigate();
+  const link="https://pos.inspiredgrow.in/vps"
 
   /* ─────────────── UI state ─────────────── */
   const [isSidebarOpen, setSidebarOpen] = useState(true);
@@ -51,7 +52,7 @@ const UnitsList = () => {
     try {
       const token = localStorage.getItem("token");
       const { data } = await axios.get(
-        "http://localhost:5000/api/units",
+        `${link}/api/units`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       setUnits(data.data || []);
@@ -113,7 +114,7 @@ const UnitsList = () => {
     try {
       const token = localStorage.getItem("token");
       await axios.put(
-        `http://localhost:5000/api/units/${unit._id}`,
+        `${link}/api/units/${unit._id}`,
         { status: newStatus },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -128,7 +129,7 @@ const UnitsList = () => {
     try {
       const token = localStorage.getItem("token");
       await axios.delete(
-        `http://localhost:5000/api/units/${id}`,
+        `${link}/api/units/${id}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       fetchUnits();

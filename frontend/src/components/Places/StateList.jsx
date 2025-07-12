@@ -11,6 +11,7 @@ import autoTable from "jspdf-autotable";
 import * as XLSX from "xlsx";
 
 export default function StateList() {
+    const link="https://pos.inspiredgrow.in/vps"
   const navigate = useNavigate();
   const [isSidebarOpen, setSidebarOpen] = useState(true);
   const [states, setStates] = useState([]);
@@ -28,7 +29,7 @@ export default function StateList() {
     try {
       const token = localStorage.getItem("token");
       const res = await axios.get(
-        "https://mybackend-l7om.onrender.com/api/states",
+        `${link}/api/states`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       setStates(res.data.data || []);
@@ -53,7 +54,7 @@ const toggleStatus = async (id, currentStatus) => {
     const token = localStorage.getItem("token");
     // use PUT to hit your existing update route
     await axios.put(
-      `https://mybackend-l7om.onrender.com/api/states/${id}`,
+      `${link}/api/states/${id}`,
       { status: newStatus },
       { headers: { Authorization: `Bearer ${token}` } }
     );
@@ -125,7 +126,7 @@ const toggleStatus = async (id, currentStatus) => {
     try {
       const token = localStorage.getItem("token");
       await axios.delete(
-        `https://mybackend-l7om.onrender.com/api/states/${id}`,
+        `${link}/api/states/${id}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       alert("State deleted");

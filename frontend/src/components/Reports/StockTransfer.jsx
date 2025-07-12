@@ -13,6 +13,8 @@ import 'jspdf-autotable';
 import autoTable from 'jspdf-autotable';
 import { BrowserMultiFormatReader } from '@zxing/library';
 export default function StockTransferReport() {
+    const link="https://pos.inspiredgrow.in/vps"
+
   const [showExportDropdown, setShowExportDropdown] = useState(false)
    const[isSidebarOpen,setSidebarOpen]=useState(true)
    const[loading,setLoading]=useState(true)
@@ -39,7 +41,7 @@ export default function StockTransferReport() {
   const [stockTransfer, setStockTransfer] = useState([]); 
    const fetchWarehouses=async()=>{
     try {
-      const response = await axios.get('https://mybackend-l7om.onrender.com/api/warehouses', {
+      const response = await axios.get(`${link}/api/warehouses`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
         }
@@ -63,7 +65,7 @@ export default function StockTransferReport() {
    
    const fetchCategories=async()=>{
     try {
-      const response = await axios.get('https://mybackend-l7om.onrender.com/api/categories', {
+      const response = await axios.get(`${link}/api/categories`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
         }
@@ -88,7 +90,7 @@ export default function StockTransferReport() {
    
    const fetchBrands=async()=>{
     try {
-      const response = await axios.get('https://mybackend-l7om.onrender.com/api/brands', {
+      const response = await axios.get(`${link}/api/brands`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
         }
@@ -113,7 +115,7 @@ export default function StockTransferReport() {
    
    const fetchItems=async()=>{
     try {
-      const response = await axios.get('https://mybackend-l7om.onrender.com/api/items', {
+      const response = await axios.get(`${link}/api/items`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
         }
@@ -135,7 +137,7 @@ export default function StockTransferReport() {
     try {
       setLoading(true)
       const token = localStorage.getItem("token");
-      const response = await axios.get(`http://localhost:5000/api/stock-transfers`, {
+      const response = await axios.get(`${link}/api/stock-transfers`, {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",

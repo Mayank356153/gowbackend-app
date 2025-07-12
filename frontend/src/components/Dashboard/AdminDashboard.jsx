@@ -13,6 +13,7 @@ import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 import LoadingScreen from "../../Loading";
 const Dashboard = () => {
+  const link="https://pos.inspiredgrow.in/vps"
    const[data,setData]=useState([])
    const[items,setItems]=useState([])
    const[lowStock,setLowStock]=useState([])
@@ -30,7 +31,7 @@ const Dashboard = () => {
   const fetchDashboardSummary = async () => {
     try {
       const response = await axios.get(
-        'https://mybackend-l7om.onrender.com/api/dashboard-summary',
+        `${link}/api/dashboard-summary`,
         {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -45,7 +46,7 @@ const Dashboard = () => {
   const fetchRecentlyAdded = async () => {
     try {
       const response = await axios.get(
-        'https://mybackend-l7om.onrender.com/api/items/summary',
+        `${link}/api/items/summary`,
         {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -60,7 +61,7 @@ const Dashboard = () => {
   const fetchStockAlert = async () => {
     try {
       const response = await axios.get(
-        'https://mybackend-l7om.onrender.com/api/items/low-stock?threshold=10',
+        `${link}/api/items/low-stock?threshold=10`,
         {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -78,7 +79,7 @@ const Dashboard = () => {
   const fetchSaleInvoice = async () => {
     try {
       const response = await axios.get(
-        'https://mybackend-l7om.onrender.com/api/sales/recent?limit=10',
+        `${link}/api/sales/recent?limit=10`,
         {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`,

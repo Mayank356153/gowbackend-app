@@ -15,6 +15,7 @@ import AuditorNavbar from './AuditorNavBar.jsx'
 import { FiEdit, FiTrash2 } from 'react-icons/fi';
 
 const  UserBucketList=()=> {
+  const link="https://pos.inspiredgrow.in/vps"
     const [isSidebarOpen, setSidebarOpen] = useState(true);
     const [buckets,setBuckets]=useState([])
      useEffect(()=>{
@@ -27,7 +28,7 @@ const  UserBucketList=()=> {
      const fetchData = async () => {
 
   try {
-    const response = await  axios.get(`http://localhost:5000/api/audit/bucket/auditor/${localStorage.getItem("id")}`, {
+    const response = await  axios.get(`${link}/api/audit/bucket/auditor/${localStorage.getItem("id")}`, {
       headers: {
         Authorization: `Bearer ${localStorage.getItem("token")}`, // Get token from localStorage
       }
@@ -50,7 +51,7 @@ useEffect(()=>fetchData(),[])
   
    
     try {
-      const response = await axios.delete(`https://localhost:5000/audit/${id}`, {
+      const response = await axios.delete(`${link}/api/audit/${id}`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
@@ -83,7 +84,7 @@ useEffect(()=>fetchData(),[])
 
     console.log(bucketformat)
  try {
-    const response = await  axios.put(`http://localhost:5000/api/audit/bucket-submission`,{
+    const response = await  axios.put(`${link}/api/audit/bucket-submission`,{
       auditId:auditId,
       buckets:bucketformat
     }, {

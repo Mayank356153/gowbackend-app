@@ -209,6 +209,7 @@ import { useState, useEffect } from 'react';
 import dayjs from 'dayjs';
 
 const BarChartComponent = ({ active }) => {
+    const link="https://pos.inspiredgrow.in/vps"
   const [chartData, setChartData] = useState([]);
   const [loading, setLoading] = useState(false);
 
@@ -216,7 +217,7 @@ const BarChartComponent = ({ active }) => {
     try {
       setLoading(true);
       const response = await axios.get(
-        `https://mybackend-l7om.onrender.com/api/dashboard-chart-data?interval=${active}`,
+        `${link}/api/dashboard-chart-data?interval=${active}`,
         {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`,

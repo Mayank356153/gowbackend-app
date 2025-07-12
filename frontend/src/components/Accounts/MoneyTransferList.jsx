@@ -12,6 +12,7 @@ import LoadingScreen from '../../Loading.jsx';
 import { useNavigate } from 'react-router-dom';
 // MoneyTransferList Component
 const MoneyTransferList = () => {
+const link="https://pos.inspiredgrow.in/vps"
   const navigate=useNavigate();
     // State variables to manage filters and settings
     const [transferDate, setTransferDate] = useState(''); 
@@ -28,7 +29,7 @@ const MoneyTransferList = () => {
     const fetchData = async () => {
         try {
           setLoading(true)
-          const response = await  axios.get('api/money-transfers', {
+          const response = await  axios.get(`${link}/api/money-transfers`, {
             headers: {
               Authorization: `Bearer ${localStorage.getItem("token")}`, // Get token from localStorage
             }
@@ -175,7 +176,7 @@ const currentUsers = filteredData.slice((currentPage-1)*entriesPerPage, currentP
       setLoading(true)
      
       try {
-        const response = await axios.delete(`api/money-transfers/${id}`, {
+        const response = await axios.delete(`${link}/api/money-transfers/${id}`, {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`,
           },

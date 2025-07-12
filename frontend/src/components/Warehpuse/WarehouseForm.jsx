@@ -14,6 +14,8 @@ import Loading  from "../../Loading.jsx";
 /* ───────────────────────────────────────────────────────────── */
 
 const WarehouseForm = () => {
+    const link="https://pos.inspiredgrow.in/vps"
+
   /* routing */
   const navigate            = useNavigate();
   const [params]            = useSearchParams();
@@ -58,7 +60,7 @@ const WarehouseForm = () => {
 
   /* ────────────────── fetch stores (one request – no /:id) */
   useEffect(() => {
-    axios.get("http://localhost:5000/admin/store/add/store", { headers })
+    axios.get(`${link}/admin/store/add/store`, { headers })
       .then(res => {
         const all = res.data.result ?? [];
         setStores(all);
@@ -77,11 +79,11 @@ const WarehouseForm = () => {
 
   /* ────────────────── accounts & terminals */
   useEffect(() => {
-    axios.get("http://localhost:5000/api/accounts", { headers })
+    axios.get(`${link}/api/accounts`, { headers })
       .then(r => setAccounts(r.data.data ?? []))
       .catch(console.error);
 
-    axios.get("http://localhost:5000/api/terminals", { headers })
+    axios.get(`${link}/api/terminals`, { headers })
       .then(r => setTerminals(r.data.data ?? []))
       .catch(console.error);
   }, []);
@@ -90,7 +92,7 @@ const WarehouseForm = () => {
   useEffect(() => {
     if (!warehouseId) return;
     setLoading(true);
-    axios.get(`http://localhost:5000/api/warehouses/${warehouseId}`, { headers })
+    axios.get(`${link}/api/warehouses/${warehouseId}`, { headers })
       .then(res => {
         const d = res.data.data;
         if (!d) return;
@@ -133,10 +135,10 @@ const WarehouseForm = () => {
       if (qrFile)            payload.append("qrCode",    qrFile);
 
       if (warehouseId){
-        await axios.put(`http://localhost:5000/api/warehouses/${warehouseId}`, payload, { headers });
+        await axios.put(`${link}/api/warehouses/${warehouseId}`, payload, { headers });
         alert("Warehouse updated!");
       }else{
-        await axios.post("http://localhost:5000/api/warehouses", payload, { headers });
+        await axios.post(`${link}/api/warehouses`, payload, { headers });
         alert("Warehouse created!");
       }
       navigate("/warehouse-list");

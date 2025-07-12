@@ -13,6 +13,34 @@ export default function POS1({
     orderPaymentMode,
     setActiveTab
 }) {
+
+   const location=useLocation()
+    const navigate=useNavigate()
+      const initialLocationRef = useRef(location);
+  
+    // Hardware back
+    useEffect(() => {
+      const backHandler = App.addListener('backButton', () => {
+        
+        navigate("/dashboard")
+      });
+  
+      return () => backHandler.remove();
+    }, []);
+  
+    // Intercept swipe back or browser back
+    useEffect(() => {
+    const handlePopState = () => {
+      // Whenever browser back is triggered
+      navigate("/dashboard");
+    };
+
+    window.addEventListener("popstate", handlePopState);
+
+    return () => {
+      window.removeEventListener("popstate", handlePopState);
+    };
+  }, [navigate]);
   
   return (
  <div className="w-full min-h-screen p-4 bg-gradient-to-br from-cyan-50 to-white">

@@ -8,6 +8,7 @@ import axios from 'axios';
 import LoadingScreen from '../../Loading';
 
 const SendMessage = () => {
+  const link="https://pos.inspiredgrow.in/vps"
   const [mobile, setMobile] = useState("");
   const [loading, setLoading] = useState(false);
   const [isSidebarOpen, setSidebarOpen] = useState(true);
@@ -55,7 +56,7 @@ const SendMessage = () => {
     try {
       setLoading(true);
       const response = await axios.post(
-        "https://mybackend-l7om.onrender.com/api/message/send",
+      `${link}/api/message/send`,
         formData,
         {
           headers: {

@@ -10,6 +10,7 @@ import * as XLSX from 'xlsx';
 import { useNavigate } from 'react-router-dom';
 import AllowedList from './AllowedList.jsx';
 const MoneyTransferList = () => {
+      const link="https://pos.inspiredgrow.in/vps"
   const navigate = useNavigate();
   const [entriesPerPage, setEntriesPerPage] = useState(10);
   const[currentPage,setCurrentPage]=useState(1)
@@ -23,7 +24,7 @@ const MoneyTransferList = () => {
   const fetchCustomerCoupons = async () => {
     try {
       setLoading(true)
-      const response = await  axios.get('http://localhost:5000/api/customer-coupons', {
+      const response = await  axios.get(`${link}/api/customer-coupons`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`, // Get token from localStorage
         }
@@ -128,7 +129,7 @@ const[dropdownIndex,setDropdownIndex]=useState(null)
     setLoading(true)
    
     try {
-      const response = await axios.delete(`https://mybackend-l7om.onrender.com/api/customer-coupons/${id}`, {
+      const response = await axios.delete(`${link}/api/customer-coupons/${id}`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
@@ -153,7 +154,7 @@ const[dropdownIndex,setDropdownIndex]=useState(null)
     
     try {
         const response = await axios.put(
-            `https://mybackend-l7om.onrender.com/api/customer-coupons/${id}`,
+            `${link}/api/customer-coupons/${id}`,
             { status: newStatus }, // ✅ Send only the status field
             {
                 headers: {

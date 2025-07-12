@@ -32,6 +32,8 @@ import React, { useState } from "react";
 import axios from "axios";
 
 const SystemTab = () => {
+    const link="https://pos.inspiredgrow.in/vps"
+
   const [username, setUsername] = useState("");
   const [firstName, setFirstName] = useState("");
 
@@ -53,7 +55,7 @@ const SystemTab = () => {
     };
     try {
       const response = await fetch(
-        "http://localhost:5000/admin/Store/add/systemzone",
+        `${link}/admin/Store/add/systemzone`,
         {
           method: "POST",
           headers: {

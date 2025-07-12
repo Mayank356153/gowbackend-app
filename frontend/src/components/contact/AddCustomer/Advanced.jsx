@@ -4,6 +4,7 @@ import Select from 'react-select'; // Importing the Select component from react-
 import axios from 'axios';
 import LoadingScreen from '../../../Loading';
 export default function Advanced({formData,setFormData,id,p,l}) {
+    const link="https://pos.inspiredgrow.in/vps"
     // Options for the price type select dropdown
     const price_options = [
         {
@@ -37,7 +38,7 @@ export default function Advanced({formData,setFormData,id,p,l}) {
             if(formData.customerName==="") return;
           console.log("Sending FormData:", formData);
           const response = await axios.post(
-            "https://mybackend-l7om.onrender.com/api/customer-data/create",
+            `${link}/api/customer-data/create`,
             formData,
             {
               headers: {
@@ -64,7 +65,7 @@ export default function Advanced({formData,setFormData,id,p,l}) {
             try {
               console.log("Updating FormData:", formData);
               const response = await axios.put(
-                `https://mybackend-l7om.onrender.com/api/customer-data/${id}`,
+                `${link}/api/customer-data/${id}`,
                 formData,
                 {
                   headers: {

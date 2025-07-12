@@ -3,6 +3,7 @@ import { FaTimes } from 'react-icons/fa';
 import axios from 'axios';
 import Select from "react-select"
 const RiderAddMoney = ({ isOpen, onClose, data,rider }) => {
+  const link="https://pos.inspiredgrow.in/vps"
     const[accounts,setAccounts]=useState([])
     console.log(data)
 
@@ -25,7 +26,7 @@ const RiderAddMoney = ({ isOpen, onClose, data,rider }) => {
    
     // console.log(formData)
     try {
-      const res=await axios.post(`http://localhost:5000/api/rider-account/money`,formData,{
+      const res=await axios.post(`${link}/api/rider-account/money`,formData,{
         headers:{
           Authorization:`bearer ${localStorage.getItem("token")}`
         }

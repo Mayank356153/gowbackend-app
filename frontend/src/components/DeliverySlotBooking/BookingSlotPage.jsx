@@ -3,6 +3,7 @@ import { toast } from 'react-toastify';
 import { Link } from 'react-router-dom'; // ✅ import Link
 
 const BookingSlotPage = () => {
+    const link="https://pos.inspiredgrow.in/vps"
     const [slots, setSlots] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
@@ -11,7 +12,7 @@ const BookingSlotPage = () => {
 
     const fetchSlots = async () => {
         try {
-            const res = await fetch('api/all-slot');
+            const res = await fetch(`${link}/api/all-slot`);
             const data = await res.json();
             if (res.ok) {
                 setSlots(data.slots || data);

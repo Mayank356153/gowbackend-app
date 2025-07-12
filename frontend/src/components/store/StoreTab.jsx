@@ -4,6 +4,8 @@ import { useGeolocated } from "react-geolocated";
 import { useNavigate } from "react-router-dom";
 import { useSearchParams } from "react-router-dom";
 const StoreTab = () => {
+    const link="https://pos.inspiredgrow.in/vps"
+
   const navigate = useNavigate(); // 2) Create a navigate function
   const [searchParams] = useSearchParams();
   const id = searchParams.get("id"); // if present, we're in edit mode
@@ -65,7 +67,7 @@ const StoreTab = () => {
       const token = localStorage.getItem("token");
       try {
         // Make sure this matches your actual backend GET route
-        const response = await fetch("http://localhost:5000/admin/store/add/store", {
+        const response = await fetch(`${link}/admin/store/add/store`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (!response.ok) {
@@ -195,7 +197,7 @@ const StoreTab = () => {
 
     try {
       const response = await fetch(
-        "http://localhost:5000/admin/Store/add/Store",
+        `${link}/admin/Store/add/Store`,
         {
           method: "POST",
           headers: {

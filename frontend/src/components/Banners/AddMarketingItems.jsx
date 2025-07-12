@@ -10,6 +10,7 @@ import LoadingScreen from "../../Loading.jsx";
 import Button from "../contact/Button.jsx";
 import { BrowserMultiFormatReader } from "@zxing/browser";
 const AddMarketingItems = () => {
+  const link="https://pos.inspiredgrow.in/vps"
   const[searchParams]=useSearchParams()
   const id=searchParams.get("id")
   const[isSidebarOpen,setSidebarOpen]=useState(true)
@@ -30,7 +31,7 @@ const AddMarketingItems = () => {
    const fetchItems=async()=>{
     try {
       setLoading(true)
-      const response = await axios.get("https://mybackend-l7om.onrender.com/api/items", {
+      const response = await axios.get(`${link}/api/items`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
@@ -50,7 +51,7 @@ const AddMarketingItems = () => {
    const fetchMarketingItem=async()=>{
     try {
       setLoading(true)
-      const response = await axios.get(`http://localhost:5000/api/marketing-item/all`, {
+      const response = await axios.get(`${link}/api/marketing-item/all`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
@@ -206,7 +207,7 @@ const AddMarketingItems = () => {
       console.log(formData)
 
       if(!id){
-        const response = await axios.post("http://localhost:5000/api/marketing-item/add",formData, {
+        const response = await axios.post(`${link}/api/marketing-item/add`,formData, {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`,
           },
@@ -219,7 +220,7 @@ const AddMarketingItems = () => {
       })
       }
       else{
-        const response = await axios.put(`http://localhost:5000/api/marketing-item/${id}`,formData, {
+        const response = await axios.put(`${link}/api/marketing-item/${id}`,formData, {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`,
           },

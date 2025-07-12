@@ -4,6 +4,8 @@ import Sidebar from "../Sidebar.jsx";
 import { useNavigate } from "react-router-dom";
 
 const StoreView = () => {
+    const link="https://pos.inspiredgrow.in/vps"
+
   const [isSidebarOpen, setSidebarOpen] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
@@ -38,7 +40,7 @@ const StoreView = () => {
         return;
       }
       try {
-        const response = await fetch("http://localhost:5000/admin/store/add/store", {
+        const response = await fetch(`${link}/admin/store/add/store`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (!response.ok) {
@@ -106,7 +108,7 @@ const StoreView = () => {
     if (!window.confirm("Are you sure you want to delete this store?")) return;
     try {
       const token = localStorage.getItem("token");
-      const response = await fetch(`http://localhost:5000/admin/store/store/${id}`, {
+      const response = await fetch(`${link}/admin/store/store/${id}`, {
         method: "DELETE",
         headers: {
           "Content-Type": "application/json",
@@ -117,7 +119,7 @@ const StoreView = () => {
         throw new Error("Failed to delete store");
       }
       alert("Store deleted successfully!");
-      const res = await fetch("http://localhost:5000/admin/store/add/store", {
+      const res = await fetch(`${link}/admin/store/add/store`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!res.ok) {

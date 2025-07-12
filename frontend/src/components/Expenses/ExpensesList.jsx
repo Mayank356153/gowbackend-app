@@ -10,6 +10,7 @@ import LoadingScreen from '../../Loading.jsx';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 const ExpenseList = () => {
+  const link="https://pos.inspiredgrow.in/vps"
     const navigate = useNavigate()
     const [entriesPerPage, setEntriesPerPage] = useState(10);
     const[searchTerm,setSearchTerm]=useState("")
@@ -103,7 +104,7 @@ function hasPermissionFor(module, action) {
         
         try {
             setLoading(true)
-            const response = await fetch(`api/expenses/${id}`, {
+            const response = await fetch(`${link}/api/expenses/${id}`, {
                 method: "DELETE",
                 headers: {
                     "Content-Type": "application/json",
@@ -133,7 +134,7 @@ function hasPermissionFor(module, action) {
         try {
             setLoading(true)
           const token = localStorage.getItem("token");
-          const response = await axios.get(`api/expenses`, {
+          const response = await axios.get(`${link}/api/expenses`, {
             headers: {
               Authorization: `Bearer ${token}`,
               "Content-Type": "application/json",

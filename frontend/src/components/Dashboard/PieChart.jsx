@@ -20,11 +20,12 @@ const COLORS = [
 ];
 
 export default function TrendingItemsDonut() {
+    const link="https://pos.inspiredgrow.in/vps"
   const[data,setData]=useState([])
   const fetchTrendingItems = async () => {
     try {
       const response = await axios.get(
-        'http://localhost:5000/api/items/top-trending?limit=10',
+        `${link}/api/items/top-trending?limit=10`,
         {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`,

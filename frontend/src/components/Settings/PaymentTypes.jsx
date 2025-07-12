@@ -10,6 +10,8 @@ import * as XLSX from "xlsx";
 import { useNavigate ,Link} from "react-router-dom";
 
 function PaymentTypesList() {
+    const link="https://pos.inspiredgrow.in/vps"
+
   const navigate = useNavigate();
   const [isSidebarOpen, setSidebarOpen] = useState(true);
  useEffect(()=>{
@@ -29,7 +31,7 @@ function PaymentTypesList() {
   const fetchPaymentTypes = async () => {
     try {
       const token = localStorage.getItem("token");
-      const res = await axios.get("http://localhost:5000/api/payment-types", {
+      const res = await axios.get(`${link}/api/payment-types`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       // data should be in res.data.data
@@ -116,7 +118,7 @@ function PaymentTypesList() {
         paymentType.status === "active" ? "inactive" : "active";
       const token = localStorage.getItem("token");
       await axios.put(
-        `https://mybackend-l7om.onrender.com/api/payment-types/${paymentType._id}`,
+        `${link}/api/payment-types/${paymentType._id}`,
         { status: newStatus },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -133,7 +135,7 @@ function PaymentTypesList() {
     try {
       const token = localStorage.getItem("token");
       await axios.delete(
-        `https://mybackend-l7om.onrender.com/api/payment-types/${id}`,
+        `${link}/api/payment-types/${id}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       alert("Payment Type deleted successfully!");

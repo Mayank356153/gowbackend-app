@@ -12,6 +12,7 @@ import AuditorSidebar from "./AuditorSidebar";
 import MetricCard from "../Dashboard/MetricCard";
 import AuditorNavbar from "./AuditorNavBar";
 const AuditDashboard = () => {
+  const link="https://pos.inspiredgrow.in/vps"
    const [isSidebarOpen,setSidebarOpen]=useState(true)
   const [data,setData]=useState([])
   const [totalItems,setTotalItems]=useState(0)
@@ -28,7 +29,7 @@ useEffect(() => {
     try {
       const id=localStorage.getItem("id")
     
-      const response = await axios.get(`http://localhost:5000/api/audit/bucket/auditor/${id}`, {
+      const response = await axios.get(`${link}/api/audit/bucket/auditor/${id}`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
         },

@@ -6,6 +6,7 @@ import Sidebar from "../Sidebar";
 import { useSearchParams } from "react-router-dom";
 import LoadingScreen from "../../Loading";
 const CreateRolelist = () => {
+          const link="https://pos.inspiredgrow.in/vps"
   const [roleName, setRoleName] = useState("");
   const [description, setDescription] = useState("");
   const [permissions, setPermissions] = useState({});
@@ -40,7 +41,7 @@ const CreateRolelist = () => {
   
       try {
         const response = await axios.get(
-          "https://mybackend-l7om.onrender.com/admincreatingrole/api/roles",
+          `${link}/admincreatingrole/api/roles`,
           {
             headers: { Authorization: `Bearer ${token}` },
           }
@@ -198,7 +199,7 @@ const CreateRolelist = () => {
       if (id) {
         setLoading(true)
         const response = await axios.put(
-          `https://mybackend-l7om.onrender.com/admincreatingrole/${id}`,
+          `${link}/admincreatingrole/${id}`,
           payload,
           {
             headers: { Authorization: `Bearer ${token}` },
@@ -212,7 +213,7 @@ const CreateRolelist = () => {
         navigate("/admin/role/list");
       } else {
         const response = await axios.post(
-          `https://mybackend-l7om.onrender.com/admincreatingrole/api/roles`,
+          `${link}/admincreatingrole/api/roles`,
           payload,
           {
             headers: { Authorization: `Bearer ${token}` },

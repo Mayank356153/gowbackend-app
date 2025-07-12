@@ -113,8 +113,9 @@ export default function POS3({
 
       <div className="flex flex-col gap-6 p-4">
         {/* Invoice Info */}
-        <div className="p-4 space-y-4 bg-white ">
-          <div className="grid grid-cols-2 gap-4 text-sm">
+        <div className="p-4 space-y-2 bg-white ">
+          
+          <div className="grid grid-cols-2 text-sm">
             <InfoBlock label="Warehouse" value={warehouses.find(w => w._id === selectedWarehouse)?.warehouseName || 'NA'} />
             <InfoBlock label="Invoice #" value={invoiceCode} />
             <InfoBlock label="Customer" value={customers.find(c => c._id === selectedCustomer)?.customerName || 'NA'} />
@@ -122,7 +123,7 @@ export default function POS3({
           </div>
 
           <div className='flex justify-end'>
-            <button className='flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white rounded-lg bg-cyan-600 hover:bg-cyan-700' onClick={()=>setActiveTab("pos2")}>
+            <button className='flex items-center px-2 text-sm font-semibold text-white rounded-lg bg-cyan-600 hover:bg-cyan-700' onClick={()=>setActiveTab("pos2")}>
               <FaPlus /> Add Item
             </button>
           </div>
@@ -141,8 +142,8 @@ export default function POS3({
 )}
         </div>
 
-        {/* Payment Buttons */}
-        <div className="flex flex-wrap justify-between gap-4 p-4 bg-white">
+<div className='flex-1 overflow-y-auto bg-gray-50'>
+    <div className="flex flex-wrap justify-between gap-4 p-4 bg-white">
           <ActionButton icon={<FaHandPaper />} label="Hold" className="bg-red-600 hover:bg-red-700" onClick={onHold} />
           <ActionButton icon={<FaLayerGroup />} label="Multiple" className="bg-blue-600 hover:bg-blue-700" onClick={() => onOpenModal('multiple')} />
           <ActionButton icon={<FaMoneyBill />} label="Cash" className="bg-green-600 hover:bg-green-700" onClick={() => onOpenModal('cash')} />
@@ -169,6 +170,10 @@ export default function POS3({
             />
           </div>
         </div>
+</div>
+        {/* Payment Buttons */}
+      
+        
       </div>
 
       {/* Payment Modal */}
@@ -215,9 +220,9 @@ const ActionButton = ({ icon, label, className, onClick }) => (
 
 
 const ItemsTable = ({ items, updateItem, removeItem, setSelectedItem }) => (
-  <div className="relative space-y-3 overflow-y-auto max-h-56">
+  <div className="flex flex-col min-h-96">
     {items.length > 0 ? (
-      <div className="overflow-hidden border border-gray-200 divide-y divide-gray-200 rounded-lg">
+      <div className="my-1 overflow-y-auto border border-gray-200 divide-y divide-gray-200 rounded-lg max-h-96 ">
         {items.map((item, index) => (
           <div key={index} className="p-3 transition-colors bg-white hover:bg-gray-50">
             <div className="flex items-start justify-between">
@@ -239,16 +244,34 @@ const ItemsTable = ({ items, updateItem, removeItem, setSelectedItem }) => (
               {/* Quantity Control */}
               <div className="flex-shrink-0 ml-2">
                 <div className="relative">
-                  <input
-                    type="number"
-                    min="1"
-                    value={item.quantity}
-                    onChange={(e) => updateItem(index, 'quantity', e.target.value)}
-                    className="block w-20 px-3 py-1 text-sm border border-gray-300 rounded-md shadow-sm focus:ring-cyan-500 focus:border-cyan-500"
-                  />
-                  <div className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
-                    <span className="text-xs text-gray-500">Qty</span>
-                  </div>
+                 <div className="flex items-center space-x-1">
+  <button type="button"
+    onClick={() =>
+      updateItem(index, 'quantity', Math.max(1, Number(item.quantity) - 1))
+    }
+    className="px-2 py-1 text-sm font-semibold text-gray-600 bg-gray-100 rounded hover:bg-gray-200"
+  >
+    -
+  </button>
+  <input
+    type="number"
+    value={item.quantity}
+    onChange={(e) =>
+      updateItem(index, 'quantity',  Number(e.target.value))
+    }
+    className="w-16 px-2 py-1 text-sm text-center border border-gray-300 rounded"
+  />
+  <button type="button"
+    onClick={() =>
+      updateItem(index, 'quantity', Number(item.quantity) + 1)
+    }
+    className="px-2 py-1 text-sm font-semibold text-gray-600 bg-gray-100 rounded hover:bg-gray-200"
+  >
+    +
+  </button>
+</div>
+
+                  
                 </div>
               </div>
             </div>

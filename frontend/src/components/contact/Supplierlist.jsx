@@ -14,7 +14,8 @@ import LoadingScreen from '../../Loading'
 export default function Supplierlist() {
     // Configuration options for table display
     const entries_options = [10, 20, 30, 40, 50] // Entries per page options
-    
+    const link="https://pos.inspiredgrow.in/vps"
+
     // State management for UI components
     const [Users, setUsers] = useState([]);
       const [loading, setLoading] = useState(true); // Loading state
@@ -37,7 +38,7 @@ export default function Supplierlist() {
    
     const fetchData = async () => {
         try {
-          const response = await  axios.get('https://mybackend-l7om.onrender.com/api/suppliers', {
+          const response = await  axios.get(`${link}/api/suppliers`, {
             headers: {
               Authorization: `Bearer ${localStorage.getItem("token")}`, // Get token from localStorage
             }
@@ -165,7 +166,7 @@ useEffect(()=>{calculate()},[filteredData])
     setLoading(true)
     
     try {
-      const response = await axios.delete(`https://mybackend-l7om.onrender.com/api/suppliers/${id}`, {
+      const response = await axios.delete(`${link}/api/suppliers/${id}`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
         },

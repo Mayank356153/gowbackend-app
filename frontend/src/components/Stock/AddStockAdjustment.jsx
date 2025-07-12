@@ -8,6 +8,8 @@ import { BiChevronRight } from "react-icons/bi";
 import { FaTachometerAlt } from "react-icons/fa";
 
 function AddStockAdjustment() {
+    const link="https://pos.inspiredgrow.in/vps"
+
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const id = searchParams.get("id"); // if present, we are editing
@@ -75,7 +77,7 @@ function AddStockAdjustment() {
     setLoading(true);
     try {
       const token = localStorage.getItem("token");
-      const res = await axios.get("http://localhost:5000/api/warehouses", {
+      const res = await axios.get(`${link}/api/warehouses`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -110,7 +112,7 @@ function AddStockAdjustment() {
     try {
       const token = localStorage.getItem("token");
       const params = warehouseId ? { warehouse: warehouseId } : {};
-      const res = await axios.get("http://localhost:5000/api/items", {
+      const res = await axios.get(`${link}/api/items`, {
         headers: { Authorization: `Bearer ${token}` },
         params,
       });
@@ -147,7 +149,7 @@ function AddStockAdjustment() {
     try {
       const token = localStorage.getItem("token");
       const res = await axios.get(
-        `http://localhost:5000/api/stock-adjustments/${id}`,
+        `${link}/api/stock-adjustments/${id}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       const data = res.data.data;
@@ -196,7 +198,7 @@ function AddStockAdjustment() {
   const generateNextRefNumber = async () => {
     try {
       const token = localStorage.getItem("token");
-      const res = await axios.get("http://localhost:5000/api/stock-adjustments", {
+      const res = await axios.get(`${link}/api/stock-adjustments`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       const adjustments = res.data.data || [];
@@ -321,7 +323,7 @@ function AddStockAdjustment() {
       const token = localStorage.getItem("token");
       if (id) {
         await axios.put(
-          `http://localhost:5000/api/stock-adjustments/${id}`,
+          `${link}/api/stock-adjustments/${id}`,
           payload,
           {
             headers: { Authorization: `Bearer ${token}` },
@@ -330,7 +332,7 @@ function AddStockAdjustment() {
         alert("Stock Adjustment updated successfully!");
       } else {
         await axios.post(
-          "http://localhost:5000/api/stock-adjustments",
+          `${link}/api/stock-adjustments`,
           payload,
           {
             headers: { Authorization: `Bearer ${token}` },

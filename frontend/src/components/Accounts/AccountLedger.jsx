@@ -21,6 +21,7 @@ function parseQs(search) {
 }
 
 export default function AccountLedger() {
+        const link="https://pos.inspiredgrow.in/vps"
   const { accountId } = useParams();
   const { search }   = useLocation();
   const { from, to, on } = parseQs(search);
@@ -46,14 +47,14 @@ export default function AccountLedger() {
     setLoading(true);
 
     // 1) get the account so we can show its name
-    axios.get(`http://localhost:5000/${API_BASE}/accounts/${accountId}`)
+    axios.get(`${link}/${API_BASE}/accounts/${accountId}`)
       .then(res => {
         if (!mounted) return;
         const acct = res.data.data;
         setAccountName(acct.accountName);
 
         // 2) find which warehouse this account backs
-        return axios.get(`http://localhost:5000/${API_BASE}/by-cash-account/${accountId}`);
+        return axios.get(`${link}/${API_BASE}/by-cash-account/${accountId}`);
       })
       .then(res2 => {
         if (!mounted) return;
@@ -63,7 +64,7 @@ export default function AccountLedger() {
 
         // 3) fetch one summary per date
         return Promise.all(dates.map(d =>
-          axios.get(`http://localhost:5000/${API_BASE}/cash-summary`, {
+          axios.get(`${link}/${API_BASE}/cash-summary`, {
             params: { warehouseId, date: d }
           })
           .then(r => ({ date: d, ...r.data }))

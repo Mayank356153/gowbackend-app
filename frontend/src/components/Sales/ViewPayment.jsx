@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
 
 const ViewPayment = () => {
+      const link="https://pos.inspiredgrow.in/vps"
   const navigate = useNavigate();
   const location = useLocation();
   const queryParams = new URLSearchParams(location.search);
@@ -38,12 +39,12 @@ const ViewPayment = () => {
     setLoading(true);
     try {
       // Fetch payment details
-      const paymentResponse = await axios.get(`api/payments/${saleId}`, {
+      const paymentResponse = await axios.get(`${link}/api/payments/${saleId}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
 
       // Fetch invoices to get the correct totalAmount
-      const invoicesResponse = await axios.get(`api/pos/invoices`, {
+      const invoicesResponse = await axios.get(`${link}/api/pos/invoices`, {
         headers: { Authorization: `Bearer ${token}` }
       });
 

@@ -256,6 +256,7 @@ import Scanner from './Scanner';
 import axios from 'axios';
 import LoadingScreen from '../../Loading';
 export default function AddService() {
+       const link="https://pos.inspiredgrow.in/vps"
   // State to manage the active tab (Edit or Advanced)
   // const[activeTab,setActiveTab]=useState("Edit")
   // State to manage the sidebar open/close status
@@ -298,7 +299,7 @@ export default function AddService() {
   },[])
   const fetchCategory = async () => {
     try {
-      const response = await axios.get('api/categories', {
+      const response = await axios.get(`${link}/api/categories`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
         }
@@ -320,7 +321,7 @@ export default function AddService() {
   const fetchtax = async () => {
     try {
       const token = localStorage.getItem("token");
-      const response = await axios.get(`api/taxes`, {
+      const response = await axios.get(`${link}/api/taxes`, {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
@@ -373,7 +374,7 @@ const postData = async () => {
     console.log("Sending FormData:", formdata);
 
     const response = await axios.post(
-      "api/services",
+      `${link}/api/services`,
       formdata,
       {
         headers: {
@@ -438,7 +439,7 @@ const fetchService = async () => {
   try {
     setLoading(true)
     const token = localStorage.getItem("token");
-    const response = await axios.get(`api/services`, {
+    const response = await axios.get(`${link}/api/services`, {
       headers: {
         Authorization: `Bearer ${token}`,
         "Content-Type": "application/json",

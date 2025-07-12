@@ -33,7 +33,7 @@ const ImageMerger = () => {
     }
 
     try {
-      const response = await axios.post('http://localhost:3001/api/merge-images', formData);
+      const response = await axios.post('https://pos.inspiredgrow.in/vps/api/merge-images', formData);
       console.log(response)
       setResult(response.data);
       setError(null);

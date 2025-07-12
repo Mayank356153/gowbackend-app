@@ -9,6 +9,7 @@ import { FaTachometerAlt } from "react-icons/fa";
 import { BiChevronRight } from "react-icons/bi";
 
 const CreateUser = () => {
+        const link="https://pos.inspiredgrow.in/vps"
   const [searchParams] = useSearchParams();
   const editId = searchParams.get("id");
   const navigate = useNavigate();
@@ -59,17 +60,17 @@ const CreateUser = () => {
   useEffect(() => {
     if (!token) return navigate("/");
     axios
-      .get("admincreatingrole/api/roles", { headers })
+      .get(`${link}/admincreatingrole/api/roles`, { headers })
       .then(r => setRoles(r.data.roles || []))
       .catch(console.error);
 
     axios
-      .get("api/warehouses", { headers })
+      .get(`${link}/api/warehouses`, { headers })
       .then(r => setWarehouses(r.data.data || []))
       .catch(console.error);
 
     axios
-      .get("admin/store/add/store", { headers })
+      .get(`${link}/admin/store/add/store`, { headers })
       .then(r => setStores(r.data.result || []))
       .catch(console.error);
   }, [navigate, token]);
@@ -79,7 +80,7 @@ const CreateUser = () => {
     if (!editId) return;
     setLoading(true);
     axios
-      .get("admiaddinguser/userlist", { headers })
+      .get(`${link}/admiaddinguser/userlist`, { headers })
       .then(res => {
         const u = res.data.find(x => x._id === editId);
         if (!u) return;
@@ -148,7 +149,7 @@ const CreateUser = () => {
         alert("User updated");
       } else {
         await axios.post(
-          "http://localhost:5000/admiaddinguser/adduserbyadmin",
+          `${link}/admiaddinguser/adduserbyadmin`,
           payload,
           { headers }
         );

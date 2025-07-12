@@ -9,6 +9,7 @@ import LoadingScreen from "../../Loading.jsx";
 import Button from "../contact/Button.jsx";
 import TimePicker from "./TimePicker.jsx"
 const DeliverySlotCreate = () => {
+  const link="https://pos.inspiredgrow.in/vps"
   const[isSidebarOpen,setSidebarOpen]=useState(true)
   const[loading,setLoading]=useState(false)
  
@@ -31,7 +32,7 @@ useEffect(()=>console.log(formData),[formData])
 const handleSubmit=async (e)=>{
     e.preventDefault();
     try{
-        const response =await axios.post('http://localhost:5000/api/delivery/slot/create',formData)
+        const response =await axios.post(`${link}/api/delivery/slot/create`,formData)
         console.log(response)
         alert("slot created successfully")
         setFormData({

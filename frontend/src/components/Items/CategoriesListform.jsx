@@ -9,6 +9,7 @@ import LoadingScreen from "../../Loading";
 import { useNavigate } from "react-router-dom";
 import { NavLink } from "react-router-dom";
 const BrandForm = () => {
+         const link="https://pos.inspiredgrow.in/vps"
   const[loading,setLoading]=useState(false)
   const Navigate=useNavigate()
   const [isSidebarOpen, setSidebarOpen] = useState(true);
@@ -27,7 +28,7 @@ const BrandForm = () => {
  const fetchCategory = async () => {
   setLoading(true)
   try {
-    const response = await axios.get('api/categories', {
+    const response = await axios.get(`${link}/api/categories`, {
       headers: {
         Authorization: `Bearer ${localStorage.getItem("token")}`,
       }
@@ -57,7 +58,7 @@ const handleChange=(e)=>{
       try {
         console.log("Sending FormData:", formData);
         const response = await axios.post(
-          "api/categories",
+          `${link}/api/categories`,
           formData,
           {
             headers: {
@@ -79,7 +80,7 @@ const updateData = async () => {
   setLoading(true)
       try {
         const response = await axios.put(
-          `api/categories/${id}`,
+          `${link}/api/categories/${id}`,
           formData,
           {
             headers: {

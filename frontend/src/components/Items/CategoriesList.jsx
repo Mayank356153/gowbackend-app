@@ -12,6 +12,7 @@ import autoTable from "jspdf-autotable";
 import * as XLSX from "xlsx";
 
 export default function CategoriesList() {
+         const link="https://pos.inspiredgrow.in/vps"
   const [isSidebarOpen, setSidebarOpen]     = useState(true);
   const [category, setCategory]             = useState([]);
   const [loading, setLoading]               = useState(false);
@@ -34,7 +35,7 @@ export default function CategoriesList() {
     setLoading(true);
     try {
       const response = await axios.get(
-        "api/categories",
+        `${link}/api/categories`,
         { headers: { Authorization: `Bearer ${localStorage.getItem("token")}` } }
       );
       const dataArr = Array.isArray(response.data)
@@ -114,7 +115,7 @@ export default function CategoriesList() {
     setLoading(true);
     try {
       await axios.put(
-        `api/categories/${id}`,
+        `${link}/api/categories/${id}`,
         updated,
         { headers: { Authorization: `Bearer ${localStorage.getItem("token")}` } }
       );
@@ -131,7 +132,7 @@ export default function CategoriesList() {
     setLoading(true);
     try {
       await axios.delete(
-        `api/categories/${id}`,
+        `${link}/api/categories/${id}`,
         { headers: { Authorization: `Bearer ${localStorage.getItem("token")}` } }
       );
       fetchCategory();

@@ -8,6 +8,8 @@ import { FaTachometerAlt } from "react-icons/fa";
 import { BiChevronRight } from "react-icons/bi";
 
 const CreateTerminal = () => {
+    const link="https://pos.inspiredgrow.in/vps"
+
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const editId = searchParams.get("id");              // for edit mode
@@ -25,7 +27,7 @@ const CreateTerminal = () => {
   useEffect(() => {
     const token = localStorage.getItem("token");
     axios
-      .get("http://localhost:5000/api/warehouses", {   // adjust to your actual warehouses endpoint
+      .get(`${link}/api/warehouses`, {   // adjust to your actual warehouses endpoint
         headers: { Authorization: `Bearer ${token}` },
       })
       .then((res) => setWarehouses(res.data.data || []))
@@ -38,7 +40,7 @@ const CreateTerminal = () => {
     setLoading(true);
     const token = localStorage.getItem("token");
     axios
-      .get("http://localhost:5000/api/terminals", { headers: { Authorization: `Bearer ${token}` } })
+      .get(`${link}/api/terminals`, { headers: { Authorization: `Bearer ${token}` } })
       .then((res) => {
         const term = res.data.data.find((t) => t._id === editId);
         if (term) {
@@ -73,7 +75,7 @@ const CreateTerminal = () => {
 
     try {
       if (editId) {
-        await axios.put(`http://localhost:5000/api/terminals/${editId}`, payload, {
+        await axios.put(`${link}/api/terminals/${editId}`, payload, {
           headers: {
             Authorization: `Bearer ${token}`,
             "Content-Type": "multipart/form-data",
@@ -81,7 +83,7 @@ const CreateTerminal = () => {
         });
         alert("Terminal updated successfully");
       } else {
-        await axios.post(`http://localhost:5000/api/terminals`, payload, {
+        await axios.post(`${link}/api/terminals`, payload, {
           headers: {
             Authorization: `Bearer ${token}`,
             "Content-Type": "multipart/form-data",

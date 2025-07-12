@@ -5,6 +5,8 @@ import Navbar from "../Navbar";
 import Sidebar from "../Sidebar";
 
 function AddTaxGroup() {
+    const link="https://pos.inspiredgrow.in/vps"
+
   const { taxGroupId } = useParams(); // Get taxGroupId from URL
   const navigate = useNavigate();
   const [isSidebarOpen, setSidebarOpen] = useState(true);
@@ -35,7 +37,7 @@ function AddTaxGroup() {
   const fetchAllTaxes = async () => {
     try {
       const token = localStorage.getItem("token");
-      const res = await axios.get("http://localhost:5000/api/taxes", {
+      const res = await axios.get(`${link}/api/taxes`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setAllTaxes(res.data.data || []);
@@ -48,7 +50,7 @@ function AddTaxGroup() {
     setLoading(true);
     try {
       const token = localStorage.getItem("token");
-      const res = await axios.get(`http://localhost:5000/api/tax-groups/${id}`, {
+      const res = await axios.get(`${link}/api/tax-groups/${id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = res.data.data;
@@ -94,7 +96,7 @@ function AddTaxGroup() {
       if (taxGroupId) {
         // Update existing tax group
         await axios.put(
-          `http://localhost:5000/api/tax-groups/${taxGroupId}`,
+          `${link}/api/tax-groups/${taxGroupId}`,
           formData,
           { headers }
         );
@@ -102,7 +104,7 @@ function AddTaxGroup() {
       } else {
         // Create new tax group
         await axios.post(
-          "http://localhost:5000/api/tax-groups",
+          `${link}/api/tax-groups`,
           formData,
           { headers }
         );

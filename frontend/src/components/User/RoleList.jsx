@@ -261,6 +261,7 @@ import { Link, useNavigate, NavLink } from 'react-router-dom';
 import axios from 'axios';
 import LoadingScreen from '../../Loading.jsx';
 const RoleList = () => {
+      const link="https://pos.inspiredgrow.in/vps"
   const navigate=useNavigate();  
   const [entries, setEntries] = useState(10);
     const [currentPage, setCurrentPage] = useState(1);
@@ -284,7 +285,7 @@ const fetchRoles=async ()=> {
 setLoading(true)
   try {
     const response = await axios.get(
-      "https://mybackend-l7om.onrender.com/admincreatingrole/api/roles",
+      `${link}/admincreatingrole/api/roles`,
       {
         headers: { Authorization: `Bearer ${token}` },
       }
@@ -365,7 +366,7 @@ const filteredData = expenses.filter(item => {
       }
       setLoading(true)
       try {
-        const response = await axios.delete(`https://mybackend-l7om.onrender.com/admincreatingrole/${id}`, {
+        const response = await axios.delete(`${link}/admincreatingrole/${id}`, {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`,
           },

@@ -5,6 +5,8 @@ import Sidebar from "../Sidebar.jsx";
 import axios from "axios";
 
 function AddPaymentType() {
+    const link="https://pos.inspiredgrow.in/vps"
+
   const navigate = useNavigate();
   const { paymentTypeId } = useParams(); // if present, we are editing
 
@@ -32,7 +34,7 @@ function AddPaymentType() {
     try {
       const token = localStorage.getItem("token");
       const res = await axios.get(
-        `http://localhost:5000/api/payment-types/${id}`,
+        `${link}/api/payment-types/${id}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       const data = res.data.data;
@@ -62,7 +64,7 @@ function AddPaymentType() {
       if (paymentTypeId) {
         // Update existing
         await axios.put(
-          `http://localhost:5000/api/payment-types/${paymentTypeId}`,
+          `${link}/api/payment-types/${paymentTypeId}`,
           formData,
           { headers }
         );
@@ -70,7 +72,7 @@ function AddPaymentType() {
       } else {
         // Create new
         await axios.post(
-          "http://localhost:5000/api/payment-types",
+          `${link}/api/payment-types`,
           formData,
           { headers }
         );

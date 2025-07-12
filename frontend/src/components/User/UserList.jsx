@@ -8,6 +8,7 @@ import LoadingScreen from "../../Loading";
 import axios from "axios";
 
 const UserList = () => {
+    const link="https://pos.inspiredgrow.in/vps"
   const [loading, setLoading] = useState(false);
   const [users, setUsers] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
@@ -48,7 +49,7 @@ const UserList = () => {
       return;
     }
     try {
-      const res = await axios.get("http://localhost:5000/admiaddinguser/userlist", {
+      const res = await axios.get(`${link}/admiaddinguser/userlist`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setUsers(res.data);
@@ -63,7 +64,7 @@ const UserList = () => {
     const token = localStorage.getItem("token");
     try {
       await axios.patch(
-        `http://localhost:5000/admiaddinguser/${id}/status`,
+        `${link}/admiaddinguser/${id}/status`,
         { status: currentStatus === "active" ? "inactive" : "active" },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -78,7 +79,7 @@ const UserList = () => {
     if (!window.confirm("Delete this user?")) return;
     setLoading(true);
     try {
-      await axios.delete(`http://localhost:5000/admiaddinguser/${id}`, {
+      await axios.delete(`${link}/admiaddinguser/${id}`, {
         headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
       });
       fetchUsers();

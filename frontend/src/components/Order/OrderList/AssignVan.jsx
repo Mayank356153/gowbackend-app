@@ -7,14 +7,14 @@ const AssignVan = ({ orderId, onClose, setSidebarOpen,fetchusers }) => {
   const [assigned, setAssigned] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [success, setSuccess] = useState(false);
-   
+   const link="https://pos.inspiredgrow.in/vps"
   const headers = { Authorization: `Bearer ${localStorage.getItem("token")}` };
   useEffect(() => {
     const role=localStorage.getItem("role")
     if (setSidebarOpen) setSidebarOpen(false);
 const AllowedWarehouse=async () => {
       try {
-        const res = await axios.get('https://mybackend-l7om.onrender.com/admiaddinguser/profile',
+        const res = await axios.get(`${link}/admiaddinguser/profile`,
           {headers}
         );
         console.log(res)
@@ -28,7 +28,7 @@ const AllowedWarehouse=async () => {
     
     const fetchWarehouse = async () => {
       try {
-        const res = await axios.get('https://mybackend-l7om.onrender.com/api/warehouses',
+        const res = await axios.get(`${link}/api/warehouses`,
           {headers}
         );
         if(role==="admin"){
@@ -49,7 +49,7 @@ const AllowedWarehouse=async () => {
 
   const handleAssign = async (riderId) => {
     try {
-      const res = await axios.put(`http://localhost:5000/api/order/assign-order/${orderId}`,{
+      const res = await axios.put(`${link}/api/order/assign-order/${orderId}`,{
         deliveryAgent:riderId,
         deliveryAgentModel:"Warehouse"
       },{headers});

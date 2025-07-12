@@ -6,6 +6,7 @@ import Navbar from "../Navbar";
 import Sidebar from "../Sidebar";
 
 const DeliveryBoyList = () => {
+  const link="https://pos.inspiredgrow.in/vps"
   const [deliveryBoys, setDeliveryBoys] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -20,7 +21,7 @@ const DeliveryBoyList = () => {
 
   const fetchDeliveryBoys = async () => {
     try {
-      const response = await fetch('api/delivery-boys');
+      const response = await fetch(`${link}/api/delivery-boys`);
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }

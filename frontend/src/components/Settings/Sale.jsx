@@ -8,6 +8,8 @@ import Navbar from "../Navbar.jsx";    // Adjust the path as needed
 import Sidebar from "../Sidebar.jsx";
 
 const PosSettingsPage = () => {
+    const link="https://pos.inspiredgrow.in/vps"
+
   // Sidebar and Tab States
   const [isSidebarOpen, setSidebarOpen] = useState(true);
   const [activeTab, setActiveTab] = useState("sales"); // Default to Sales tab
@@ -38,7 +40,7 @@ const PosSettingsPage = () => {
   const fetchAccounts = async () => {
     try {
       const token = localStorage.getItem("token");
-      const response = await axios.get("https://mybackend-l7om.onrender.com/api/accounts", {
+      const response = await axios.get(`${link}/api/accounts`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = Array.isArray(response.data)
@@ -55,7 +57,7 @@ const PosSettingsPage = () => {
     try {
       setLoading(true);
       const token = localStorage.getItem("token");
-      const response = await axios.get("https://mybackend-l7om.onrender.com/api/pos-settings", {
+      const response = await axios.get(`${link}/api/pos-settings`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setSettings(response.data);
@@ -84,7 +86,7 @@ const PosSettingsPage = () => {
     try {
       const token = localStorage.getItem("token");
       const response = await axios.put(
-        "https://mybackend-l7om.onrender.com/api/pos-settings",
+        `${link}/api/pos-settings`,
         settings,
         { headers: { Authorization: `Bearer ${token}` } }
       );

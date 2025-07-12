@@ -1,14 +1,9 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { BiChevronRight } from "react-icons/bi";
-import { FaTachometerAlt, FaBarcode } from "react-icons/fa";
 import Navbar from "../../Navbar.jsx";
 import Sidebar from "../../Sidebar.jsx";
-import { useNavigate, Link, useSearchParams } from 'react-router-dom';
+import { useNavigate,  useSearchParams } from 'react-router-dom';
 import axios from 'axios';
-import Select from 'react-select';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faCamera } from "@fortawesome/free-solid-svg-icons";
-import { BrowserMultiFormatReader } from "@zxing/browser";
+
 import LoadingScreen from '../../../Loading.jsx';
 import dayjs from 'dayjs';
 import SupplierPopup from "../SupplierPopup";
@@ -73,14 +68,6 @@ const esc = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
 const PurchaseM= () => {
   const link="https://pos.inspiredgrow.in/vps"
-   useEffect(() => {
-      const request = async () => {
-        await Camera.requestPermissions({
-              permissions: ['camera', 'photos']
-        }); 
-      };
-      request();
-    }, []);
     const[activeTab,setActiveTab]=useState("p1")
   const [searchParams] = useSearchParams();
   const id = searchParams.get("id");
@@ -90,16 +77,14 @@ const PurchaseM= () => {
   const [discountType, setDiscountType] = useState('amount');
   const [subtotal, setSubtotal] = useState(0);
   const [grandtotal, setGrandTotal] = useState(0);
-  const [isSidebarOpen, setSidebarOpen] = useState(true);
+  const [isSidebarOpen, setSidebarOpen] = useState(false);
   const [result, setResult] = useState("");
   const [allItems, setAllItems] = useState([]);
   const [filteredItems, setFilteredItems] = useState([]);
   const [discountMoney, setDiscountMoney] = useState(0);
-  const [scanning, setScanning] = useState(false);
   const [showSupplierPop, setShowSupplierPop] = useState(false);
   const prevWarehouse = useRef(null);
   const [defaultWarehouse, setDefaultWarehouse] = useState(null);
-  const[matchedItems,setMatchedItems]=useState([])
   const [options, setOptions] = useState({
     warehouse: [],
     items: [],
@@ -152,7 +137,7 @@ const PurchaseM= () => {
     if (videoRef.current?.srcObject) {
       videoRef.current.srcObject.getTracks().forEach(t => t.stop());
     }
-    setScanning(false);
+
 
     // 2. Clear cart
     setOptions(o => ({ ...o, items: [] }));
@@ -219,11 +204,7 @@ useEffect(() => {
   }, [id]);
 
   // Set sidebar state based on screen size
-  useEffect(() => {
-    if (window.innerWidth < 768) {
-      setSidebarOpen(false);
-    }
-  }, []);
+ 
 
   // Fetch all items
   const fetchItems = async () => {
@@ -235,10 +216,12 @@ useEffect(() => {
       return;
     }
     try {
-      const {data} = await axios.get(`${link}/api/items`, {
-        headers: { Authorization: `Bearer ${token}` },
-        params: { warehouse: formData.warehouse }
-      });
+      const data  = await axios.get(
+      `${link}/api/items/all?warehouse=${formData.warehouse}`,
+      {
+          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+      }
+    );
         const rawItems = data.data || [];
 
       const flatItems = rawItems
@@ -405,13 +388,13 @@ useEffect(() => {
   }
 }, [options.warehouse, defaultWarehouse, id]);
 
-const updateItem = (index, field, value) => {
+
  const updateItem = (index, field, value) => {
   const updatedItems = formData.items.map((item, i) =>
     i === index
       ? {
           ...item,
-          [field]: field === "quantity" ? Math.max(1, parseInt(value) || 1) : value,
+          [field]: value,
         }
       : item
   );
@@ -423,7 +406,7 @@ const updateItem = (index, field, value) => {
 };
 
   
-};
+
 
 
   // Fetch suppliers
@@ -708,77 +691,6 @@ const updateItem = (index, field, value) => {
     else sendData();
   };
 
-  // Barcode scanner
-
-  
-const startScanner = async () => {
-  console.log("Starting scanner");
-
-  if (!selectedWarehouse) {
-    alert("Please select a warehouse before scanning");
-    return;
-  }
-
-  const codeReader = new BrowserMultiFormatReader();
-  codeReaderRef.current = codeReader;
-
-    if (!videoRef.current) return;
-
-  // Get camera devices
-  const videoInputDevices = await codeReader.listVideoInputDevices();
-  const backCam = videoInputDevices.find((device) =>
-    device.label.toLowerCase().includes("back")
-  ) || videoInputDevices[0]; // fallback if no label
-
-  
-  if (!backCam) {
-    alert("No camera found");
-    return;
-  }
-
-  // Start continuous scanning
-  codeReader.decodeFromVideoDevice(backCam.deviceId, videoRef.current, (result, err) => {
-    if (result) {
-      const text = result.getText();
-      console.log("Scanned barcode:", text);
-
-      const match = filteredItems.find(
-        (i) =>
-          i.itemCode === text ||
-          i.barcodes?.includes(text) ||
-          i.itemName.toLowerCase() === text.toLowerCase()
-      );
-
-      console.log("Matched item:", match);
-
-      if (match) {
-        setMatchedItems((prev) => {
-            const existingIndex = prev.findIndex((item) => item._id === match._id);
-            if (existingIndex !== -1) {
-              const updated = [...prev];
-              updated[existingIndex].quantity += 1;
-              return updated;
-            } else {
-              return [...prev, { ...match, quantity: 1 }];
-            }
-          });
-        setResult("");
-        navigator.vibrate?.(100);
-        try {
-          new Audio("/beep.mp3").play();
-        } catch {}
-      } else {
-        alert("No item found for scanned code: " + text);
-      }
-    }
-
-    if (err && err.name !== "NotFoundException") {
-      console.error("Scan error:", err);
-    }
-  });
-};
-
-
 
   useEffect(() => {
     return () => {
@@ -791,88 +703,6 @@ const startScanner = async () => {
       }
     };
   }, []);
-
-  
-const stopScanner = () => {
-  const reader = codeReaderRef.current;
-  if (reader?.reset) reader.reset();
-
-  if (videoRef.current?.srcObject) {
-    videoRef.current.srcObject.getTracks().forEach((track) => track.stop());
-    videoRef.current.srcObject = null;
-  }
-
-  setScanning(false);
-};
-
-  // Add item to purchase
-  // Add item to purchase
-  
-// const addItem = (it) => {
-//   if (!it) {
-//     console.log("No item selected");
-//     return;
-//   }
-
-//   // Check if the item already exists in formData.items
-//   const existingItemIndex = formData.items.findIndex(
-//     (item) =>
-//       item.item === it.parentId &&
-//       (item.variant || null) === (it.variantId || null)
-//   );
-
-//   if (existingItemIndex >= 0) {
-//     // Item exists, increment quantity
-//     setFormData((prev) => {
-//       const updatedItems = [...prev.items];
-//       updatedItems[existingItemIndex] = {
-//         ...updatedItems[existingItemIndex],
-//         quantity: (updatedItems[existingItemIndex].quantity || 1) + 1,
-//         totalAmount:
-//           ((updatedItems[existingItemIndex].quantity || 1) + 1) *
-//             (updatedItems[existingItemIndex].mrp || 0) -
-//           (updatedItems[existingItemIndex].discount || 0),
-//       };
-//       return { ...prev, items: updatedItems };
-//     });
-//   } else {
-//     // Item doesn't exist, add new item
-//     setOptions((prev) => ({
-//       ...prev,
-//       items: [
-//         ...(prev.items || []),
-//         {
-//           ...it,
-//           parentId: it.parentId,
-//           variantId: it.variantId,
-//           itemName: it.itemName,
-//         },
-//       ],
-//     }));
-//     setFormData((prev) => ({
-//       ...prev,
-//       items: [
-//         ...(prev.items || []),
-//         {
-//           item: it.parentId,
-//           variant: it.variantId || null,
-//           quantity: 1,
-//           unitCost: it.priceWithoutTax || 0,
-//           mrp: it.mrp || 0,
-//           expiryDate: it.expiryDate || "",
-//           discount:
-//             it.discountType?.toLowerCase() === "percentage"
-//               ? (it.discount * it.mrp) / 100
-//               : it.discount || 0,
-//           salesPrice: it.salesPrice || 0,
-//           totalAmount: 1 * (it.mrp || 0) - (it.discount || 0),
-//         },
-//       ],
-//     }));
-//   }
-//   setResult("");
-// };
-
 
 const addItem = (it) => {
   if (!it || !it.parentId) {
@@ -918,6 +748,7 @@ const addItem = (it) => {
     const totalAmount = (it.mrp || 0) - discountAmount;
 
     const newItem = {
+      purchasePrice:it.purchasePrice ||0,
        item: it.parentId,
       variant: it.variantId || null,
       itemName: it.itemName,
@@ -1017,8 +848,7 @@ const addItem = (it) => {
             activeTab==="p1" && <Purchase1 options={options} setActiveTab={setActiveTab} handleSelectChange={handleSelectChange} formData={formData} setFormData={setFormData} setShowSupplierPop={setShowSupplierPop} />
           }
            {
-            activeTab==="p2" && <Purchase2  updateItem={updateItem} items={formData.items} removeItem={handleRemoveItem} matchedItems={matchedItems} setMatchedItems={setMatchedItems} selectedWarehouse={formData.warehouse} setActiveTab={setActiveTab} formData={formData} setFormData={setFormData} result={result} setResult={setResult} allItems={allItems} addItem={addItem} handleAddItem={handleAddItem} startScanner={startScanner} filteredItems={filteredItems} scanning={scanning} stopScanner={stopScanner}
-            setScanning={setScanning} videoRef={videoRef} codeReaderRef={codeReaderRef} options={options} handleItemFieldChange={handleItemFieldChange} handleRemoveItem={handleRemoveItem}
+            activeTab==="p2" && <Purchase2  updateItem={updateItem} items={formData.items} removeItem={handleRemoveItem}  selectedWarehouse={formData.warehouse} setActiveTab={setActiveTab} formData={formData} setFormData={setFormData} result={result} setResult={setResult} allItems={allItems} addItem={addItem} handleAddItem={handleAddItem}filteredItems={filteredItems}  options={options} handleItemFieldChange={handleItemFieldChange} handleRemoveItem={handleRemoveItem}
             />
           }
             {

@@ -14,6 +14,7 @@ import * as XLSX from 'xlsx';
 import autoTable from 'jspdf-autotable';
 import { BrowserMultiFormatReader } from '@zxing/library';
 export default function SaleItemsReport() {
+    const link="https://pos.inspiredgrow.in/vps"
   const [showExportDropdown, setShowExportDropdown] = useState(false)
    const[isSidebarOpen,setSidebarOpen]=useState(true)
    const[loading,setLoading]=useState(true)
@@ -39,7 +40,7 @@ export default function SaleItemsReport() {
   const[total,setTotal]=useState(0)
    const fetchWarehouses=async()=>{
     try {
-      const response = await axios.get('https://mybackend-l7om.onrender.com/api/warehouses', {
+      const response = await axios.get(`${link}/api/warehouses`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
         }
@@ -63,7 +64,7 @@ export default function SaleItemsReport() {
    
    const fetchCategories=async()=>{
     try {
-      const response = await axios.get('https://mybackend-l7om.onrender.com/api/categories', {
+      const response = await axios.get(`${link}/api/categories`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
         }
@@ -90,7 +91,7 @@ export default function SaleItemsReport() {
    
    const fetchItems=async()=>{
     try {
-      const response = await axios.get('https://mybackend-l7om.onrender.com/api/items', {
+      const response = await axios.get(`${link}/api/items`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
         }
@@ -112,7 +113,7 @@ export default function SaleItemsReport() {
     try {
       setLoading(true)
       const token = localStorage.getItem("token");
-      const response = await axios.get(`http://localhost:5000/api/sales`, {
+      const response = await axios.get(`${link}/api/sales`, {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",

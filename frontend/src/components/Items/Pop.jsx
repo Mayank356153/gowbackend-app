@@ -4,6 +4,7 @@ import axios from 'axios';
 import LoadingScreen from '../../Loading';
 
 export default function Pop({ add, setAdd, category, options, setOptions, fetchTax, fetchUnits, fetchBrands, fetchVariants }) {
+  const link="https://pos.inspiredgrow.in/vps"
   const [newOption, setNewOption] = useState({
     name: '',
     description: '',
@@ -30,7 +31,7 @@ export default function Pop({ add, setAdd, category, options, setOptions, fetchT
       let response;
       if (category === 'Category') {
         response = await axios.post(
-          'api/categories',
+          `${link}/api/categories`,
           {
             name: newOption.name,
             description: newOption.description,
@@ -55,7 +56,7 @@ export default function Pop({ add, setAdd, category, options, setOptions, fetchT
         }));
       } else if (category === 'Tax') {
         response = await axios.post(
-          'api/taxes',
+          `${link}/api/taxes`,
           {
             taxName: newOption.name,
             taxPercentage: Number(newOption.taxPercentage),
@@ -71,7 +72,7 @@ export default function Pop({ add, setAdd, category, options, setOptions, fetchT
         await fetchTax();
       } else if (category === 'Unit') {
         response = await axios.post(
-          'api/units',
+          `${link}/api/units`,
           {
             unitName: newOption.name,
             description: newOption.description,
@@ -87,7 +88,7 @@ export default function Pop({ add, setAdd, category, options, setOptions, fetchT
         await fetchUnits();
       } else if (category === 'Brand') {
         response = await axios.post(
-          'api/brands',
+          `${link}/api/brands`,
           {
             brandName: newOption.name,
             description: newOption.description,
@@ -103,7 +104,7 @@ export default function Pop({ add, setAdd, category, options, setOptions, fetchT
         await fetchBrands();
       } else if (category === 'Variant') {
         response = await axios.post(
-          'api/variants',
+          `${link}/api/variants`,
           {
             variantName: newOption.name,
             description: newOption.description,

@@ -19,6 +19,7 @@ import {
 import axios from 'axios';
 
 const CustomerProfile = ({ customerData, visible, onClose }) => {
+  const link="https://pos.inspiredgrow.in/vps"
   const [customer, setCustomer] = useState(customerData);
   const [loading, setLoading] = useState(false);
 
@@ -27,7 +28,7 @@ const CustomerProfile = ({ customerData, visible, onClose }) => {
       setLoading(true);
       const newStatus = customer.status === 'active' ? 'inactive' : 'active';
 
-      const response = await axios.patch(`/api/customers/${customer._id}`, {
+      const response = await axios.patch(`${link}/api/customers/${customer._id}`, {
         status: newStatus
       });
 

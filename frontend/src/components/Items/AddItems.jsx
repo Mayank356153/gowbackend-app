@@ -17,6 +17,7 @@
    import LoadingScreen from "../../Loading";
    
    export default function AddItem() {
+     const link="https://pos.inspiredgrow.in/vps"
     const [selectedFiles, setSelectedFiles] = useState([]);
      /* ───────── Router */
      const [searchParams] = useSearchParams();
@@ -112,7 +113,7 @@
      const fetchLastItemCode = async () => {
       try {
         const { data } = await axios.get(
-          "api/items",
+          `${link}/api/items`,
           auth()
         );
     
@@ -373,37 +374,37 @@
        try {
          await Promise.all([
            fetchSimple(
-             "api/brands",
+              `${link}/api/brands`,
              "brand",
              (d) => d.map((x) => ({ label: x.brandName, value: x._id }))
            ),
            fetchSimple(
-             "api/categories",
+              `${link}/api/categories`,
              "category",
              (d) => d.map((x) => ({ label: x.name, value: x._id }))
            ),
            fetchSimple(
-             "api/subcategories",
+              `${link}/api/subcategories`,
              "subCategory",
              (d) => d.map((x) => ({ label: x.name, value: x._id }))
            ),
            fetchSimple(
-             "api/sub-subcategories",
+              `${link}/api/sub-subcategories`,
              "subsubCategory",
              (d) => d.map((x) => ({ label: x.name, value: x._id }))
            ),
            fetchSimple(
-             "api/units",
+              `${link}/api/units`,
              "unit",
              (d) => d.map((x) => ({ label: x.unitName, value: x._id }))
            ),
            fetchSimple(
-             "api/taxes",
+              `${link}/api/taxes`,
              "tax",
              (d) => d.map((x) => ({ label: x.taxName, value: x._id }))
            ),
           fetchSimple(
-      "api/warehouses",
+       `${link}/api/warehouses`,
       "warehouse",
       (d) =>
         d
@@ -412,7 +413,7 @@
          .map((x) => ({ label: x.warehouseName, value: x._id }))
     ),
            axios
-             .get("api/variants", auth())
+             .get( `${link}/api/variants`, auth())
              .then(({ data }) =>
                setOptions((p) => ({ ...p, variants: data.data }))
              ),
@@ -420,7 +421,7 @@
    
          if (id) {
            const { data } = await axios.get(
-             `api/items/${id}`,
+             `${link}/api/items/${id}`,
              auth()
            );
            const it = data.data;
@@ -503,8 +504,8 @@
   });
 
   const url = id
-    ? `api/items/${id}`
-    : `api/items`;
+    ? `${link}/api/items/${id}`
+    : `${link}/api/items`;
   const method = id ? "put" : "post";
 
   await axios[method](url, body, {

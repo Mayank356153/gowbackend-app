@@ -12,10 +12,9 @@ import {
   FaBars,
   FaWindowMaximize,
 } from "react-icons/fa";
-import { Capacitor } from "@capacitor/core";
+import { Camera } from "@capacitor/camera";
 import { BrowserMultiFormatReader } from "@zxing/browser";
 import { MdOutlineDashboard } from "react-icons/md";
-import { CameraIcon } from "@heroicons/react/outline";
 import axios, { all } from "axios";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { jsPDF } from "jspdf";
@@ -25,13 +24,9 @@ import LoadingScreen from "../../../Loading";
 import POS1 from "./POS1";
 import POS2 from "./POS2";
 import POS3 from "./POS3";
-import { Camera } from "@capacitor/camera";
 import Swal from 'sweetalert2';
-import { CameraPreview, CameraPreviewOptions } from '@capacitor-community/camera-preview';
+import playSound from "../../../utility/sound";
 export default function POSM() {
-   const canvasRef = useRef(null);
-  const reader = useRef(new BrowserMultiFormatReader());
-  const scan = useRef(true);
   const link="https://pos.inspiredgrow.in/vps"
    useEffect(() => {
       const request = async () => {
@@ -94,13 +89,11 @@ export default function POSM() {
   const [paymentMode, setPaymentMode] = useState(""); // "cash" | "bank" | "multiple" | "hold"
   const [orderPaymentMode, setOrderPaymentMode] = useState(""); // Tracks payment mode of loaded order
 
-  const videoRef = useRef(null);
-  const codeReaderRef = useRef(null);
   const [storeName, setStoreName] = useState("");
   const [orderToEdit, setOrderToEdit] = useState(null);
   const [defaultWarehouse, setDefaultWarehouse]   = useState("");
   const prevWarehouseRef = useRef();    
-  const isScanning=useRef(true)
+  
   // ─── HELPERS ────────────────────────────────────────────────────────
   const authHeaders = () => ({
     headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
@@ -186,6 +179,7 @@ export default function POSM() {
       setLoadingUser(false);
     }
   }
+  
 async function fetchLookups() {
     // ── 1) Warehouses ─────────────────────────────────────
     try {
@@ -348,16 +342,14 @@ async function fetchLookups() {
   }
 
   try {
-    const { data } = await axios.get(
-      `${link}/api/items`,
-      {
-        headers: authHeaders().headers,
-        params:  { warehouse: selectedWarehouse }
-      }
-    );
+     const {data} = await axios.get(`${link}/api/items`, {
+          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+        params: { warehouse: selectedWarehouse }
+      });
+      
     console.log("item")
-    console.log(data)
-    const rawItems = data.data || [];
+    console.log(data.data)
+    const rawItems = data.data || [] ;
 
       const flatItems = rawItems
         .filter((it) => it._id && it.warehouse?._id)
@@ -603,162 +595,109 @@ useEffect(() => {
   }
 }, [warehouses, defaultWarehouse, editId]);
 
+ const videoRef       = useRef(null);
+  const codeReaderRef  = useRef(null);
+ 
 
-  // ─── SCANNER LOGIC ─────────────────────────────────────────────────
-//   const startScanner = () => {
-//     console.log("Starting scanner...");
-//     if (!selectedWarehouse) {
-//       alert("Please select a warehouse before scanning.");
-//       return;
-//     }
-//     setScanning(true);
-//     const codeReader = new BrowserMultiFormatReader();
-
-
-//     try {
-//       codeReader.decodeFromConstraints(
-//         { video: { facingMode: "environment"  } },
-//         videoRef.current,
-//         (result, err) => {
-//           if (result) {
-//             const text = result.getText();
-//             console.log("Scanned barcode:", text);
-//             const hit = filteredItems.find(
-//               (i) =>
-//                 i.itemCode === text ||
-//                 i.barcodes?.includes(text) ||
-//                 i.itemName.toLowerCase() === text.toLowerCase()
-//             );
-//             console.log("Matched item:", hit);
-//             if (hit) {
-//               addItem(hit);
-//               setSearchItemCode("");
-//             } else {
-//               alert("No item found for scanned code: " + text);
-//             }
-//             codeReader.reset();
-//             setScanning(false);
-//           }
-//           if (err && err.name !== "NotFoundException") {
-//             console.error("Scanner error:", err);
-//             alert("Scanning failed: " + err.message);
-//             codeReader.reset();
-//             setScanning(false);
-//           }
-//         }
-//       );
-//     } catch (e) {
-//       console.error("Scanner initialization failed:", e);
-//       alert("Failed to start scanner: " + (e.message || "Unknown error"));
-//       codeReader.reset();
-//       setScanning(false);
-//     }
-//   };
-
-// const startScanner = async () => {
-//   console.log("Starting scanner");
-
-//   if (!selectedWarehouse) {
-//     alert("Please select a warehouse before scanning");
-//     return;
-//   }
-
-//   try {
-//     const codeReader = new BrowserMultiFormatReader();
-//     codeReaderRef.current = codeReader;
-
-//     // Request camera permission explicitly (important on mobile)
-//     const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-//     stream.getTracks().forEach(track => track.stop()); // release it early
-
-//     // Get camera devices
-//     const videoInputDevices = await codeReader.listVideoInputDevices();
-//     const backCam = videoInputDevices.find((device) =>
-//       device.label.toLowerCase().includes("back")
-//     ) || videoInputDevices[0]; // fallback if no label
-
-//     if (!backCam) {
-//       alert("No camera found");
-//       return;
-//     }
-
-//     // Continuous decoding from back camera
-//     codeReader.decodeFromVideoDevice(backCam.deviceId, videoRef.current, (result, err) => {
-//       if (result) {
-//         const text = result.getText();
-//         console.log("Scanned barcode:", text);
-
-//         const match = filteredItems.find(
-//           (i) =>
-//             i.itemCode === text ||
-//             i.barcodes?.includes(text) ||
-//             i.itemName.toLowerCase() === text.toLowerCase()
-//         );
-
-//         if (match) {
-//           setMatchedItems((prev) => {
-//             const existingIndex = prev.findIndex((item) => item.item === match._id);
-//             if (existingIndex !== -1) {
-//               const updated = [...prev];
-//               updated[existingIndex].quantity += 1;
-//               return updated;
-//             } else {
-//               return [...prev, { item: match._id, quantity: 1 }];
-//             }
-//           });
-
-//           setSearchItemCode("");
-//           navigator.vibrate?.(100);
-//           try {
-//             new Audio("/beep.mp3").play();
-//           } catch (e) {
-//             console.warn("Beep failed", e);
-//           }
-//         } else {
-//           console.warn("No match found for:", text);
-//         }
-//       }
-
-//       if (err && err.name !== "NotFoundException") {
-//         console.error("Scan error:", err);
-//       }
-//     });
-
-//   } catch (error) {
-//     console.error("Camera start error:", error);
-//     alert("Camera access failed. Please check permission.");
-//     alert(error)
-//   }
-// };
+  
 const startScanner = async () => {
+  if (!selectedWarehouse) {
+    alert("Please select a warehouse before scanning.");
+    return;
+  }
+  // Request Camera Permission on Android
+  const permission = await Camera.requestPermissions(); // or checkPermissions()
+  console.log(permission)
+  if (permission.camera !== 'granted') {
+    alert('Camera permission is required');
+    return ;
+  }
+  const codeReader = new BrowserMultiFormatReader();
+  codeReaderRef.current = codeReader;
+
+  const decode = (facingMode) =>
+    
+    codeReader.decodeFromConstraints(
+      { video: { facingMode } },
+      videoRef.current,
+      async (result, err) => {
+        if (result) {
+           const text = result.getText() 
+        console.log("Scanned barcode:", text);
+          
+        const match = allItems.find(
+          (i) =>
+            i.itemCode === text ||
+            i.barcodes?.includes(text) ||
+            i.itemName.toLowerCase() === text.toLowerCase()
+        );
+
+        if (match) {
+        setMatchedItems((prev) => {
+  const existingIndex = prev.findIndex((item) => item.item === match._id);
+
+  if (existingIndex !== -1) {
+    // Existing item: increment quantity and play different sound
+    const updatedItems = [...prev];
+    updatedItems[existingIndex] = {
+      ...updatedItems[existingIndex],
+      quantity: updatedItems[existingIndex].quantity + 1,
+    };
+    playSound("/sounds/item-exists.mp3");
+    return updatedItems;
+  } else {
+    // New item: add and play add sound
+    playSound("/sounds/item-added.mp3");
+    return [
+      ...prev,
+      {
+        ...match,
+        quantity: 1,
+        item: match._id,
+      },
+    ];
+  }
+});
+
+
+         // Wait a bit then scan again
+            setTimeout(() => {
+              codeReader.reset(); // very important to reset before new scan
+              decode(facingMode); // recursively call decode
+            }, 5000); // 800ms delay before next scan
+        }}
+
+        if (err && err.name !== 'NotFoundException') {
+          console.error("Scan error:", err);
+        }
+      }
+    );
+    
+   console.log(videoRef)
   try {
-      const { BarcodeScanner } = Capacitor.Plugins ;
-    const result = await BarcodeScanner.scanBarcode();
-    if (result.hasContent) {
-      console.log('Barcode content:', result.content);
-      alert(`Scanned: ${result.content}`);
-    } else {
-      alert("No barcode detected.");
+    await decode({ exact: "environment" }); // Try back camera first
+  } catch {
+    try {
+      await decode("user"); // Fallback to front camera
+    } catch (e) {
+      console.error("Camera error:", e);
+      stopScanner();
     }
-  } catch (error) {
-    console.error('Scan error:', error);
-    alert('Scan failed.');
-    alert(error)
   }
 };
-   
+
+
+
 const stopScanner = () => {
-  const reader = codeReaderRef.current;
-  if (reader?.reset) reader.reset();
-
-  if (videoRef.current?.srcObject) {
-    videoRef.current.srcObject.getTracks().forEach((track) => track.stop());
-    videoRef.current.srcObject = null;
+  // Stop camera tracks
+  const tracks = videoRef.current?.srcObject?.getTracks();
+  if (tracks) {
+    tracks.forEach((t) => t.stop());
   }
 
-  setScanning(false);
+  codeReaderRef.current?.reset?.();
+  setMatchedItems([])
 };
-
 
   // ─── ITEM HANDLERS ─────────────────────────────────────────────────
 function addItem(it) {
@@ -766,7 +705,8 @@ function addItem(it) {
     console.error("Invalid item, missing parentId:", it);
     return;
   }
-
+  console.log("it")
+  console.log(it)
   const parentExists = allItems.some((ai) => ai._id === it.parentId && !ai.variantId);
   if (!parentExists && !it.variantId) {
     console.error(`Parent item not found for parentId: ${it.parentId}`, it);
@@ -844,7 +784,7 @@ function addItem(it) {
   }
 
   // your existing non-zero check
-  if ((field === "quantity" || field === "salesPrice") && numericVal <= 0) {
+  if ((field === "salesPrice") && numericVal <= 0) {
     alert(`${field.charAt(0).toUpperCase() + field.slice(1)} must be greater than zero.`);
     return;
   }
@@ -1164,7 +1104,7 @@ function addItem(it) {
     if (currentOrderId) {
       await axios.put(`${link}/api/pos/${currentOrderId}`, payload, { headers: { Authorization: `Bearer ${token}` } });
     } else {
-      await axios.post(`{link}/api/pos`, payload, { headers: { Authorization: `Bearer ${token}` } });
+      await axios.post(`${link}/api/pos`, payload, { headers: { Authorization: `Bearer ${token}` } });
     }
     await fetchHeld();
     Swal.fire("Held!", "Order has been moved to held invoices.", "success");
@@ -1431,7 +1371,7 @@ function addItem(it) {
                          startScanner={startScanner}   filteredItems={filteredItems} scanning={scanning} setScanning={setScanning} videoRef={videoRef} orderPaymentMode={orderPaymentMode}    
                           previousBalance={previousBalance}
            />}
-           {activeTab==="pos2" && <POS2 canvasRef={canvasRef} matchedItems={matchedItems} setMatchedItems={setMatchedItems}  searchItemCode={searchItemCode} setActiveTab={setActiveTab} setSearchItemCode={setSearchItemCode} updateItem={updateItem} removeItem={removeItem} items={items} setItems={setItems} stopScanner={stopScanner}
+           {activeTab==="pos2" && <POS2  matchedItems={matchedItems} setMatchedItems={setMatchedItems}  searchItemCode={searchItemCode} setActiveTab={setActiveTab} setSearchItemCode={setSearchItemCode} updateItem={updateItem} removeItem={removeItem} items={items} setItems={setItems} stopScanner={stopScanner}
                                             allItems={allItems}  codeReaderRef={codeReaderRef} addItem={addItem} startScanner={startScanner} setScanning={setScanning} selectedWarehouse={selectedWarehouse}  filteredItems={filteredItems} scanning={scanning} videoRef={videoRef} orderPaymentMode={orderPaymentMode}    
            />}
            {activeTab==="pos3" && <POS3 allItems={allItems} showHoldList={showHoldList} heldInvoices={heldInvoices} handleEditInvoice={handleEditInvoice}

@@ -12,6 +12,8 @@ import * as XLSX from "xlsx";
 import LoadingScreen from "../../Loading";
 
 const SubscriptionList = () => {
+    const link="https://pos.inspiredgrow.in/vps"
+
   const navigate = useNavigate();
   const [isSidebarOpen, setSidebarOpen] = useState(true);
   const [subscriptions, setSubscriptions] = useState([]);
@@ -31,8 +33,8 @@ const SubscriptionList = () => {
       const token = localStorage.getItem("token");
       // If storeId is provided, filter by it
       const url = storeId 
-        ? `http://localhost:5000/api/subscriptions?storeId=${storeId}` 
-        : `http://localhost:5000/api/subscriptions`;
+        ? `${link}/api/subscriptions?storeId=${storeId}` 
+        : `${link}/api/subscriptions`;
       const res = await axios.get(url, {
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -127,7 +129,7 @@ const SubscriptionList = () => {
     if (!window.confirm("Are you sure you want to delete this subscription?")) return;
     try {
       const token = localStorage.getItem("token");
-      await axios.delete(`http://localhost:5000/api/subscriptions/${id}`, {
+      await axios.delete(`${link}/api/subscriptions/${id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       alert("Subscription deleted successfully!");

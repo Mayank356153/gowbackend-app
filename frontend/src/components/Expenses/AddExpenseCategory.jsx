@@ -8,6 +8,8 @@ import { BiChevronRight } from "react-icons/bi";
 import { FaTachometerAlt } from "react-icons/fa";
 
 function AddExpenseCategory() {
+  const link="https://pos.inspiredgrow.in/vps"
+
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const id = searchParams.get("id"); // if present, we're editing
@@ -33,7 +35,7 @@ function AddExpenseCategory() {
         setLoading(true);
         try {
           const res = await axios.get(
-            `api/expense-categories/${id}`,
+            `${link}/api/expense-categories/${id}`,
             {
               headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
             }
@@ -67,7 +69,7 @@ function AddExpenseCategory() {
       if (id) {
         // Update mode
         await axios.put(
-          `api/expense-categories/${id}`,
+          `${link}/api/expense-categories/${id}`,
           formData,
           {
             headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
@@ -77,7 +79,7 @@ function AddExpenseCategory() {
       } else {
         // Create mode
         await axios.post(
-          "api/expense-categories",
+          `${link}/api/expense-categories`,
           formData,
           {
             headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },

@@ -37,6 +37,7 @@ const downloadXLSX = (rows, filename = "items_export.xlsx") => {
 };
 
 export default function ItemList() {
+  const link="https://pos.inspiredgrow.in/vps";
   const navigate = useNavigate();
 
   /* ───────── UI state ───────── */
@@ -77,7 +78,7 @@ export default function ItemList() {
   const fetchItems = async () => {
     setLoading(true);
     try {
-      const { data } = await axios.get("api/items", auth());
+      const { data } = await axios.get(`${link}/api/items`, auth());
       setItems(Array.isArray(data.data) ? data.data : []);
     } catch {
       setError("Failed to fetch items. Please try again.");
@@ -88,7 +89,7 @@ export default function ItemList() {
 
   const fetchUnits = async () => {
     try {
-      const { data } = await axios.get("api/units", auth());
+      const { data } = await axios.get(`${link}/api/units`, auth());
       setUnitOptions([
         { label: "All Units", value: "all" },
         ...data.data.map((u) => ({ label: u.unitName, value: u._id })),
@@ -98,7 +99,7 @@ export default function ItemList() {
 
   const fetchWarehouses = async () => {
     try {
-      const { data } = await axios.get("api/warehouses", auth());
+      const { data } = await axios.get(`${link}/api/warehouses`, auth());
       setWarehouseOptions([
         { label: "All Warehouses", value: "all" },
         ...data.data.map((w) => ({ label: w.warehouseName, value: w._id })),
@@ -108,7 +109,7 @@ export default function ItemList() {
 
   const fetchCategories = async () => {
     try {
-      const { data } = await axios.get("api/categories", auth());
+      const { data } = await axios.get(`${link}/api/categories`, auth());
       setCategoryOptions([
         { label: "All Categories", value: "all" },
         ...data.data.map((c) => ({ label: c.name, value: c._id })),
@@ -120,7 +121,7 @@ export default function ItemList() {
     if (!window.confirm("Do you really want to delete this item?")) return;
     setLoading(true);
     try {
-      await axios.delete(`api/items/${id}`, auth());
+      await axios.delete(`${link}/api/items/${id}`, auth());
       await fetchItems();
     } catch {
       setError("Failed to delete. Please try again.");

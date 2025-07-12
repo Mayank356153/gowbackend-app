@@ -11,6 +11,7 @@ import LoadingScreen from '../../Loading.jsx';
 import { useNavigate } from 'react-router-dom';
 
 const StockTransferList = () => {
+    const link="https://pos.inspiredgrow.in/vps"
   const Navigate = useNavigate();
   const [entries, setEntries] = useState(10);
   const [currentPage, setCurrentPage] = useState(1);
@@ -31,7 +32,7 @@ const StockTransferList = () => {
     try {
       setLoading(true);
       const token = localStorage.getItem("token");
-      const response = await axios.get(`http://localhost:5000/api/stock-transfers`, {
+      const response = await axios.get(`${link}/api/stock-transfers`, {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
@@ -124,7 +125,7 @@ const StockTransferList = () => {
     if (!conf) return;
 
     try {
-      const response = await fetch(`http://localhost:5000/api/stock-transfers/${id}`, {
+      const response = await fetch(`${link}/api/stock-transfers/${id}`, {
         method: "DELETE",
         headers: {
           "Content-Type": "application/json",

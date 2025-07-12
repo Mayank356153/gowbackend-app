@@ -16,6 +16,7 @@ import Loading from "../../Loading.jsx";
 
 const WarehouseListPage = () => {
   const navigate = useNavigate();
+  const link="https://pos.inspiredgrow.in/vps"
 
   /* ── UI state ───────────────────────── */
   const [sidebarOpen, setSidebarOpen] = useState(window.innerWidth >= 768);
@@ -74,7 +75,7 @@ const WarehouseListPage = () => {
   const fetchWarehouses = async () => {
     setLoading(true);
     try {
-      const { data } = await axios.get("http://localhost:5000/api/warehouses", {
+      const { data } = await axios.get(`${link}/api/warehouses`, {
         headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
       });
       setWarehouses(data.data || []);
@@ -88,7 +89,7 @@ const WarehouseListPage = () => {
   const fetchItems = async () => {
     try {
       const { data } = await axios.get(
-        "http://localhost:5000/api/items/summary",
+        `${link}/api/items/summary`,
         { headers: { Authorization: `Bearer ${localStorage.getItem("token")}` } }
       );
       setItems(data.data || []);
@@ -150,7 +151,7 @@ const WarehouseListPage = () => {
     if (!window.confirm("Permanently delete this warehouse?")) return;
     setLoading(true);
     try {
-      await axios.delete(`http://localhost:5000/api/warehouses/${id}`, {
+      await axios.delete(`${link}/api/warehouses/${id}`, {
         headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
       });
       fetchWarehouses();
@@ -168,7 +169,7 @@ const WarehouseListPage = () => {
       if (!reason) return;
       axios
         .post(
-          "api/deletion-requests",
+          `${link}/api/deletion-requests`,
           { itemType: "Warehouse", itemId: id, reason },
           { headers: { Authorization: `Bearer ${localStorage.getItem("token")}` } }
         )
@@ -181,7 +182,7 @@ const WarehouseListPage = () => {
     setLoading(true);
     try {
       await axios.put(
-        `http://localhost:5000/api/warehouses/${id}`,
+        `${link}/api/warehouses/${id}`,
         { status: current === "Active" ? "Inactive" : "Active" },
         { headers: { Authorization: `Bearer ${localStorage.getItem("token")}` } }
       );
@@ -211,7 +212,7 @@ const WarehouseListPage = () => {
     const doPost = () => {
       axios
         .post(
-          `http://localhost:5000/api/warehouse-location`,
+          `${link}/api/warehouse-location`,
           { lat: coords.latitude, lng: coords.longitude, warehouseId },
           { headers: { Authorization: `Bearer ${localStorage.getItem("token")}` } }
         )

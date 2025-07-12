@@ -6,6 +6,7 @@ import Sidebar from "../Sidebar.jsx";
 import LoadingScreen from "../../Loading";
 
 const ReceivePayment = () => {
+      const link="https://pos.inspiredgrow.in/vps"
   const navigate = useNavigate();
   const location = useLocation();
   const queryParams = new URLSearchParams(location.search);
@@ -54,7 +55,7 @@ const ReceivePayment = () => {
     setLoading(true);
     try {
       // Fetch invoice details
-      const invoicesResponse = await axios.get(`http://localhost:5000/api/pos/invoices`, {
+      const invoicesResponse = await axios.get(`${link}/api/pos/invoices`, {
         headers: { Authorization: `Bearer ${token}` }
       });
 
@@ -75,19 +76,19 @@ const ReceivePayment = () => {
       }
 
       // Fetch existing payments
-      const paymentsResponse = await axios.get(`http://localhost:5000/api/payments/${matchingInvoice._id}`, {
+      const paymentsResponse = await axios.get(`${link}/api/payments/${matchingInvoice._id}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
 
       // Fetch payment types
-      const paymentTypesResponse = await axios.get(`http://localhost:5000/api/paymenttypes`, {
+      const paymentTypesResponse = await axios.get(`${link}/api/paymenttypes`, {
         headers: { Authorization: `Bearer ${token}` }
       });
 
       // Fetch accounts (optional)
       let accountsData = [];
       try {
-        const accountsResponse = await axios.get(`http://localhost:5000/api/accounts`, {
+        const accountsResponse = await axios.get(`${link}/api/accounts`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         accountsData = accountsResponse.data;
@@ -170,7 +171,7 @@ const ReceivePayment = () => {
         paymentNote: formData.paymentNote || undefined
       };
 
-      await axios.post(`api/payments/receive`, payload, {
+      await axios.post(`${link}/api/payments/receive`, payload, {
         headers: { Authorization: `Bearer ${token}` }
       });
 

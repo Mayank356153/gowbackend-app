@@ -16,6 +16,7 @@ import { jsPDF } from 'jspdf';
 import  {autoTable} from 'jspdf-autotable';
 import Select from "react-select"
 const OrderList = () => {
+  const link="https://pos.inspiredgrow.in/vps"
   const [loading, setLoading] = useState(false);
   const [actionMenu, setActionMenu] = useState(null);
   const [isSidebarOpen, setSidebarOpen] = useState(true);
@@ -70,7 +71,7 @@ const OrderList = () => {
     return ;
   }
   try {
-    const response = await axios.get("https://mybackend-l7om.onrender.com/api/warehouses", {
+    const response = await axios.get(`${link}/api/warehouses`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
@@ -90,7 +91,7 @@ finally{
         const token = localStorage.getItem("token");
         try {
           // Adjust this endpoint if needed – using your provided URL.
-          const response = await fetch("https://mybackend-l7om.onrender.com/admin/store/add/store", {
+          const response = await fetch(`${link}/admin/store/add/store`, {
             headers: { Authorization: `Bearer ${token}` },
           });
           if (!response.ok) {
@@ -117,7 +118,7 @@ finally{
     }
 
     try {
-      const response = await fetch("http://localhost:5000/api/order/all", {
+      const response = await fetch(`${link}/api/order/all`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       const payload = await response.json();
@@ -143,7 +144,7 @@ finally{
     if (!window.confirm("Delete this order?")) return;
     setLoading(true);
     try {
-      await axios.delete(`http://localhost:5000/api/order/${id}`, {
+      await axios.delete(`${link}/api/order/${id}`, {
         headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
       });
       fetchusers();

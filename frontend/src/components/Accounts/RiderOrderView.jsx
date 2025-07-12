@@ -10,6 +10,7 @@ import { jsPDF } from "jspdf";
 import  {autoTable} from "jspdf-autotable";
 
 const RiderOrderList = ({ orders, setRiderOrderView, riderInfo }) => {
+  const link="https://pos.inspiredgrow.in/vps"
   const [loading, setLoading] = useState(true);
   const [viewOrders, setViewOrders] = useState([]);
   const [filteredOrders, setFilteredOrders] = useState([]);
@@ -24,7 +25,7 @@ const RiderOrderList = ({ orders, setRiderOrderView, riderInfo }) => {
   const fetchOrders = async () => {
     try {
       setLoading(true);
-      const response = await axios.get('http://localhost:5000/api/order/all', {
+      const response = await axios.get(`${link}/api/order/all`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
         }

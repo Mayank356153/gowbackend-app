@@ -8,6 +8,7 @@ import { BiChevronRight } from "react-icons/bi";
 import { FaTachometerAlt } from "react-icons/fa";
 
 function AddExpense() {
+  const link="https://pos.inspiredgrow.in/vps"
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const id = searchParams.get("id"); // if present, we're in edit mode
@@ -47,7 +48,7 @@ function AddExpense() {
   // Fetch expense categories from new API endpoint
   const fetchExpenseCategories = async () => {
     try {
-      const res = await axios.get("api/expense-categories", {
+      const res = await axios.get(`${link}/api/expense-categories`, {
         headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
       });
       setExpenseCategories(Array.isArray(res.data) ? res.data : (res.data.data || []));
@@ -58,7 +59,7 @@ function AddExpense() {
 
   const fetchPaymentTypes = async () => {
     try {
-      const res = await axios.get("api/payment-types", {
+      const res = await axios.get(`${link}/api/payment-types`, {
         headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
       });
       setPaymentTypes(res.data.data || []);
@@ -69,7 +70,7 @@ function AddExpense() {
 
   const fetchAccounts = async () => {
     try {
-      const res = await axios.get("api/accounts", {
+      const res = await axios.get(`${link}/api/accounts`, {
         headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
       });
       setAccounts(res.data.data || []);
@@ -84,7 +85,7 @@ function AddExpense() {
       const fetchExpense = async () => {
         setLoading(true);
         try {
-          const res = await axios.get(`api/expenses/${id}`, {
+          const res = await axios.get(`${link}/api/expenses/${id}`, {
             headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
           });
           const data = res.data.data;
@@ -127,7 +128,7 @@ function AddExpense() {
       if (id) {
         // Update expense
         await axios.put(
-          `api/expenses/${id}`,
+          `${link}/api/expenses/${id}`,
           expensePayload,
           {
             headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
@@ -137,7 +138,7 @@ function AddExpense() {
       } else {
         // Create new expense
         await axios.post(
-          "api/expenses",
+          `${link}/api/expenses`,
           expensePayload,
           {
             headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },

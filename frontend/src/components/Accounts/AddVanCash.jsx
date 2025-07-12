@@ -5,7 +5,7 @@ import { useNavigate } from "react-router-dom";
 import Navbar from "../Navbar.jsx";
 import Sidebar from "../Sidebar.jsx";
 
-const API_BASE = "api";
+const API_BASE = "https://pos.inspiredgrow.in/vps/api";
 
 export default function AddVanCash() {
   const navigate = useNavigate();

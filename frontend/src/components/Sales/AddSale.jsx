@@ -27,6 +27,7 @@ const esc = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
 
 export default function AddSale() {
+    const link="https://pos.inspiredgrow.in/vps"
   const navigate = useNavigate();
   const [params] = useSearchParams();
   const editId = params.get("id");
@@ -82,11 +83,11 @@ export default function AddSale() {
         const [respCust, respWh, respPT, respAcc, respTerm] =
           await Promise.all([
             
-            axios.get("http://localhost:5000/api/customer-data/all", auth),
-            axios.get("http://localhost:5000/api/warehouses", auth),
-            axios.get("http://localhost:5000/api/payment-types", auth),
-            axios.get("http://localhost:5000/api/accounts", auth),
-            axios.get("http://localhost:5000/api/terminals", auth),
+            axios.get(`${link}/api/customer-data/all`, auth),
+            axios.get(`${link}/api/warehouses`, auth),
+            axios.get(`${link}/api/payment-types`, auth),
+            axios.get(`${link}/api/accounts`, auth),
+            axios.get(`${link}/api/terminals`, auth),
           ]);
 
         // flatten variants
@@ -150,7 +151,7 @@ if (!editId && activeWh.length) {
 
         if (editId) {
           const { data: sale } = await axios.get(
-            `http://localhost:5000/api/sales/${editId}`,
+            `${link}/api/sales/${editId}`,
             auth
           );
           hydrateForEdit(sale);
@@ -170,7 +171,7 @@ if (!editId && activeWh.length) {
     const token = localStorage.getItem("token");
     const auth  = { headers: { Authorization: `Bearer ${token}` } };
     const resp  = await axios.get(
-      "http://localhost:5000/api/items",
+      `${link}/api/items`,
       { ...auth, params: { warehouse: selectedWarehouse } }
     );
     const raw = resp.data.data || [];
@@ -449,12 +450,12 @@ useEffect(() => {
 
       if (editId)
         await axios.put(
-          `http://localhost:5000/api/sales/${editId}`,
+          `${link}/api/sales/${editId}`,
           body,
           auth
         );
       else
-        await axios.post("http://localhost:5000/api/sales", body, auth);
+        await axios.post(`${link}/api/sales`, body, auth);
 
       alert("Saved ✔️");
       navigate("/sale-list");
@@ -486,7 +487,7 @@ useEffect(() => {
         return;
       }
       const auth = { headers: { Authorization: `Bearer ${token}` } };
-      const resp = await axios.get("http://localhost:5000/api/sales", auth);
+      const resp = await axios.get(`${link}/api/sales`, auth);
       // backend replies { summary: {...}, sales: [...] }
       const sales = Array.isArray(resp.data.sales) ? resp.data.sales : [];
       

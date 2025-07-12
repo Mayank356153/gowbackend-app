@@ -6,6 +6,7 @@ import Navbar from "../Navbar";
 import Sidebar from "../Sidebar";
 
 const AddDeliveryBoy = () => {
+  const link="https://pos.inspiredgrow.in/vps"
   const [isSidebarOpen, setSidebarOpen] = useState(false);
   const [formData, setFormData] = useState({
     id: '',
@@ -30,7 +31,7 @@ const AddDeliveryBoy = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await fetch('api/delivery-boys', {
+      const response = await fetch(`${link}/api/delivery-boys`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData)

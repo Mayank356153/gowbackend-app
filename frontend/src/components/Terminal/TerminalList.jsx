@@ -8,6 +8,8 @@ import { BiChevronRight } from "react-icons/bi";
 import { FaTachometerAlt } from "react-icons/fa";
 
 const TerminalList = () => {
+    const link="https://pos.inspiredgrow.in/vps"
+
   const navigate = useNavigate();
   const [terminals, setTerminals] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -24,7 +26,7 @@ const TerminalList = () => {
     setLoading(true);
     const token = localStorage.getItem("token");
     try {
-      const res = await axios.get("http://localhost:5000/api/terminals", {
+      const res = await axios.get(`${link}/api/terminals`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setTerminals(res.data.data || []);
@@ -45,7 +47,7 @@ const TerminalList = () => {
     setLoading(true);
     const token = localStorage.getItem("token");
     try {
-      await axios.delete(`http://localhost:5000/api/terminals/${id}`, {
+      await axios.delete(`${link}/api/terminals/${id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       fetchTerminals();

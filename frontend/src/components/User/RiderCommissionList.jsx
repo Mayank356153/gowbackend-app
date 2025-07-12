@@ -11,6 +11,8 @@ import jsPDF from 'jspdf';
 import * as XLSX from 'xlsx';
 import autoTable from 'jspdf-autotable';
 const RiderCommissionList = () => {
+        const link="https://pos.inspiredgrow.in/vps"
+
   const [loading, setLoading] = useState(false);
   const [actionMenu, setActionMenu] = useState(null);
   const [isSidebarOpen, setSidebarOpen] = useState(true);
@@ -43,7 +45,7 @@ const RiderCommissionList = () => {
     }
 
     try {
-      const response = await fetch("http://localhost:5000/api/rider-commission/all", {
+      const response = await fetch(`${link}/api/rider-commission/all`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       const payload = await response.json();
@@ -69,7 +71,7 @@ const RiderCommissionList = () => {
     if (!window.confirm("Delete this ?")) return;
     setLoading(true);
     try {
-      await axios.delete(`http://localhost:5000/api/rider-commission/${id}`, {
+      await axios.delete(`${link}/api/rider-commission/${id}`, {
         headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
       });
       fetchusers();

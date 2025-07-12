@@ -6,6 +6,8 @@ import Sidebar from "../Sidebar";
 import LoadingScreen from "../../Loading";
 
 function AddSubscription() {
+    const link="https://pos.inspiredgrow.in/vps"
+
   const navigate = useNavigate();
   // Use useParams() to extract the subscription id from the route.
   const { id: subscriptionId } = useParams();
@@ -66,7 +68,7 @@ function AddSubscription() {
     const fetchPaymentTypes = async () => {
       try {
         const token = localStorage.getItem("token");
-        const res = await axios.get("http://localhost:5000/api/payment-types", {
+        const res = await axios.get(`${link}/api/payment-types`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         // Assuming API returns an array of payment type objects under res.data.data
@@ -96,7 +98,7 @@ function AddSubscription() {
     setLoading(true);
     try {
       const token = localStorage.getItem("token");
-      const res = await axios.get(`http://localhost:5000/api/subscriptions/${id}`, {
+      const res = await axios.get(`${link}/api/subscriptions/${id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = res.data.data;
@@ -136,12 +138,12 @@ function AddSubscription() {
 
       if (subscriptionId) {
         // Update existing subscription.
-       const response= await axios.put(`http://localhost:5000/api/subscriptions/${subscriptionId}`, payload, { headers });
+       const response= await axios.put(`${link}/api/subscriptions/${subscriptionId}`, payload, { headers });
         alert("Subscription updated successfully!");
         console.log(response.data)
       } else {
         // Create new subscription.
-        await axios.post("http://localhost:5000/api/subscriptions", payload, { headers });
+        await axios.post(`${link}/api/subscriptions`, payload, { headers });
         alert("Subscription created successfully!");
       }
       // Navigate back to the subscription list while preserving the storeId in the URL.

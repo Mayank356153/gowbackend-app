@@ -5,7 +5,8 @@ import { jsPDF } from "jspdf";
 import  {autoTable} from "jspdf-autotable";
 
 const RiderTransactionsList = ({ transactions, setRiderTransactionsView,riderInfo }) => {
-   const [dateRange, setDateRange] = useState({
+  const link="https://pos.inspiredgrow.in/vps"
+  const [dateRange, setDateRange] = useState({
       startDate: subDays(new Date(), 7),
       endDate: new Date()
     });

@@ -7,6 +7,8 @@ import LoadingScreen from "../../Loading";
 import { FaTachometerAlt } from "react-icons/fa";
 
 const AddTax = () => {
+    const link="https://pos.inspiredgrow.in/vps"
+
   const { taxId } = useParams(); // if present, we're in edit mode
   const navigate = useNavigate();
   const [isSidebarOpen, setSidebarOpen] = useState(true);
@@ -28,7 +30,7 @@ const AddTax = () => {
         setLoading(true);
         try {
           const token = localStorage.getItem("token");
-          const res = await axios.get(`http://localhost:5000/api/taxes/${taxId}`, {
+          const res = await axios.get(`${link}/api/taxes/${taxId}`, {
             headers: { Authorization: `Bearer ${token}` },
           });
           setTaxData({
@@ -57,13 +59,13 @@ const AddTax = () => {
       const token = localStorage.getItem("token");
       if (taxId) {
         // Update tax
-        await axios.put(`http://localhost:5000/api/taxes/${taxId}`, taxData, {
+        await axios.put(`${link}/api/taxes/${taxId}`, taxData, {
           headers: { Authorization: `Bearer ${token}` },
         });
         alert("Tax updated successfully!");
       } else {
         // Create new tax
-        await axios.post("http://localhost:5000/api/taxes", taxData, {
+        await axios.post(`${link}/api/taxes`, taxData, {
           headers: { Authorization: `Bearer ${token}` },
         });
         alert("Tax created successfully!");

@@ -17,7 +17,7 @@ const AuditorLogin = () => {
 
     try {
       const res = await axios.post(
-        "http://192.168.1.5:5000/api/audit/login",
+        "https://pos.inspiredgrow.in/vps/api/audit/login",
         user
       );
      

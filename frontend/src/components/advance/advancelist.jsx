@@ -9,6 +9,7 @@ import { NavLink, useNavigate } from 'react-router-dom';
 import { FaEdit, FaTrash } from "react-icons/fa";
 
 const AdvanceList = () => {
+  const link="https://pos.inspiredgrow.in/vps"
   const [isSidebarOpen, setSidebarOpen] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [entriesPerPage, setEntriesPerPage] = useState(10);
@@ -29,7 +30,7 @@ const AdvanceList = () => {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const response = await axios.get('api/advance-payments', {
+      const response = await axios.get(`${link}/api/advance-payments`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
@@ -51,7 +52,7 @@ const AdvanceList = () => {
     if (!window.confirm("Do you want to delete this advance payment?")) return;
     setLoading(true);
     try {
-      await axios.delete(`api/advance-payments/${id}`, {
+      await axios.delete(`${link}/api/advance-payments/${id}`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
