@@ -31,6 +31,7 @@ export default function S1({
       };
     }, [navigate]);
   return (
+   
  <>
   <div className="px-4 py-4 space-y-6 bg-white shadow-sm rounded-xl">
 

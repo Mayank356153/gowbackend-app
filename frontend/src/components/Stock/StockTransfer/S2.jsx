@@ -13,7 +13,7 @@ import { App } from "@capacitor/app";
 import { useLocation,useNavigate } from 'react-router-dom'
 import Swal from "sweetalert2"
 export default function S2({
-     searchQuery,
+     searchQuery,handleAddItemsBatch,
   setSearchQuery,
   allItems,
   handleAddItem,
@@ -83,8 +83,9 @@ export default function S2({
 
      
   const handleQuanity=(id,type)=>{
+
     const itemformat=selectedItems.map(item=>
-      (item.itemId===id)?{
+      (item.item===id)?{
         ...item,
         quantity:type==="plus"?item.quantity+1:item.quantity-1
       }:item
@@ -92,13 +93,17 @@ export default function S2({
     // setItems(itemformat)
     setSelectedItems(itemformat.filter(it=>it.quantity!==0))
   }
-  if(itemScan) return <StockScanner startScanner={startScanner} matchedItems={matchedItems} setMatchedItems={setMatchedItems} stopScanner={stopScanner} allItems={allItems} handleQuanity={handleQuanity}  videoRef={videoRef}    
+
+
+
+  
+  if(itemScan) return <StockScanner handleAddItemsBatch={handleAddItemsBatch} startScanner={startScanner} matchedItems={matchedItems} setMatchedItems={setMatchedItems} stopScanner={stopScanner} allItems={allItems} handleQuanity={handleQuanity}  videoRef={videoRef}    
  setItemScan={setItemScan}/>
   return (
   
-<div className="relative min-h-screen pb-24 bg-white">
+<div className="relative min-h-screen p-2 pb-24 bg-white">
   {/* Top Bar */}
-  <div className="flex items-center space-x-3">
+  <div className="flex items-center pt-4 space-x-3">
     <FaArrowLeft className="text-xl text-gray-600" onClick={() => setActiveTab("s1")} />
     
     <div className="flex items-center flex-grow px-3 py-2 bg-gray-100 rounded-full shadow-sm">
@@ -182,7 +187,10 @@ export default function S2({
   {/* Selected Items */}
   <div className="mt-4 space-y-4">
     {selectedItems?.map((item, index) => {
-      const it = allItems.find(i => i._id === item.itemId);
+      console.log(item)
+      console.log("t")
+      const it = allItems.find(i => i._id === item.item);
+      console.log(it)
       if (item.quantity <= 0) return null;
 
       return (
@@ -206,11 +214,6 @@ export default function S2({
                         <div className="flex items-center justify-center w-12 h-12 text-lg font-bold text-white shadow-xs bg-gradient-to-br from-purple-500 to-indigo-500 rounded-xl">
                           {it.itemName?.charAt(0)?.toUpperCase() || "?"}
                         </div>
-                        {it.currentStock <= 0 && (
-                          <div className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] px-1.5 py-0.5 rounded-full">
-                            Out
-                          </div>
-                        )}
                       </div>
         
                       {/* Item Details */}

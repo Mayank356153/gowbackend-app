@@ -26,6 +26,8 @@ const SalesReturn = () => {
     navigate('/sales-list');
   };
 
+
+  
   if (loading) return <LoadingScreen />;
 
   return (

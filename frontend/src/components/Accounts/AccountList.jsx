@@ -12,12 +12,11 @@ import Sidebar from "../Sidebar.jsx";
 import LoadingScreen from "../../Loading.jsx";
 import axios   from "axios";
 
-const API_BASE = "api";
+const API_BASE = "https://pos.inspiredgrow.in/vps/api";
 const todayISO = () => new Date().toISOString().slice(0, 10);
 const safe     = n => Number(n ?? 0).toFixed(2);
 
 export default function AccountList() {
-        const link="https://pos.inspiredgrow.in/vps"
   const navigate = useNavigate();
   const token    = localStorage.getItem("token") || "";
   axios.defaults.headers.common = { Authorization: `Bearer ${token}` };
@@ -48,6 +47,7 @@ export default function AccountList() {
 
   const tableRef = useRef();
 
+
   /* ───────── 1 – Load accounts & their warehouses ───────── */
   useEffect(() => {
     setLoading(true);
@@ -68,7 +68,7 @@ export default function AccountList() {
 
         // for each account, ask which warehouse it uses
         const ps = (accRes.data.data||[]).map(acc =>
-          axios.get(`${link}/${API_BASE}/by-cash-account/${acc._id}`)
+          axios.get(`${API_BASE}/by-cash-account/${acc._id}`)
             .then(r => {
               const wid = r.data.warehouseId;
               const wh  = wMap[wid];
@@ -125,11 +125,11 @@ export default function AccountList() {
     }));
     try {
       const { warehouseId } = await axios
-        .get(`${link}/${API_BASE}/by-cash-account/${accId}`)
+        .get(`${API_BASE}/by-cash-account/${accId}`)
         .then(r=>r.data);
 
       const row = await axios
-        .get(`${link}/${API_BASE}/cash-summary`,{
+        .get(`${API_BASE}/cash-summary`,{
           params: dateParams({ warehouseId })
         })
         .then(r=>r.data);
@@ -195,7 +195,7 @@ export default function AccountList() {
     }
     try {
       setLoading(true);
-      await axios.put(`${link}/${API_BASE}/ledger/van-cash`, {
+      await axios.put(`${API_BASE}/ledger/van-cash`, {
         warehouseId: wh,
         date: `${onDate}T12:00:00Z`,
         amount: amt,

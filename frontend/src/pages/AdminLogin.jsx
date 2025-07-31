@@ -22,11 +22,14 @@ const AdminLogin = () => {
     const { value: token } = await Preferences.get({ key: "token" });
     const { value: role } = await Preferences.get({ key: "role" });
     const { value: permissions } = await Preferences.get({ key: "permissions" });
-
+    const { value: printerAddress } = await Preferences.get({ key: "printerAddress" });
+    const { value: printerAddressName } = await Preferences.get({ key: "printerAddressName" });
     if (token) {
       localStorage.setItem("token", token);
       localStorage.setItem("role", role);
       localStorage.setItem("permissions", permissions);
+      localStorage.setItem("printerAddress", printerAddress);
+      localStorage.setItem("printerAddressName", printerAddressName);
       navigate("/dashboard");
     }
   };
@@ -118,26 +121,7 @@ await storeToken("permissions",JSON.stringify(res.data.permissions || (res.data.
       </button>
     </form>
 
-    <div className="mt-6 space-y-2 text-center">
-      <button
-        onClick={() => navigate("/admin-register")}
-        className="block w-full text-blue-500 hover:text-blue-700 focus:outline-none"
-      >
-        Not Registered? Register
-      </button>
-      <button
-        onClick={() => navigate("/user-login")}
-        className="block w-full text-blue-500 hover:text-blue-700 focus:outline-none"
-      >
-        Login As a User
-      </button>
-      <button
-        onClick={() => navigate("/audit-login")}
-        className="block w-full text-blue-500 hover:text-blue-700 focus:outline-none"
-      >
-        Login As an Auditor
-      </button>
-    </div>
+  
   </div>
 </div>
 

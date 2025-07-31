@@ -8,7 +8,8 @@ import { Camera } from '@capacitor/camera';
 import { Html5QrcodeSupportedFormats } from 'html5-qrcode';
 import playSound from '../../../utility/sound';
 import { BsBasket2 } from 'react-icons/bs';
-const PurchaseScanner = ({ allItems, addItem, setItemScan }) => {
+import { add, sub } from 'date-fns';
+const PurchaseScanner = ({ allItems, addItem, setItemScan, addItemsInBatch }) => {
   const [matchedItems, setMatchedItems] = useState([]);
   const [isInitialized, setIsInitialized] = useState(false);
   const scannerRef = useRef(null);
@@ -95,27 +96,42 @@ const PurchaseScanner = ({ allItems, addItem, setItemScan }) => {
 
     if (match) {
       setMatchedItems(prevItems => {
-        const existingIndex = prevItems.findIndex(item => item.item === match._id);
-        
-        if (existingIndex !== -1) {
-          const newItems = [...prevItems];
-          newItems[existingIndex] = {
-            ...newItems[existingIndex],
-            quantity: newItems[existingIndex].quantity + 1
-          };
-          playSound("/sounds/item-exists.mp3");
-          return newItems;
-              }
-        else{
-          playBeep();
-            return [...prevItems, {
-          ...match,
-          quantity: 1,
-          item: match._id
-        }];   
-        }
-       
-      });
+  const existingIndex = prevItems.findIndex(item => item.item === match._id);
+
+  if (existingIndex !== -1) {
+    const existingItem = prevItems[existingIndex];
+
+    if (existingItem.quantity >= existingItem.stock) {
+      alert("❗ No more stock available.");
+      return prevItems;
+    }
+
+    const updatedQty = existingItem.quantity + 1;
+
+    const newItems = [...prevItems];
+    newItems[existingIndex] = {
+      ...existingItem,
+      quantity: updatedQty,
+      subtotal: updatedQty * match.salesPrice,
+    };
+
+    playSound("/sounds/item-exists.mp3");
+    return newItems;
+  } else {
+    playSound("/sounds/item-added.mp3");
+    return [
+      ...prevItems,
+      {
+        ...match,
+        quantity: 1,
+        item: match._id,
+        subtotal: match.salesPrice * 1,
+        stock: match.currentStock || 0,
+      }
+    ];
+  }
+});
+
     }
 
     setTimeout(() => {
@@ -139,7 +155,7 @@ const PurchaseScanner = ({ allItems, addItem, setItemScan }) => {
         
         const config = {
           fps: 10,
-          qrbox: { width: 250, height: 250 },
+          qrbox: { width: 700, height: 700 },
           formatsToSupport: [
             Html5QrcodeSupportedFormats.UPC_A,
             Html5QrcodeSupportedFormats.UPC_E,
@@ -189,7 +205,7 @@ const PurchaseScanner = ({ allItems, addItem, setItemScan }) => {
   const handleQuantity = (id, type) => {
     setMatchedItems(prevItems => 
       prevItems.map(item =>
-        item.item === id ? {
+        item.item === id &&item.quantity<item.stock ? {
           ...item,
           quantity: type === "plus" ? item.quantity + 1 : Math.max(1, item.quantity - 1)
         } : item
@@ -202,7 +218,7 @@ const PurchaseScanner = ({ allItems, addItem, setItemScan }) => {
       Swal.fire("Error", "At least one item is required", "error");
       return;
     }
-    matchedItems.forEach(item => addItem(item));
+    addItemsInBatch(matchedItems);
     setItemScan(false);
   };
 

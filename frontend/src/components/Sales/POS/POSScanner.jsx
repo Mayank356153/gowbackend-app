@@ -7,13 +7,20 @@ import { Html5Qrcode } from "html5-qrcode";
 import { Camera } from '@capacitor/camera';
 import { Html5QrcodeSupportedFormats } from 'html5-qrcode';
 import playSound from '../../../utility/sound';
-const POSScanner = ({ allItems, addItem, setItemScan }) => {
+import { add, set, sub } from 'date-fns';
+import { all } from 'axios';
+import MinimalOfferView from "./OfferView";
+const POSScanner = ({ allItems, addItem, setItemScan, addItemsInBatch }) => {
+ 
   const [matchedItems, setMatchedItems] = useState([]);
   const [isInitialized, setIsInitialized] = useState(false);
+   const [offerView, setOfferView] = useState(false);
+  const [offerItem, setOfferItem] = useState(null);
   const scannerRef = useRef(null);
   const isScanningRef = useRef(false);
   const navigate = useNavigate();
    const lastScannedRef = useRef({ value: "", timestamp: 0 });
+   
    
   // Hardware back button handler
     useEffect(() => {
@@ -56,6 +63,31 @@ const POSScanner = ({ allItems, addItem, setItemScan }) => {
     }
   };
 
+
+function applyOfferLogic(itemList) {
+  return itemList.map((item) => {
+    const { discountPolicy, quantity, requiredQty, freeQty, salesPrice, discount = 0 } = item;
+
+    if (discountPolicy === "BuyXGetY" && quantity >= requiredQty) {
+      const groups = Math.floor(quantity / requiredQty); // how many times requiredQty fits
+      const totalFree = groups * freeQty;
+      const discountAmount = totalFree * salesPrice;
+
+      return {
+        ...item,
+        subtotal: quantity * salesPrice - discountAmount,
+        effectiveFreeQty: totalFree // optional: if you want to show how many were free
+      };
+    }
+
+    return {
+      ...item,
+      subtotal: quantity * salesPrice - discount,
+    };
+  });
+}
+
+
   const playBeep = useCallback(() => {
     const audioContext = new (window.AudioContext || window.webkitAudioContext)();
     const oscillator = audioContext.createOscillator();
@@ -86,41 +118,64 @@ const POSScanner = ({ allItems, addItem, setItemScan }) => {
     isScanningRef.current = true;
     lastScannedRef.current = { value: decodedText, timestamp: now };
 
-    const match = allItems.find(
-      (it) =>
-        it.barcodes?.includes(decodedText) ||
-        it.barcode === decodedText ||
-        it.itemCode === decodedText
-    );
+   const match = allItems.find(
+  (it) =>
+    it.barcodes?.includes(decodedText) ||
+    it.barcode === decodedText ||
+    it.itemCode === decodedText
+);
 
-    if (match) {
-      setMatchedItems(prevItems => {
-        const existingIndex = prevItems.findIndex(item => item.item === match._id);
-        
-        if (existingIndex !== -1) {
-          const newItems = [...prevItems];
-          newItems[existingIndex] = {
-            ...newItems[existingIndex],
-            quantity: newItems[existingIndex].quantity + 1
-          };
-          playSound("/sounds/item-exists.mp3");
-          return newItems;
-              }
-        else{
-          playBeep();
-            return [...prevItems, {
-          ...match,
-          quantity: 1,
-          item: match._id
-        }];   
-        }
-       
-      });
+if (match) {
+  setMatchedItems(prevItems => {
+    const existingIndex = prevItems.findIndex(item => item.item === match._id);
+
+    let updatedItems;
+
+    if (existingIndex !== -1) {
+      const currentItem = prevItems[existingIndex];
+      const currentQty = currentItem.quantity;
+      const stockQty = currentItem.currentStock || currentItem.stock || 0;
+
+      if (currentQty >= stockQty) {
+        alert("No more stock available for this item.");
+        return prevItems;
+      }
+
+      const updatedItem = {
+        ...currentItem,
+        quantity: currentQty + 1
+      };
+
+      updatedItems = [...prevItems];
+      updatedItems[existingIndex] = updatedItem;
+
+      playSound("/sounds/item-exists.mp3");
+    } else {
+      const newItem = {
+        ...match,
+        quantity: 1,
+        item: match._id,
+        stock: match.openingStock || 0,
+        currentStock: match.currentStock || match.openingStock || 0,
+        salesPrice: match.salesPrice || 0,
+        discountPolicy: match.discountPolicy || "None",
+        requiredQty: match.requiredQuantity || 0,
+        freeQty: match.freeQuantity || 0
+      };
+
+      updatedItems = [...prevItems, newItem];
+      playSound("/sounds/item-added.mp3");
     }
+
+    // 🔁 Apply offer logic
+    return applyOfferLogic(updatedItems);
+  });
+}
+
 
     setTimeout(() => {
       isScanningRef.current = false;
-    }, 300);
+    }, 1000);
   }, [allItems, playBeep]);
 
   useEffect(() => {
@@ -139,7 +194,7 @@ const POSScanner = ({ allItems, addItem, setItemScan }) => {
         
         const config = {
           fps: 10,
-          qrbox: { width: 250, height: 250 },
+          qrbox: { width: 700, height: 700 },
           formatsToSupport: [
             Html5QrcodeSupportedFormats.UPC_A,
             Html5QrcodeSupportedFormats.UPC_E,
@@ -186,25 +241,44 @@ const POSScanner = ({ allItems, addItem, setItemScan }) => {
     };
   }, [handleScanSuccess]);
 
-  const handleQuantity = (id, type) => {
-    setMatchedItems(prevItems => 
-      prevItems.map(item =>
-        item.item === id ? {
+const handleQuantity = (id, type) => {
+  setMatchedItems(prevItems => {
+    const updatedItems = prevItems
+      .map(item => {
+        if (item.item !== id) return item;
+
+        const stockQty = item.currentStock || item.stock || 0;
+        const price = item.salesPrice || item.rate || 0;
+        let newQty = type === "plus" ? item.quantity + 1 : item.quantity - 1;
+
+        if (type === "plus" && newQty > stockQty) {
+          alert("❗ No more stock available for this item.");
+          return item;
+        }
+
+        return {
           ...item,
-          quantity: type === "plus" ? item.quantity + 1 : item.quantity - 1
-        } : item
-      ).filter(item => item.quantity > 0)
-    );
-  };
+          quantity: newQty
+          // subtotal will be calculated in applyOfferLogic
+        };
+      })
+      .filter(item => item.quantity > 0);
+
+    // ✅ Apply BuyXGetY or other discounts
+    return applyOfferLogic(updatedItems);
+  });
+};
+
 
   const handleSave = () => {
     if (matchedItems.length === 0) {
       Swal.fire("Error", "At least one item is required", "error");
       return;
     }
-    matchedItems.forEach(item => addItem(item));
+   addItemsInBatch(matchedItems);
     setItemScan(false);
   };
+
 
 
   return (
@@ -229,7 +303,10 @@ const POSScanner = ({ allItems, addItem, setItemScan }) => {
         <div className="absolute w-full h-[3px] bg-gradient-to-r from-transparent via-green-400 to-transparent shadow-lg shadow-green-400/30 animate-scan"></div>
       </div>
     </div>
-
+ {
+      offerView && offerItem && (
+        <MinimalOfferView setOfferView={setOfferView}  offerItem={offerItem} />)
+      }
       {/* Scanned Items List */}
       <div className="flex-1 p-4 overflow-y-auto">
         {matchedItems.length === 0 ? (
@@ -238,7 +315,7 @@ const POSScanner = ({ allItems, addItem, setItemScan }) => {
           </div>
         ) : (
           matchedItems.map((item,index) => {
-            const it = allItems.find(i => i._id === item.item);
+            const it = allItems.find(i => i._id === item._id);
             if (!it) return null;
 
            return (
@@ -264,7 +341,7 @@ const POSScanner = ({ allItems, addItem, setItemScan }) => {
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-semibold text-gray-900 line-clamp-1">{it.itemName}</h3>
             <span className="ml-2 text-sm font-bold text-purple-600 whitespace-nowrap">
-              ₹{(it.salesPrice * item.quantity).toFixed(2)}
+              ₹{(item.subtotal).toFixed(2)}
             </span>
           </div>
           <p className="mt-0.5 text-xs text-gray-500 line-clamp-1">
@@ -297,9 +374,9 @@ const POSScanner = ({ allItems, addItem, setItemScan }) => {
                 {item.quantity}
               </span>
               <button
+               disabled={it.currentStock <= item.quantity}
                 onClick={() => handleQuantity(it._id, "plus")}
                 className="p-1 text-gray-600 transition-colors duration-200 rounded-full hover:text-purple-600 active:bg-gray-200 disabled:opacity-50"
-                disabled={it.currentStock <= item.quantity}
               >
                 <FaPlus className="w-3 h-3" />
               </button>
@@ -309,9 +386,42 @@ const POSScanner = ({ allItems, addItem, setItemScan }) => {
       </div>
 
       {/* Price Breakdown (Subtle) */}
-      <div className="flex justify-end pt-1.5 mt-1.5 text-[10px] text-gray-500 border-t border-gray-100">
-        <span>₹{it.salesPrice} × {item.quantity}</span>
-      </div>
+      <div className="flex items-center justify-between pt-2 mt-2 text-xs text-gray-500 border-t border-gray-100/70">
+  
+  {/* Offer Button */}
+
+
+  {
+    it.discountPolicy!=="None" && (
+<button
+    onClick={() => {
+      setOfferView(true);
+      setOfferItem({
+        itemName: it.itemName,
+        
+          requiredQty: it.requiredQuantity || 0,
+          freeQty: it.freeQuantity || 0
+        
+      });
+    }}
+    className="flex items-center gap-1 px-3 py-1 text-xs font-semibold text-blue-600 transition-colors bg-blue-100 rounded-full hover:bg-blue-200"
+  >
+    <svg
+      className="w-3.5 h-3.5 text-blue-500"
+      fill="currentColor"
+      viewBox="0 0 20 20"
+    >
+      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l.7 2.148a1 1 0 00.95.69h2.262c.969 0 1.371 1.24.588 1.81l-1.833 1.33a1 1 0 00-.364 1.118l.7 2.148c.3.921-.755 1.688-1.538 1.118l-1.834-1.33a1 1 0 00-1.175 0l-1.833 1.33c-.783.57-1.838-.197-1.538-1.118l.7-2.148a1 1 0 00-.364-1.118L3.55 7.575c-.783-.57-.38-1.81.588-1.81H6.4a1 1 0 00.95-.69l.7-2.148z" />
+    </svg>
+    View Offer
+  </button>
+    )
+  }
+  
+
+  {/* Price Text */}
+  <span className="font-medium text-gray-700">₹{it.salesPrice} × {item.quantity}</span>
+</div>
     </div>
             );
           })

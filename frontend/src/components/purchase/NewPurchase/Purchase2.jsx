@@ -18,10 +18,11 @@ import { App } from "@capacitor/app";
 import { useLocation,useNavigate } from 'react-router-dom'
 import Swal from "sweetalert2"
 export default function Purchase2({
-    filteredItems,stopScanner,
+    filteredItems,stopScanner,addItemsInBatch,
     allItems,matchedItems,setMatchedItems,setActiveTab,removeItem,updateItem,
     startScanner,result,setResult,formData,setFormData,addItem,handleAddItem,handleItemFieldChange,handleRemoveItem,scanning,setScanning,videoRef,codeReaderRef,options,items,selectedWarehouse
 }) {
+  
      const confirmBack = async () => {
         const result = await Swal.fire({
           title: "Go Back?",
@@ -86,13 +87,13 @@ const handleViewInfo = (item) => {
     // setItems(itemformat)
     setFormData((prev)=>({...prev,items:itemformat.filter(it=>it.quantity!==0)}))
   }
-  if(itemScan) return <PurchaseScanner startScanner={startScanner} matchedItems={matchedItems} setMatchedItems={setMatchedItems} stopScanner={stopScanner} allItems={allItems} handleQuanity={handleQuanity}  videoRef={videoRef}  addItem={addItem} setItemScan={setItemScan}/>
+  if(itemScan) return <PurchaseScanner addItemsInBatch={addItemsInBatch} startScanner={startScanner} matchedItems={matchedItems} setMatchedItems={setMatchedItems} stopScanner={stopScanner} allItems={allItems} handleQuanity={handleQuanity}  videoRef={videoRef}  addItem={addItem} setItemScan={setItemScan}/>
   return (
     
 <div className="min-h-screen pb-24 bg-gray-50">
   {/* Header with Search */}
   <div className="sticky top-0 z-10 ">
-    <div className="flex items-center space-x-3">
+    <div className="flex items-center pt-2 space-x-3">
       <button 
         onClick={() => setActiveTab("p1")}
         className="p-2 text-gray-600 rounded-full hover:bg-gray-100"
@@ -108,7 +109,7 @@ const handleViewInfo = (item) => {
           type="text"
           value={result}
           onChange={(e) => {
-            const val = e.target.value.trim();
+            const val = e.target.value;
             setResult(val);
             const hit = allItems.find((i) => i.barcodes?.includes(val));
             if (hit) {
@@ -262,7 +263,7 @@ const handleViewInfo = (item) => {
                     <button type='button'
                       onClick={() => handleQuanity(it._id, "plus")}
                       className="p-1.5 text-gray-600 hover:text-purple-600 rounded-full active:bg-gray-200 transition-colors"
-                      disabled={it.currentStock <= item.quantity}
+                     
                     >
                       <FaPlus className="w-3.5 h-3.5" />
                     </button>

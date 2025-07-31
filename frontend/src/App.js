@@ -1,191 +1,313 @@
-import axios from "axios"
+import React, { useState,useEffect } from "react";
+import { Suspense, lazy } from "react";
+
+
+
+
+
 import BackButtonHandler from "./BackButtonHandler";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import AdminRegister from "./pages/AdminRegister";
-import AdminLogin from "./pages/AdminLogin";
-import AuditorLogin from "./pages/AuditorLogin";
-import AdminDashboard from "./components/Dashboard/AdminDashboard";
-import UserLogin from "./pages/UserLogin";
-import AddUser from "./components/AddUser";
-import UserList from "./components/User/UserList";
-import RoleList from "./components/User/RoleList";
-import CreateRolelist from "./components/User/CreateRolist";
-import CreateUres from "./components/User/CreateUser";
-import RiderList from "./components/User/RiderList";
-import CreateRider from "./components/User/CreateRider";
-import CreateRiderCommission from "./components/User/CreateRiderCommission";
-import RiderCommissionList from "./components/User/RiderCommissionList";
-import AddStore from "./components/store/AddStore";
-import StoreView from "./components/store/StoreView";
-import AddSubscription from "./components/store/AddSubscription";
-import SubscriptionList from "./components/store/SubscriptionList";
-import SystemTab from "./components/store/SystemTab";
-import Reports from "./pages/Reports";
-import ProfitLossReport from "./components/Reports/ProfitLossReport";
-import SalesPaymentReport from "./components/Reports/SalesPaymentReport";
-import ItemTransfer from "./components/Reports/ItemTransfer";
-import StockTransferReport from "./components/Reports/StockTransfer";
-import SaleItemsReport from "./components/Reports/SaleItems";
-import StockReport from "./components/Reports/StockReport";
-import ItemCompare from "./components/Reports/ItemCompare";
-import CustomerOrders from "./pages/CustomerOrders";
-import Supplierlist from "./components/contact/Supplierlist";
-import Customerlist from "./components/contact/Customerlist";
-import AddSupplier from "./components/contact/AddSupplier";
-import Addcustomer from "./components/contact/AddCustomer/Addcustomer";
-import NewCustomer from "./components/contact/NewCustomer";
-import NewCustomerlist from "./components/contact/NewCustomerList";
-import ImportCustomer from "./components/contact/import/ImportCustomer";
-import ImportSupplier from "./components/contact/import/ImportSupplier";
-import AddItem from "./components/Items/AddItems";
-import AddService from "./components/Items/AddServices";
-import AddUpdateServices from "./components/Items/AddUpdateServices";
-import ItemList from "./components/Items/Itemlist";
-import CategoriesList from "./components/Items/CategoriesList";
-import CategoriesListform from "./components/Items/CategoriesListform";
-import SubCategoryList from "./components/Items/SubCategoryList";
-import SubCategoryForm from "./components/Items/SubCategoryForm";
-import SubSubCategoryList from "./components/Items/SubSubCategoryList";
-import BrandsList from "./components/Items/BrandsList";
-import BrandForm from "./components/Items/BrandForm";
-import VariantAdd from "./components/Items/VariantAdd";
-import VariantsList from "./components/Items/VariantsList";
-import PrintLabels from "./components/Items/PrintLabels";
-import ImportItems from "./components/Items/ImportItems";
-import ImportServices from "./components/Items/ImportServices";
-import ImportEntity from "./components/Items/ImportEntity";
-import AddAdvance from "./components/advance/addadvance";
-import AdvanceList from "./components/advance/advancelist";
-import CustomerCoupenList from "./components/coupens/CustomerCouponsList";
-import CreateCustomerCoupons from "./components/coupens/CreateCustomerCoupon";
-import CreateCoupon from "./components/coupens/CreateCoupon";
-import CouponsMaster from "./components/coupens/CouponsMaster";
-import CreateMasterCoupon from "./components/coupens/CreateMasterCoupon";
-import CouponForm from "./components/coupens/CreateCustomerCoupon";
-import DiscountCouponForm from "./components/coupens/CreateCoupon";
-import DiscountCouponList from "./components/coupens/CouponsMaster";
-import NewQuotation from "./components/Quotation/NewQuotation";
-import QuotationList from "./components/Quotation/QuotationList";
-import QuotationForm from "./components/Quotation/NewQuotation";
-import NewPurchase from "./components/purchase/newpurcheas";
-import PurchaseList from "./components/purchase/purchaselist";
-import PurchaseReturnsList from "./components/purchase/PurchaseReturnsList";
-import PurchaseReturn from "./components/purchase/purchasereturn";
-import POS from "./components/Sales/POS";
-import AddSale from "./components/Sales/AddSale";
-import AddSalesRetutrn from "./components/Sales/AddSalesReturn";
-import AddSalesReturn from "./components/Sales/AddSalesReturn";
-import SaleList from "./components/Sales/SalesList";
-import SalesPayment from "./components/Sales/SalesPayment";
-import SalesPaymentList from "./components/Sales/SalesReturnsList";
-import ViewSale from "./components/Sales/ViewSale";
-import ReceivePayment from "./components/Sales/ReceivePayment";
-import POSInvoice from "./components/Sales/POSInvoice";
-import SalesReturn from "./components/Sales/SalesReturn";
-import ViewPayment from "./components/Sales/ViewPayment";
-import AddAccount from "./components/Accounts/AddAccounts";
-import AccountList from "./components/Accounts/AccountList";
-import MoneyTransferList from "./components/Accounts/MoneyTransferList";
-import AddMoneyTransfer from "./components/Accounts/AddMoneyTransfer";
-import AddDeposit from "./components/Accounts/AddDeposit";
-import DepositList from "./components/Accounts/DepositList";
-import CashTransactions from "./components/Accounts/CashTransactions";
-import AddVanCash from "./components/Accounts/AddVanCash";
-import RiderAccountList from "./components/Accounts/RiderAccountList";
-import AccountLedger from "./components/Accounts/AccountLedger";
-import AddStockAdjustment from "./components/Stock/AddStockAdjustment";
-import AdjustmentList from "./components/Stock/AdjustmentList";
-import AddStockTransfer from "./components/Stock/AddStockTransfer";
-import TransferList from "./components/Stock/TransferList";
-import ExpenseList from "./components/Expenses/ExpensesList";
-import AddExpense from "./components/Expenses/AddExpense";
-import AddExpenseCategory from "./components/Expenses/AddExpenseCategory";
-import ExpenseCategoryList from "./components/Expenses/ExpenseCategoryList";
-import SendMessage from "./components/Message/SendMessage";
-import MessageTemplatesList from "./components/Message/MessageTemplatesList";
-import UnitsList from "./components/Settings/UnitsList";
-import PaymentTypesList from "./components/Settings/PaymentTypes";
-import ChangePassword from "./components/Settings/ChangePassword";
-import Store from "./components/Settings/Store";
-import TaxList from "./components/Settings/TaxList";
-import SmsApi from "./components/Settings/SmsApi";
-import PosSettingsForm from "./components/Settings/Sale";
-import AddTax from "./components/Settings/AddTax";
-import AddTaxGroup from "./components/Settings/AddTaxGroup";
-import AddUnit from "./components/Settings/AddUnit";
-import AddPaymentType from "./components/Settings/AddPaymentType";
-import AddCountry from "./components/Places/AddCountry";
-import AddState from "./components/Places/AddState";
-import CountryList from "./components/Places/CountryList";
-import StateList from "./components/Places/StateList";
-import WarehouseForm from "./components/Warehpuse/WarehouseForm";
-import WarehouseList from "./components/Warehpuse/WarehouseList";
-import WarehouseTracker from "./components/Warehpuse/WarehouseTracker";
-import TerminalList from "./components/Terminal/TerminalList";
-import CreateTerminal from "./components/Terminal/CreateTerminal";
-import AddBanner from "./components/Banners/AddBanner";
-import BannersList from "./components/Banners/BannersList";
-import AddMarketingItems from "./components/Banners/AddMarketingItems";
-import MarketingItemsList from "./components/Banners/MarketingItemView";
-import AddProduct from "./components/Banners/AddProduct";
-import ProductListView from "./components/Banners/ProductListView";
-import DeletionRequests from "./components/admin/deletion-requests";
-import ProfileEdit from "./pages/ProfileEdit";
-import OrderList from "./components/Order/OrderList/OrderList";
-import DeliverySlotCreate from "./components/DeliverySlot/DeliverySlotCreate";
-import DeliverySlotList from "./components/DeliverySlot/DeliverySlotList";
-import Audit from "./components/Auditor/Audit";
-import AuditDashboard from "./components/Auditor/AuditDashboard";
-import OpenAuditList from "./components/Auditor/OpenAuditList"
-import BucketCreate from "./components/Auditor/BucketCreate";
-import UserBucketList from "./components/Auditor/UserBucketList";
-import ImageMerger from "./pages/ImageMerger";
-import ItemImageManagement from "./components/ImageManagement/ItemImageManagement";
-import CategoryImageManagement from "./components/ImageManagement/CategoryImageManagement";
-import SubCategoryImageManagement from "./components/ImageManagement/subcategory/SubCategoryImageManagement";
-import SubSubCategoryImageManagement from "./components/ImageManagement/subsubcategory/SubSubCategoryImageManagement";
-import AllAudits from "./components/Auditor/AllAudits";
-//POS MOBILE
-import POSM from "./components/Sales/POS/POSM";
-import PurchaseM from "./components/purchase/NewPurchase/PurchaseM"
-import Sm from "./components/Stock/StockTransfer/Sm";
-import { useEffect } from 'react';
+
+
+// Capacitor plugins
 import { Camera } from '@capacitor/camera';
 import { StatusBar, Style } from '@capacitor/status-bar';
-const useStatusBarConfig = () => {
-  useEffect(() => {
-    const requestCameraPermission = async () => {
-      try {
-        const res = await Camera.requestPermissions({ permissions: ['camera', 'photos'] });
-        console.log('Camera permission:', res);
-      } catch (err) {
-        console.error('Camera permission error:', err);
-      }
-    };
+import { Device } from '@capacitor/device';
+import { Preferences } from '@capacitor/preferences';
+import { Geolocation } from "@capacitor/geolocation";
+import { BluetoothLe } from '@capacitor-community/bluetooth-le';
+import BluetoothStatus from './plugins/BluetoothStatus';
 
-    const configureStatusBar = async () => {
-      try {
-        await StatusBar.setOverlaysWebView({ overlay: false }); // Keeps content below status bar
-        await StatusBar.setStyle({ style: Style.Dark }); // Light or Dark
-        await StatusBar.show();
-      } catch (error) {
-        console.warn('StatusBar plugin not available:', error);
-      }
-    };
-
-    // Call both
-    requestCameraPermission();
-    configureStatusBar();
-  }, []);
-};
-
+// Lazily loaded components/pages
+const AdminRegister = lazy(() => import("./pages/AdminRegister"));
+const AdminLogin = lazy(() => import("./pages/AdminLogin"));
+const AuditorLogin = lazy(() => import("./pages/AuditorLogin"));
+const AdminDashboard = lazy(() => import("./components/Dashboard/AdminDashboard"));
+const UserLogin = lazy(() => import("./pages/UserLogin"));
+const AddUser = lazy(() => import("./components/AddUser"));
+const UserList = lazy(() => import("./components/User/UserList"));
+const RoleList = lazy(() => import("./components/User/RoleList"));
+const CreateRolelist = lazy(() => import("./components/User/CreateRolist"));
+const CreateUres = lazy(() => import("./components/User/CreateUser"));
+const RiderList = lazy(() => import("./components/User/RiderList"));
+const CreateRider = lazy(() => import("./components/User/CreateRider"));
+const CreateRiderCommission = lazy(() => import("./components/User/CreateRiderCommission"));
+const RiderCommissionList = lazy(() => import("./components/User/RiderCommissionList"));
+const AddStore = lazy(() => import("./components/store/AddStore"));
+const StoreView = lazy(() => import("./components/store/StoreView"));
+const AddSubscription = lazy(() => import("./components/store/AddSubscription"));
+const SubscriptionList = lazy(() => import("./components/store/SubscriptionList"));
+const SystemTab = lazy(() => import("./components/store/SystemTab"));
+const Reports = lazy(() => import("./pages/Reports"));
+const ProfitLossReport = lazy(() => import("./components/Reports/ProfitLossReport"));
+const SalesPaymentReport = lazy(() => import("./components/Reports/SalesPaymentReport"));
+const ItemTransfer = lazy(() => import("./components/Reports/ItemTransfer"));
+const StockTransferReport = lazy(() => import("./components/Reports/StockTransfer"));
+const SaleItemsReport = lazy(() => import("./components/Reports/SaleItems"));
+const StockReport = lazy(() => import("./components/Reports/StockReport"));
+const ItemCompare = lazy(() => import("./components/Reports/ItemCompare"));
+const CustomerOrders = lazy(() => import("./pages/CustomerOrders"));
+const Supplierlist = lazy(() => import("./components/contact/Supplierlist"));
+const Customerlist = lazy(() => import("./components/contact/Customerlist"));
+const AddSupplier = lazy(() => import("./components/contact/AddSupplier"));
+const Addcustomer = lazy(() => import("./components/contact/AddCustomer/Addcustomer"));
+const NewCustomer = lazy(() => import("./components/contact/NewCustomer"));
+const NewCustomerlist = lazy(() => import("./components/contact/NewCustomerList"));
+const ImportCustomer = lazy(() => import("./components/contact/import/ImportCustomer"));
+const ImportSupplier = lazy(() => import("./components/contact/import/ImportSupplier"));
+const AddItem = lazy(() => import("./components/Items/AddItems"));
+const AddService = lazy(() => import("./components/Items/AddServices"));
+const AddUpdateServices = lazy(() => import("./components/Items/AddUpdateServices"));
+const ItemList = lazy(() => import("./components/Items/Itemlist"));
+const CategoriesList = lazy(() => import("./components/Items/CategoriesList"));
+const CategoriesListform = lazy(() => import("./components/Items/CategoriesListform"));
+const SubCategoryList = lazy(() => import("./components/Items/SubCategoryList"));
+const SubCategoryForm = lazy(() => import("./components/Items/SubCategoryForm"));
+const SubSubCategoryList = lazy(() => import("./components/Items/SubSubCategoryList"));
+const BrandsList = lazy(() => import("./components/Items/BrandsList"));
+const BrandForm = lazy(() => import("./components/Items/BrandForm"));
+const VariantAdd = lazy(() => import("./components/Items/VariantAdd"));
+const VariantsList = lazy(() => import("./components/Items/VariantsList"));
+const PrintLabels = lazy(() => import("./components/Items/PrintLabels"));
+const ImportItems = lazy(() => import("./components/Items/ImportItems"));
+const ImportServices = lazy(() => import("./components/Items/ImportServices"));
+const ImportEntity = lazy(() => import("./components/Items/ImportEntity"));
+const AddAdvance = lazy(() => import("./components/advance/addadvance"));
+const AdvanceList = lazy(() => import("./components/advance/advancelist"));
+const CustomerCoupenList = lazy(() => import("./components/coupens/CustomerCouponsList"));
+const CreateCustomerCoupons = lazy(() => import("./components/coupens/CreateCustomerCoupon"));
+const CreateCoupon = lazy(() => import("./components/coupens/CreateCoupon"));
+const CouponsMaster = lazy(() => import("./components/coupens/CouponsMaster"));
+const CreateMasterCoupon = lazy(() => import("./components/coupens/CreateMasterCoupon"));
+const CouponForm = lazy(() => import("./components/coupens/CreateCustomerCoupon"));
+const DiscountCouponForm = lazy(() => import("./components/coupens/CreateCoupon"));
+const DiscountCouponList = lazy(() => import("./components/coupens/CouponsMaster"));
+const NewQuotation = lazy(() => import("./components/Quotation/NewQuotation"));
+const QuotationList = lazy(() => import("./components/Quotation/QuotationList"));
+const QuotationForm = lazy(() => import("./components/Quotation/NewQuotation"));
+const NewPurchase = lazy(() => import("./components/purchase/newpurcheas"));
+const PurchaseList = lazy(() => import("./components/purchase/purchaselist"));
+const PurchaseReturnsList = lazy(() => import("./components/purchase/PurchaseReturnsList"));
+const PurchaseReturn = lazy(() => import("./components/purchase/purchasereturn"));
+const POS = lazy(() => import("./components/Sales/POS"));
+const AddSale = lazy(() => import("./components/Sales/AddSale"));
+const AddSalesRetutrn = lazy(() => import("./components/Sales/AddSalesReturn"));
+const AddSalesReturn = lazy(() => import("./components/Sales/AddSalesReturn"));
+const SaleList = lazy(() => import("./components/Sales/SalesList"));
+const SalesPayment = lazy(() => import("./components/Sales/SalesPayment"));
+const SalesPaymentList = lazy(() => import("./components/Sales/SalesReturnsList"));
+const ViewSale = lazy(() => import("./components/Sales/ViewSale"));
+const ReceivePayment = lazy(() => import("./components/Sales/ReceivePayment"));
+const POSInvoice = lazy(() => import("./components/Sales/POSInvoice"));
+const SalesReturn = lazy(() => import("./components/Sales/SalesReturn"));
+const ViewPayment = lazy(() => import("./components/Sales/ViewPayment"));
+const AddAccount = lazy(() => import("./components/Accounts/AddAccounts"));
+const AccountList = lazy(() => import("./components/Accounts/AccountList"));
+const MoneyTransferList = lazy(() => import("./components/Accounts/MoneyTransferList"));
+const AddMoneyTransfer = lazy(() => import("./components/Accounts/AddMoneyTransfer"));
+const AddDeposit = lazy(() => import("./components/Accounts/AddDeposit"));
+const DepositList = lazy(() => import("./components/Accounts/DepositList"));
+const CashTransactions = lazy(() => import("./components/Accounts/CashTransactions"));
+const AddVanCash = lazy(() => import("./components/Accounts/AddVanCash"));
+const RiderAccountList = lazy(() => import("./components/Accounts/RiderAccountList"));
+const AccountLedger = lazy(() => import("./components/Accounts/AccountLedger"));
+const AddStockAdjustment = lazy(() => import("./components/Stock/AddStockAdjustment"));
+const AdjustmentList = lazy(() => import("./components/Stock/AdjustmentList"));
+const AddStockTransfer = lazy(() => import("./components/Stock/AddStockTransfer"));
+const TransferList = lazy(() => import("./components/Stock/TransferList"));
+const ExpenseList = lazy(() => import("./components/Expenses/ExpensesList"));
+const AddExpense = lazy(() => import("./components/Expenses/AddExpense"));
+const AddExpenseCategory = lazy(() => import("./components/Expenses/AddExpenseCategory"));
+const ExpenseCategoryList = lazy(() => import("./components/Expenses/ExpenseCategoryList"));
+const SendMessage = lazy(() => import("./components/Message/SendMessage"));
+const MessageTemplatesList = lazy(() => import("./components/Message/MessageTemplatesList"));
+const UnitsList = lazy(() => import("./components/Settings/UnitsList"));
+const PaymentTypesList = lazy(() => import("./components/Settings/PaymentTypes"));
+const ChangePassword = lazy(() => import("./components/Settings/ChangePassword"));
+const Store = lazy(() => import("./components/Settings/Store"));
+const TaxList = lazy(() => import("./components/Settings/TaxList"));
+const SmsApi = lazy(() => import("./components/Settings/SmsApi"));
+const PosSettingsForm = lazy(() => import("./components/Settings/Sale"));
+const AddTax = lazy(() => import("./components/Settings/AddTax"));
+const AddTaxGroup = lazy(() => import("./components/Settings/AddTaxGroup"));
+const AddUnit = lazy(() => import("./components/Settings/AddUnit"));
+const AddPaymentType = lazy(() => import("./components/Settings/AddPaymentType"));
+const AddCountry = lazy(() => import("./components/Places/AddCountry"));
+const AddState = lazy(() => import("./components/Places/AddState"));
+const CountryList = lazy(() => import("./components/Places/CountryList"));
+const StateList = lazy(() => import("./components/Places/StateList"));
+const WarehouseForm = lazy(() => import("./components/Warehpuse/WarehouseForm"));
+const WarehouseList = lazy(() => import("./components/Warehpuse/WarehouseList"));
+const WarehouseTracker = lazy(() => import("./components/Warehpuse/WarehouseTracker"));
+const TerminalList = lazy(() => import("./components/Terminal/TerminalList"));
+const CreateTerminal = lazy(() => import("./components/Terminal/CreateTerminal"));
+const AddBanner = lazy(() => import("./components/Banners/AddBanner"));
+const BannersList = lazy(() => import("./components/Banners/BannersList"));
+const AddMarketingItems = lazy(() => import("./components/Banners/AddMarketingItems"));
+const MarketingItemsList = lazy(() => import("./components/Banners/MarketingItemView"));
+const AddProduct = lazy(() => import("./components/Banners/AddProduct"));
+const ProductListView = lazy(() => import("./components/Banners/ProductListView"));
+const DeletionRequests = lazy(() => import("./components/admin/deletion-requests"));
+const ProfileEdit = lazy(() => import("./pages/ProfileEdit"));
+const OrderList = lazy(() => import("./components/Order/OrderList/OrderList"));
+const DeliverySlotCreate = lazy(() => import("./components/DeliverySlot/DeliverySlotCreate"));
+const DeliverySlotList = lazy(() => import("./components/DeliverySlot/DeliverySlotList"));
+const Audit = lazy(() => import("./components/Auditor/Audit"));
+const AuditDashboard = lazy(() => import("./components/Auditor/AuditDashboard"));
+const OpenAuditList = lazy(() => import("./components/Auditor/OpenAuditList"));
+const BucketCreate = lazy(() => import("./components/Auditor/BucketCreate"));
+const UserBucketList = lazy(() => import("./components/Auditor/UserBucketList"));
+const ImageMerger = lazy(() => import("./pages/ImageMerger"));
+const ItemImageManagement = lazy(() => import("./components/ImageManagement/ItemImageManagement"));
+const CategoryImageManagement = lazy(() => import("./components/ImageManagement/CategoryImageManagement"));
+const SubCategoryImageManagement = lazy(() => import("./components/ImageManagement/subcategory/SubCategoryImageManagement"));
+const SubSubCategoryImageManagement = lazy(() => import("./components/ImageManagement/subsubcategory/SubSubCategoryImageManagement"));
+const AllAudits = lazy(() => import("./components/Auditor/AllAudits"));
+const POSM = lazy(() => import("./components/Sales/POS/POSM"));
+const PurchaseM = lazy(() => import("./components/purchase/NewPurchase/PurchaseM"));
+const Sm = lazy(() => import("./components/Stock/StockTransfer/Sm"));
+const PrinterSettings = lazy(() => import("./pages/PrinterSettings"));
+const Print = lazy(() => import("./components/Sales/POS/Print"));
+const ClubBillReport = lazy(() => import("./components/Reports/ClubReport"));
+const AccountList1 = lazy(() => import("./components/Accounts/AccountListM/AccountList1"));
 
 function App() {
-  useStatusBarConfig();
+  const [isOn, setIsOn] = useState(false);
+useEffect(() => {
+  // Initial Bluetooth status check
+  if (BluetoothStatus) {
+    window.BluetoothStatus.isBluetoothOn(
+      (res) => {
+        setIsOn(res.enabled);
+        console.log('Bluetooth ON?', res.enabled);
+      },
+      (err) => {
+        console.error('Bluetooth check failed', err);
+      }
+    );
+  }
+
+  // Periodic Bluetooth status check
+  const interval = setInterval(() => {
+    if (BluetoothStatus) {
+      window.BluetoothStatus.isBluetoothOn(
+        (res) => {
+          setIsOn(res.enabled);
+          console.log('Bluetooth ON?', res.enabled);
+        },
+        (err) => {
+          console.error('Bluetooth check failed', err);
+        }
+      );
+    }
+  }, 2000);
+
+  return () => clearInterval(interval);
+}, []); // Empty dependency array is fine here since this runs on mount/unmount
+
+useEffect(() => {
+  const connectToDevice = (device) => {
+    window.bluetoothSerial.connect(
+      device.address,
+      async () => {
+        alert(`Successfully connected to ${device.name}`);
+        localStorage.setItem('printerAddress', device.address); // Save for auto-connect
+        localStorage.setItem('printerAddressName', device.name); // Save for auto-connect
+      },
+      (failure) => {
+        alert(`Failed to connect: ${failure}`);
+      }
+    );
+  };
+
+  const autoConnect = async () => {
+    try {
+      const { value: printerAddress } = await Preferences.get({ key: 'printerAddress' });
+      const { value: printerAddressName } = await Preferences.get({ key: 'printerAddressName' });
+
+      if (printerAddress && printerAddressName) {
+        localStorage.setItem('printerAddress', printerAddress);
+        localStorage.setItem('printerAddressName', printerAddressName);
+        connectToDevice({ address: printerAddress, name: printerAddressName });
+      } else {
+        console.warn('No saved printer address found.');
+      }
+    } catch (err) {
+      console.error('Auto-connect failed:', err);
+    }
+  };
+
+  if (isOn) {
+    // Run autoConnect when Bluetooth is on
+    autoConnect();
+  }
+}, [isOn]); // Runs when isOn changes
+
+useEffect(() => {
+  // --- Permission functions waise hi rahenge ---
+  const requestCameraPermission = async () => {
+    try {
+      const res = await Camera.requestPermissions({ permissions: ['camera', 'photos'] });
+      console.log('Camera permission:', res);
+    } catch (err) {
+      console.error('Camera permission error:', err);
+    }
+  };
+
+  const requestLocationPermission = async () => {
+    try {
+      const status = await Geolocation.requestPermissions();
+      console.log('Location permission:', status);
+    } catch (err) {
+      console.error('Location permission error:', err);
+    }
+  };
+
+  const requestBluetoothPermission = async () => {
+    try {
+      // NOTE: Is plugin ka naam alag ho sakta hai, jaise BleClient
+      await BluetoothLe.requestPermissions();
+      console.log('Bluetooth permission granted');
+    } catch (err) {
+      console.error('Bluetooth permission error:', err);
+    }
+  };
+
+  const configureStatusBar = async () => {
+    try {
+      await StatusBar.setStyle({ style: Style.Dark });
+      await StatusBar.setBackgroundColor({ color: '#ffffff' }); // use hex code
+      await StatusBar.show();
+    } catch (error) {
+      console.warn('StatusBar plugin not available:', error);
+    }
+  };
+
+  // --- Solution: Ek master function banayein jo sabko sequence mein call kare ---
+  const initializeApp = async () => {
+    // UI configuration pehle kar sakte hain
+    await configureStatusBar();
+
+    // Ab permissions ek-ek karke maangein
+    await requestCameraPermission();
+    await requestLocationPermission();
+    await requestBluetoothPermission();
+  };
+
+  // Sirf master function ko call karein
+  initializeApp();
+
+}, []);
   return (
     <Router>
         <BackButtonHandler />
+         <Suspense fallback={<div style={{ padding: 24 }}>Loading…</div>}>
       <Routes>
+
+         <Route path="/account-list1" element={<AccountList1 />} />
+
+          <Route path="/print" element={<Print />} />
+        <Route path="/printer-settings" element={<PrinterSettings />} />
           {/* POSM */}
          <Route path="/pos-main" element={<POSM />}/>
          <Route path="/purchase-main" element={<PurchaseM />}/>
@@ -194,8 +316,8 @@ function App() {
  
 
         <Route path="/admin-register" element={<AdminRegister />} />
-        <Route path="/" element={<AdminLogin />} />
-        <Route path="/user-login" element={<UserLogin />} />
+        <Route path="/admin-login" element={<AdminLogin />} />
+        <Route path="/" element={<UserLogin />} />
         <Route path="/audit-login" element={<AuditorLogin />} />
         <Route path="/dashboard" element={<AdminDashboard />} />
         <Route path="/auditor-dashboard" element={<AuditDashboard />} />
@@ -255,6 +377,7 @@ function App() {
         <Route path="/reports/customer-orders" element={<CustomerOrders />} />
         <Route path="/reports/stock-transfer" element={<StockTransferReport />} />
         <Route path="/reports/sale-item" element={<SaleItemsReport />} />
+        <Route path="/reports/club-bill" element={<ClubBillReport />} />
         <Route path="/reports/stock" element={<StockReport />} />
         <Route path="/reports/item-compare" element={<ItemCompare />} />
         <Route path="/reports/item-transfer" element={<ItemTransfer />} />
@@ -353,6 +476,7 @@ function App() {
         <Route path="/subcategory/image-management" element={<SubCategoryImageManagement />} />
         <Route path="/subsubcategory/image-management" element={<SubSubCategoryImageManagement />} />
       </Routes>
+      </Suspense>
     </Router>
   );
 }

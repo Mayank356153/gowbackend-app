@@ -40,7 +40,7 @@ const Navbar = ({ isSidebarOpen, setSidebarOpen }) => {
       });
        
       setUser(data);
-
+        localStorage.setItem("user", JSON.stringify(data));
       /* NEW — preferred: server already sends storeName */
       if (data.storeName) {
         setStoreName(data.storeName);
@@ -77,7 +77,8 @@ const handleLogout = async () => {
     roleLower === "admin" ? "Admin Panel" : storeName || "Grocery On Wheel";
 
   return (
-    <nav className="flex flex-col items-center justify-between gap-2 px-6 py-1 text-white bg-gray-900 md:gap-0 md:flex-row safe-area-top">
+<nav className="sticky top-0 z-50 flex flex-col items-center justify-between gap-2 px-6 pt-2 text-white bg-gray-900 md:gap-0 md:flex-row">
+  
       <div className="flex items-center justify-between w-full gap-2 md:w-auto md:bg-transparent">
         <div className={`w-screen text-center ${isSidebarOpen?"md:w-64":"w-auto"} md:text-center`}>
           <h2

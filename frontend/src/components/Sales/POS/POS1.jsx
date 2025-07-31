@@ -2,6 +2,7 @@ import React from 'react'
 import { useState,useRef,useEffect } from 'react'
 import { App } from "@capacitor/app";
 import { useLocation,useNavigate } from 'react-router-dom'
+
 export default function POS1({
     selectedWarehouse,
     setSelectedWarehouse,
@@ -43,6 +44,7 @@ export default function POS1({
   }, [navigate]);
   
   return (
+    
  <div className="w-full min-h-screen p-4 bg-gradient-to-br from-cyan-50 to-white">
   {/* Card Container */}
   <div className="p-5 space-y-6 bg-white shadow-2xl rounded-2xl">

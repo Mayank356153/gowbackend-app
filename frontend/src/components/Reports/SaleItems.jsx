@@ -1,650 +1,515 @@
-import React ,{useState,useEffect,useRef}from 'react'
-import Sidebar from '../Sidebar';
-import Navbar from '../Navbar';
+import React, { useState, useEffect, useRef ,useMemo} from 'react';
 import { NavLink } from 'react-router-dom';
-import { FaTachometerAlt } from 'react-icons/fa';
-import { CameraIcon } from "@heroicons/react/solid";
-import Select from 'react-select'
-import { FaBars } from "react-icons/fa";
+import Select from 'react-select'; // Removed to fix build error
 import axios from 'axios';
-
 import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+import 'jspdf-autotable'; // Removed to fix build error
 import * as XLSX from 'xlsx';
-import autoTable from 'jspdf-autotable';
 import { BrowserMultiFormatReader } from '@zxing/library';
-export default function SaleItemsReport() {
-    const link="https://pos.inspiredgrow.in/vps"
-  const [showExportDropdown, setShowExportDropdown] = useState(false)
-   const[isSidebarOpen,setSidebarOpen]=useState(true)
-   const[loading,setLoading]=useState(true)
-   const[options,setOptions]=useState({
-    warehouses:[],
-    categories:[],
-    brands:[],
-    items:[]
-   })
-   useEffect(()=>{
-    if(window.innerWidth<768){
-      setSidebarOpen(false)
-    }
-   },[])
-   const[searchItemName,setSearchItemName]=useState("")
-   const[SelectedWarehouse,setSelectedWarehouse]=useState("all")
-   const[category,setCategory]=useState("all")
-    const[searchItem,setSearchItem]=useState("all")
-    const[dateFrom,setDateFrom]=useState("all")
-    const[dateTo,setDateTo]=useState("all")
-    const[result,setResult]=useState("")
-  const [sale, setSales] = useState([]); 
-  const[total,setTotal]=useState(0)
-   const fetchWarehouses=async()=>{
-    try {
-      const response = await axios.get(`${link}/api/warehouses`, {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        }
-      });
-     
-  
-     const warehouses =response.data.data.map((warehouse)=>({
-      label:warehouse.warehouseName,
-      value:warehouse._id
-     }))
-       setOptions((prev)=>({
-        ...prev,
-        warehouses:[{label:"All",value:"all"},...warehouses]
-       }))
-    } catch (err) {
-      console.log(err.message);
-    } finally {
-      setLoading(false);
-    }
-   }
-   
-   const fetchCategories=async()=>{
-    try {
-      const response = await axios.get(`${link}/api/categories`, {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        }
-      });
-     
-  
-     const category =response.data.data.map((warehouse)=>({
-      label:warehouse.name,
-      value:warehouse._id
-     }))
-       setOptions((prev)=>({
-        ...prev,
-        categories:[{label:"All",value:"all"},...category]
-       }))
-    } catch (err) {
-      console.log(err.message);
-    } finally {
-      setLoading(false);
-    }
-   }
-   
-   
+import Navbar from '../Navbar';
+import Sidebar from '../Sidebar';
+import autoTable from 'jspdf-autotable';
+import { FixedSizeList as List } from 'react-window';
+import SaleBillItemsPopup from './ItemsView';
+const MenuIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>;
+const HomeIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>;
+const CameraIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"></path><circle cx="12" cy="13" r="3"></circle></svg>;
+const ChevronRightIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>;
+const DownloadIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>;
+const FilterIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>;
+const ChevronDownIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>;
+const ExcelIcon = () => <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>;
+const PdfIcon = () => <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>;
+const CustomerIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 text-gray-500"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>;
+const CalendarIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 text-gray-500"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>;
+const CategoryIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 text-gray-500"><path d="M2 16.1A5 5 0 0 1 5.9 20M2 12.05A9 9 0 0 1 9.95 20M2 8V2l6 .05"></path><path d="M22 8h-6"></path><path d="M16 2v6"></path><path d="M12.55 8.5A2.5 2.5 0 0 1 15.05 6"></path><path d="M12.55 13.5A2.5 2.5 0 0 1 15.05 11"></path><path d="M12.55 18.5A2.5 2.5 0 0 1 15.05 16"></path></svg>;
 
-   
-   const fetchItems=async()=>{
-    try {
-      const response = await axios.get(`${link}/api/items`, {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        }
-      });
-     
-   
-     setOptions((prev)=>({
-      ...prev,
-      items:response.data.data
-     }))
-    } catch (err) {
-      console.log(err.message);
-    } finally {
-      setLoading(false);
-    }
-   }
-   
-   const fetchSale = async () => {
-    try {
-      setLoading(true)
-      const token = localStorage.getItem("token");
-      const response = await axios.get(`${link}/api/sales`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      });
-      console.log("sales")
-      console.log(response.data.sales)
-      setSales(response.data.sales)
-     
-    } catch (err) {
-      console.log(err.message);
-    } 
-    finally{
-      setLoading(false)
-    }
-  };
+// --- Custom Hook for Debouncing input ---
+function useDebounce(value, delay) {
+  const [debouncedValue, setDebouncedValue] = useState(value);
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedValue(value);
+    }, delay);
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [value, delay]);
+  return debouncedValue;
+}
 
-   useEffect(()=>{
-    fetchWarehouses();
-    fetchCategories();
-    fetchItems();
-    fetchSale();
-   },[])
 
-    const[scanning,setScanning]=useState(false)
-          const videoRef = useRef(null);
-           const codeReaderRef = useRef(null);
-         
-           useEffect(() => {
-             if (!scanning) return;
-         
-             const startScanner = async () => {
-               if (!videoRef.current) return;
-         
-               const codeReader = new BrowserMultiFormatReader();
-               codeReaderRef.current = codeReader;
-         
-               const tryDecode = async (facingMode) => {
-                 const constraints = {
-                   video: {
-                     facingMode,
-                     advanced: [
-                       { width: 1920 },
-                       { height: 1080 },
-                       { zoom: 2 }, // not all devices support this
-                     ],
-                   },
-                 };
-         
-                 return codeReader.decodeFromConstraints(
-                   constraints,
-                   videoRef.current,
-                   (result, error) => {
-                     if (result) {
-                       const text = result.getText();
-                       alert(text);
-                       setSearchItem(text)  
-                       window.navigator.vibrate?.(200);
-                       const beep = new Audio("/beep.mp3");
-                       beep.play();
-         
-                       const stream = videoRef.current?.srcObject;
-                       stream?.getTracks().forEach((track) => track.stop());
-         
-                       if (codeReaderRef.current?.reset && typeof codeReaderRef.current.reset === "function") {
-                         codeReaderRef.current.reset();
-                       }
-         
-                       setScanning(false);
-                     }
-         
-                     if (error && error.name !== "NotFoundException") {
-                       console.error("Scan error:", error);
-                     }
-                   }
-                 );
-               };
-         
-               try {
-                 await tryDecode({ exact: "environment" });
-               } catch (error) {
-                 if (error.name === "OverconstrainedError" || error.name === "NotFoundError") {
-                   console.warn("Back camera not found. Trying front camera...");
-                   try {
-                     await tryDecode("user");
-                   } catch (fallbackError) {
-                     console.error("Front camera also failed:", fallbackError);
-                     alert("No camera found or accessible.");
-                     setScanning(false);
-                   }
-                 } else {
-                   console.error("Camera access error:", error);
-                   alert("Camera access error: " + error.message);
-                   setScanning(false);
-                 }
-               }
-             };
-         
-             startScanner();
-         
-             return () => {
-               const stream = videoRef.current?.srcObject;
-               stream?.getTracks().forEach((track) => track.stop());
-         
-               if (codeReaderRef.current?.reset && typeof codeReaderRef.current.reset === "function") {
-                 codeReaderRef.current.reset();
-               }
-             };
-           }, [scanning]);
+// --- Main Page Component ---
+const SaleItemReportPage = () => {
+    const link = "https://pos.inspiredgrow.in/vps";
 
-   const filteredTransfers = sale.filter((transfer) => {
-    const {
-      warehouse: warehouse,
-      items,
-      saleDate: date,
-    } = transfer;
-    // Basic string matches
-    const warehouseMatch = SelectedWarehouse === "all" || warehouse._id===SelectedWarehouse;
-     
-    // Match at least one item inside items
-    const categoryMatch =
-      category === "all" ||
-      items.some((it) => it.item?.category?._id === category);
-   
-      const itemMatch = 
+    // State Management
+    const [loading, setLoading] = useState(true);
+    const [sales, setSales] = useState([]);
+    const [total, setTotal] = useState(0);
+    const [pop,setPop]=useState(false);
+    const [selectedSale, setSelectedSale] = useState(null);
+    // Filter States
+    const [options, setOptions] = useState({ warehouses: [], categories: [], items: [] });
+    const [selectedWarehouse, setSelectedWarehouse] = useState("all");
+    const [category, setCategory] = useState("all");
+    const [searchItem, setSearchItem] = useState("all");
+    const [searchItemName, setSearchItemName] = useState("");
+    const [dateFrom, setDateFrom] = useState("");
+    const [dateTo, setDateTo] = useState("");
+    
+    // UI States
+    const [result, setResult] = useState(""); // For item search dropdown
+    const [scanning, setScanning] = useState(false);
+    const [showExportDropdown, setShowExportDropdown] = useState(false);
+    const [filtersVisible, setFiltersVisible] = useState(false); // Filters collapsed by default on mobile
+    const debouncedSearchTerm = useDebounce(searchItemName, 500); // 500ms delay
+    const[saleItems,setSaleItems]=useState([]);
+    // Refs
+    const videoRef = useRef(null);
+    const codeReaderRef = useRef(null);
+    
+    // Initial data fetching
+    useEffect(() => {
+        const fetchInitialData = async () => {
+            setLoading(true);
+            try {
+                const token = localStorage.getItem("token");
+                const headers = { Authorization: `Bearer ${token}` };
+
+                const [warehousesRes, categoriesRes,  salesRes] = await Promise.all([
+                    axios.get(`${link}/api/warehouses`, { headers }),
+                    axios.get(`${link}/api/categories`, { headers }),
+                    
+                    axios.get(`${link}/api/pos/invoices`, { headers })
+                ]);
+
+                const warehouses = warehousesRes.data.data.map(w => ({ label: w.warehouseName, value: w._id }));
+                const categories = categoriesRes.data.data.map(c => ({ label: c.name, value: c._id }));
+
+                setOptions({
+                    warehouses: [{ label: "All", value: "all" }, ...warehouses],
+                    categories: [{ label: "All", value: "all" }, ...categories],
+                    
+                });
+                setSales(salesRes.data);
+            } catch (err) {
+                console.error("Failed to fetch initial data:", err);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchInitialData();
+    }, []);
+
+    // Barcode Scanning Logic
+              // useEffect(() => {
+              //   if (!scanning) return;
+            
+              //   const startScanner = async () => {
+              //     if (!videoRef.current) return;
+            
+              //     const codeReader = new BrowserMultiFormatReader();
+              //     codeReaderRef.current = codeReader;
+            
+              //     const tryDecode = async (facingMode) => {
+              //       const constraints = {
+              //         video: {
+              //           facingMode,
+              //           advanced: [
+              //             { width: 1920 },
+              //             { height: 1080 },
+              //             { zoom: 2 }, // not all devices support this
+              //           ],
+              //         },
+              //       };
+            
+              //       return codeReader.decodeFromConstraints(
+              //         constraints,
+              //         videoRef.current,
+              //         (result, error) => {
+              //           if (result) {
+              //             const text = result.getText();
+              //             alert(text);
+              //             setSearchItem(text)  
+              //             window.navigator.vibrate?.(200);
+              //             const beep = new Audio("/beep.mp3");
+              //             beep.play();
+            
+              //             const stream = videoRef.current?.srcObject;
+              //             stream?.getTracks().forEach((track) => track.stop());
+            
+              //             if (codeReaderRef.current?.reset && typeof codeReaderRef.current.reset === "function") {
+              //               codeReaderRef.current.reset();
+              //             }
+            
+              //             setScanning(false);
+              //           }
+            
+              //           if (error && error.name !== "NotFoundException") {
+              //             console.error("Scan error:", error);
+              //           }
+              //         }
+              //       );
+              //     };
+            
+              //     try {
+              //       await tryDecode({ exact: "environment" });
+              //     } catch (error) {
+              //       if (error.name === "OverconstrainedError" || error.name === "NotFoundError") {
+              //         console.warn("Back camera not found. Trying front camera...");
+              //         try {
+              //           await tryDecode("user");
+              //         } catch (fallbackError) {
+              //           console.error("Front camera also failed:", fallbackError);
+              //           alert("No camera found or accessible.");
+              //           setScanning(false);
+              //         }
+              //       } else {
+              //         console.error("Camera access error:", error);
+              //         alert("Camera access error: " + error.message);
+              //         setScanning(false);
+              //       }
+              //     }
+              //   };
+            
+              //   startScanner();
+            
+              //   return () => {
+              //     const stream = videoRef.current?.srcObject;
+              //     stream?.getTracks().forEach((track) => track.stop());
+            
+              //     if (codeReaderRef.current?.reset && typeof codeReaderRef.current.reset === "function") {
+              //       codeReaderRef.current.reset();
+              //     }
+              //   };
+              // }, [scanning]);
+
+    // Filtering Logic
+  const [filteredTransfers, setFilteredTransfers] = useState([]);
+
+       const applyfilter = () => {
+  const result = sales.filter((transfer) => {
+    const { warehouse, items, saleDate: date } = transfer;
+
+    const warehouseMatch = selectedWarehouse === "all" || warehouse._id === selectedWarehouse;
+
+    const categoryMatch = category === "all" || items.some((it) => it.item?.category?._id === category);
+
+    const itemMatch =
       searchItem === "all" || searchItem === "" ||
-      items.some((it) => 
-        it.item?._id === searchItem || it.item?.barcode === searchItem || it.item?.itemName.toLowerCase().includes(searchItem.toLowerCase())
+      items.some((it) =>
+        it.item?._id === searchItem ||
+        it.item?.barcode === searchItem ||
+        it.item?.itemName.toLowerCase().includes(searchItem.toLowerCase())
       );
-      
-    // Date range match
+
     const dateObj = new Date(date);
-    const fromDateObj = dateFrom === "all" || dateFrom==="" ? null : new Date(dateFrom);
-    const toDateObj = dateTo === "all" || dateTo==="" ? null : new Date(dateTo);
-  
-    const dateInRange =
-      (!fromDateObj || dateObj >= fromDateObj) &&
-      (!toDateObj || dateObj <= toDateObj);
-     
-    return warehouseMatch && categoryMatch  && itemMatch && dateInRange;
+    const fromDateObj = dateFrom === "all" || dateFrom === "" ? null : new Date(dateFrom);
+    const toDateObj = dateTo === "all" || dateTo === "" ? null : new Date(dateTo);
+
+    const dateInRange = (!fromDateObj || dateObj >= fromDateObj) && (!toDateObj || dateObj <= toDateObj);
+
+    return warehouseMatch && categoryMatch && itemMatch && dateInRange;
   });
 
-   const filteredItems = result
-           ? options.items.filter((item) => {
-               const q = result.toLowerCase();
-               return (
-                 item.itemName?.toLowerCase().includes(q) ||
-                 item.itemCode?.toLowerCase().includes(q) ||
-                 (item.barcode && item.barcode.toLowerCase().includes(q))
-               );
-             })
-           : [];
-           useEffect(()=>{
-             const filteredItems = result
-             ? options.items.filter((item) => {
-                 const q = result.toLowerCase();
-                 return (
-                   item.itemName?.toLowerCase().includes(q) ||
-                   item.itemCode?.toLowerCase().includes(q) ||
-                   (item.barcode && item.barcode.toLowerCase().includes(q))
-                 );
-               })
-             : [];
-           },[result])
-  
-           
-           // Export to PDF function
-           const exportToPDF = () => {
-            const doc = new jsPDF();
-            
-            // Add title
-            doc.text('Sale Item', 14, 15);
-            
-            // Prepare headers
-            const headers = [
-              '#', 
-              'Sale Code', 
-              'Date', 
-              'Customer', 
-              'Items', 
-              'Categories', 
-              'Quantities', 
-              'Unit Prices', 
-              'Total'
-            ];
-            
-            // Prepare data
-            const data = filteredTransfers.map((item, index) => [
-              index + 1,
-              item.saleCode || 'NA',
-              new Date(item.saleDate).toDateString(),
-              item.customer?.customerName || 'NA',
-              item.items?.map(it => it.item?.itemName || 'NA').join(', '),
-              item.items?.map(it => it.item?.category?.name || 'No category').join(', '),
-              item.items?.map(it => it.quantity).join(', '),
-              item.items?.map(it => it.unitPrice).join(', '),
-              item.grandTotal?.toFixed(2) || '0.00'
-            ]);
-          
-            // Add table using autoTable
-            autoTable(doc, {
-              head: [headers],
-              body: data,
-              startY: 20,
-              styles: {
-                fontSize: 8,
-                cellPadding: 2,
-                overflow: 'linebreak'
-              },
-              columnStyles: {
-                0: { cellWidth: 10 },
-                1: { cellWidth: 20 },
-                2: { cellWidth: 25 },
-                3: { cellWidth: 25 },
-                4: { cellWidth: 30 },
-                5: { cellWidth: 25 },
-                6: { cellWidth: 15 },
-                7: { cellWidth: 15 },
-                8: { cellWidth: 15 }
-              }
-            });
-          
-            // Save the PDF
-            doc.save('sale_items.pdf');
-          };
-           
-           // Export to Excel function
-           const exportToExcel = () => {
-             // Prepare data for Excel
-             const excelData = filteredTransfers.map((item, index) => ({
-               '#': index + 1,
-               'Sale Code': item.saleCode || 'NA',
-               'Date': new Date(item.saleDate).toDateString(),
-               'Customer': item.customer?.customerName || 'NA',
-               'Items': item.items?.map(it => it.item?.itemName || 'NA').join('\n'),
-               'Categories': item.items?.map(it => it.item?.category?.name || 'No category').join('\n'),
-               'Quantities': item.items?.map(it => it.quantity).join('\n'),
-               'Unit Prices': item.items?.map(it => it.unitPrice).join('\n'),
-               'Total': item.grandTotal?.toFixed(2) || '0.00'
-             }));
-           
-             // Create worksheet
-             const worksheet = XLSX.utils.json_to_sheet(excelData);
-             
-             // Create workbook
-             const workbook = XLSX.utils.book_new();
-             XLSX.utils.book_append_sheet(workbook, worksheet, 'saleItems');
-             
-             // Export to Excel file
-             XLSX.writeFile(workbook, 'saleItems.xlsx');
-           };
-useEffect(()=>{
-  let sum=0;
-           
-             filteredTransfers.forEach(element => {
-              sum=sum+element.grandTotal
-             });
-             console.log("Sum")
-             setTotal(sum)
-},[filteredTransfers])
-  useEffect(()=>console.log(filteredTransfers),[filteredTransfers])
-  useEffect(()=>console.log("sale"),[sale])
+  setFilteredTransfers(result); // Only updates on Apply
+};
 
-  
+useEffect(()=>{
+  applyfilter();
+},[sales])
+   
+
+
+    
+     // Export to PDF function
+const handlePdfDownload = () => {
+  if (!saleItems.length) {
+    alert("No data to download!");
+    return;
+  }
+
+  const doc = new jsPDF();
+
+  doc.text("Sales Report", 14, 15);
+
+  const tableColumn = ["Sale Code", "Customer", "Item", "Category", "Date", "Qty", "Rate", "Subtotal"];
+  const tableRows = saleItems.map(item => [
+    item.saleCode,
+    item.customerName,
+    item.item?.itemName,
+    item.item?.category.name,
+    new Date(item.saleDate).toLocaleDateString(),
+    item.quantity,
+    `₹${item.price?.toFixed(2)}`,
+    `₹${item.subtotal?.toFixed(2)}`
+  ]);
+
+  autoTable(doc, {
+    head: [tableColumn],
+    body: tableRows,
+    startY: 20,
+  });
+
+  doc.save('saleItems-report.pdf');
+};
+              
+              // Export to Excel function
+          
+const exportToExcel = () => {
+  if (!saleItems.length) {
+    alert("No data to download!");
+    return;
+  }
+
+  // Flatten the nested data for easier sheet conversion
+  const flattenedData = saleItems.map(item => ({
+    'Sale Code': item.saleCode,
+    'Customer Name': item.customerName,
+    'Item Name': item.item?.itemName,
+    'Category': item.item?.category.name,
+    'Date': new Date(item.saleDate).toLocaleDateString(),
+    'Quantity': item.quantity,
+    'Rate': item.price, // Keep as a number for Excel
+    'Subtotal': item.subtotal // Keep as a number for Excel
+  }));
+
+  // Create a new worksheet from the flattened data
+  const worksheet = XLSX.utils.json_to_sheet(flattenedData);
+
+  // Create a new workbook
+  const workbook = XLSX.utils.book_new();
+
+  // Append the worksheet to the workbook with a name
+  XLSX.utils.book_append_sheet(workbook, worksheet, "Sales");
+
+  // Trigger the download
+  XLSX.writeFile(workbook, 'saleItems-report.xlsx');
+};
+
+
+
+    
+  useEffect(() => {
+    console.log(filteredTransfers)
+  const mappedItems = filteredTransfers.flatMap(sale => 
+    sale.items.map(item => ({
+      saleCode: sale.saleCode,
+      ...item,
+      saleId: sale._id,
+      saleDate: sale.saleDate,
+      customerName: sale.customer?.customerName || 'N/A',
+    }))
+  );
+        const sum = filteredTransfers.reduce((acc, curr) => acc + (curr.amount || 0), 0);
+        setTotal(sum);
+  setSaleItems(mappedItems);
+}, [filteredTransfers]);
+
+
+
     return (
-      <div className="flex flex-col h-screen">
+        <div className="flex flex-col flex-1 overflow-y-auto">
+            <main className="flex-grow p-4 space-y-6 bg-gray-100 sm:p-6">
+                {/* Page Header */}
+                <header className="flex flex-col items-start justify-between gap-2 sm:flex-row sm:items-center">
+                    <div>
+                        <h1 className="text-2xl font-bold text-gray-800 sm:text-3xl">Sale Item Report</h1>
+                        <nav className="flex items-center mt-1 text-sm text-gray-500" aria-label="Breadcrumb">
+                            <NavLink to="/dashboard" className="flex items-center hover:text-blue-600"><HomeIcon className="w-4 h-4" /> <span className="hidden ml-1 sm:inline">Home</span></NavLink>
+                            <ChevronRightIcon /><span>Reports</span><ChevronRightIcon />
+                            <span className="font-medium text-gray-600">Sale Item Report</span>
+                        </nav>
+                    </div>
+                </header>
+                {
+                  pop  && (
+                    <SaleBillItemsPopup sale={selectedSale} onClose={() => setPop(false)} />
+                  )
+                }
+
+                {/* Filter Section (Collapsible) */}
+                <div className="bg-white border-t-4 rounded-lg shadow-sm border-cyan-600">
+                    <button onClick={() => setFiltersVisible(!filtersVisible)} className="flex items-center justify-between w-full p-4 font-semibold text-left text-gray-700">
+                        <div className="flex items-center gap-2">
+                            <FilterIcon className="w-5 h-5" />
+                            <span>Filter Report</span>
+                        </div>
+                        <ChevronDownIcon className={`w-5 h-5 transition-transform ${filtersVisible ? 'rotate-180' : ''}`} />
+                    </button>
+                    {filtersVisible && (
+                        <div className="p-4 border-t border-gray-200">
+                            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                                <div>
+                                    <label className="block mb-1 text-sm font-medium text-gray-600">Warehouse</label>
+                                   <Select className='w-full' options={options.warehouses} onChange={(option)=>setSelectedWarehouse(option.value)} value={options.warehouses.find(option => option.value===selectedWarehouse)}/>
+                                </div>
+                                <div>
+                                    <label className="block mb-1 text-sm font-medium text-gray-600">Item Type</label>
+                                   <Select className='w-full' options={[{label:"Item",value:"item"},{label:"Services",value:"services"}]} />  
+                                </div>
+                                <div>
+                                    <label className="block mb-1 text-sm font-medium text-gray-600">Category</label>
+                                    <Select className='w-full' options={options.categories} onChange={(option)=>setCategory(option.value)} value={options.categories.find(option => option.value===category) || null}/>
+                                </div>
+                               
+                                <div>
+                                    <label className="block mb-1 text-sm font-medium text-gray-600">From Date</label>
+                                    <input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                                </div>
+                                <div>
+                                    <label className="block mb-1 text-sm font-medium text-gray-600">To Date</label>
+                                    <input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                                </div>
+                            </div>
+                            <div className="flex justify-end mt-6">
+                <button 
+                    onClick={applyfilter} 
+                    className="px-5 py-2 font-semibold text-white transition-colors duration-200 rounded-md bg-cyan-600 hover:bg-cyan-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-500"
+                >
+                    Apply Filter
+                </button>
+            </div>
+                        </div>
+                    )}
+                </div>
+
+                {/* Records Section */}
+                <div className="pb-20 bg-white rounded-lg shadow-sm">
+                    <div className="flex items-center justify-between p-4 border-b border-gray-200">
+                        <h3 className="text-lg font-semibold text-gray-700">Records</h3>
+                        <div className="relative">
+                            <button onClick={() => setShowExportDropdown(!showExportDropdown)} className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700">
+                                <DownloadIcon className="w-4 h-4" />
+                                <span className="hidden sm:inline">Export</span>
+                                <ChevronDownIcon className="hidden w-4 h-4 sm:inline" />
+                            </button>
+                            {showExportDropdown && (
+                                <div className="absolute right-0 z-10 w-40 mt-2 bg-white rounded-md shadow-lg" onMouseLeave={() => setShowExportDropdown(false)}>
+                                    <button onClick={exportToExcel} className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"><ExcelIcon /> Excel</button>
+                                    <button onClick={() => handlePdfDownload()} className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"><PdfIcon /> PDF</button>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+               <div className="overflow-x-auto">
+  <table className="min-w-full bg-white border border-gray-200 rounded-lg">
+    <thead className="text-white bg-blue-500">
+      <tr>
+        <th className="py-3 text-xs font-medium tracking-wider text-left text-white uppercase">
+          Sale Code
+        </th>
+        <th className="py-3 text-xs font-medium tracking-wider text-left text-white uppercase ">
+          Customer
+        </th>
+        <th className="py-3 text-xs font-medium tracking-wider text-left text-white uppercase ">
+          Item
+        </th>
+        <th className="py-3 text-xs font-medium tracking-wider text-left text-white uppercase ">
+          Category
+        </th>
+        <th className="py-3 text-xs font-medium tracking-wider text-left text-white uppercase ">
+          Date
+        </th>
+        <th className="py-3 text-xs font-medium tracking-wider text-left text-white uppercase ">
+          Qty
+        </th>
+        <th className="py-3 text-xs font-medium tracking-wider text-left text-white uppercase ">
+          Rate
+        </th>
+        <th className="py-3 text-xs font-medium tracking-wider text-left text-white uppercase ">
+          Subtotal
+        </th>
+      </tr>
+    </thead>
+    <tbody className="divide-y divide-gray-200">
+      {/* Example of looping through data in JSX */}
+      {!loading && saleItems.length > 0 && saleItems.map((item, index) =>
+      {
+
+      if(item.item === null || item.item === undefined) {
+        return null; // Skip rendering if item is null or undefined
+      }
+     return (
+        <tr key={`${item.saleId}-${index}`}>
+          <td className="py-4 text-sm text-gray-800 border-1">{item.saleCode}</td>
+          <td className="py-4 text-sm text-gray-800 ">{item.customerName}</td>
+          <td className="py-4 text-sm font-bold text-gray-900 ">{item.item.itemName || "NA"}</td>
+          <td className="py-4 text-sm text-gray-800 ">{item.item.category.name}</td>
+          <td className="py-4 text-sm text-gray-800 ">{new Date(item.saleDate).toLocaleDateString()}</td>
+          <td className="py-4 text-sm font-medium text-gray-800">{item.quantity}</td>
+          <td className="py-4 text-sm font-medium text-gray-800 ">₹{item.price?.toFixed(2)}</td>
+          <td className="py-4 text-lg font-bold text-blue-600 ">₹{item.subtotal?.toFixed(2)}</td>
+        </tr>
+      )})}
+
+      {/* Loading State */}
+      {loading && (
+        <tr>
+          <td colSpan="8" className="px-6 py-4 text-center text-gray-500">
+            Loading...
+          </td>
+        </tr>
+      )}
+
+      {/* No Records State */}
+      {!loading && saleItems.length === 0 && (
+        <tr>
+          <td colSpan="8" className="px-6 py-4 text-center text-gray-500">
+            No records found
+          </td>
+        </tr>
+      )}
+    </tbody>
+  </table>
+</div>
+                
+                    <div className="hidden p-4 font-bold text-right text-gray-800 rounded-b-lg bg-gray-50 md:block">Total Sales: ₹{total.toFixed(2)}</div>
+                </div>
+                
+                {/* Sticky Footer for Mobile */}
+                <div className="fixed bottom-0 left-0 right-0 flex items-center justify-between p-4 bg-white border-t border-gray-200 md:hidden">
+                    <span className="text-sm font-medium text-gray-600">Total Sales:</span>
+                    <span className="text-xl font-bold text-gray-900">₹{total.toFixed(2)}</span>
+                </div>
+            </main>
+            {/* Barcode Scanner Modal */}
+            {scanning && (
+                <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black bg-opacity-75">
+                    <div className="relative w-full max-w-sm overflow-hidden rounded-lg h-72">
+                        <video ref={videoRef} className="absolute object-cover w-full h-full" autoPlay muted playsInline />
+                        <div className="absolute w-full h-1 bg-red-500 animate-scan" />
+                    </div>
+                    <button onClick={() => setScanning(false)} className="px-4 py-2 mt-6 text-white bg-red-600 rounded hover:bg-red-700">Cancel</button>
+                </div>
+            )}
+        </div>
+    );
+};
+
+// --- Main App Component to render the page ---
+export default function App() {
+    const [isSidebarOpen, setSidebarOpen] = useState(false);
+
+    useEffect(() => {
+        if (window.innerWidth >= 1024) {
+            setSidebarOpen(true);
+        } else {
+            setSidebarOpen(false);
+        }
+    }, [])
+
+    return (
+ <div className="flex flex-col h-screen">
         <Navbar isSidebarOpen={isSidebarOpen} setSidebarOpen={setSidebarOpen} />
         <div className="flex flex-grow">
           <Sidebar isSidebarOpen={isSidebarOpen} />
-    
-          {/* Main Content */}
-          <div className="relative flex flex-col flex-grow px-4 py-6 bg-gray-100">
-            {/* Header */}
-            <header className="flex flex-col items-center justify-between sm:flex-row">
-              <div className="flex items-center gap-1 text-center sm:flex-row sm:text-left">
-                <h1 className="text-lg font-semibold truncate sm:text-xl">Sale Item Report</h1>
-              </div>
-              <nav className="flex flex-wrap items-center justify-center mt-2 text-xs text-gray-500 sm:justify-start sm:text-sm sm:mt-0">
-                <NavLink to="/dashboard" className="flex items-center text-gray-700 no-underline hover:text-cyan-600">
-                  <FaTachometerAlt className="mr-2 text-gray-500 hover:text-cyan-600" /> Home
-                </NavLink>
-                
-                <NavLink to="/reports/sale-item" className="text-gray-700 no-underline hover:text-cyan-600">
-                  &gt; sale item Report
-                </NavLink>
-              </nav>
-            </header>
-            
-            <div className='flex flex-col w-full mx-auto mt-4 bg-white border-t-4 rounded-lg shadow-md border-cyan-600'>
-              <div className='w-full h-auto px-2 border-b-2 border-gray-200'>
-                <h4 className='text-gray-700'>Please Enter Valid Information</h4>
-              </div>
-              <div className='py-4 '>
-
-
-                {/* //first row */}
-                <div className='flex w-full gap-5 px-4 mb-4'>
-                  <div className='flex flex-col w-full'>
-                    <label htmlFor="">Warehouse</label>
-                    <Select className='w-full' options={options.warehouses} onChange={(option)=>setSelectedWarehouse(option.value)} value={options.warehouses.find(option => option.value===SelectedWarehouse)}/>
-                  </div>
-                  <div className='flex flex-col w-full'>
-                    <label htmlFor="">Item Type</label>
-                    <Select className='w-full' options={[{label:"Item",value:"item"},{label:"Services",value:"services"}]} />
-                  </div>
-                </div>
-
-                {/* second row */}
-                <div className='flex w-full gap-5 px-4 mb-4'>
-                  <div className='flex flex-col w-full'>
-                    <label htmlFor="">Category</label>
-                    <Select className='w-full' options={options.categories} onChange={(option)=>setCategory(option.value)} value={options.categories.find(option => option.value===category) || null}/>
-                  </div>
-                  <div className='relative flex flex-col w-full'>
-                    <label htmlFor="">Item Name</label>
-                  <label htmlFor="" className="flex">
-                                     <input type="text" name="type" className="w-full px-2 py-1 border-2 rounded-md"  value={searchItemName} onChange={(e)=>{setResult(e.target.value);setSearchItemName(e.target.value);setSearchItem(e.target.value)}}/>
-                                     <button type="button"
-                         className="p-2 ml-2 text-white rounded-full hover:bg-blue-600" 
-                         onClick={() => setScanning(true)}
-                       >
-                         <CameraIcon className="w-6 h-6 text-gray-500" />
-                       </button>
-                                     </label>
-                                     {result !== "" && (
-                   <div
-                     className="absolute z-50 w-full overflow-y-auto bg-white border rounded-lg shadow-lg top-20 sm:w-96 max-h-60 touch-auto"
-                     style={{ WebkitOverflowScrolling: 'touch' }} // enables momentum scrolling on iOS
-                   >
-                     <ul>
-                       {filteredItems.map((list) => (
-                         <li
-                           key={list.itemCode}
-                           onClick={() => {setSearchItem(list._id); setResult("");setSearchItemName(list.itemName)}}
-                           className="p-2 cursor-pointer hover:bg-gray-100"
-                         >
-                           <strong>{list.itemCode}</strong> - {list.itemName} - {list.barcode}
-                         </li>
-                       ))}
-                     </ul>
-                   </div>
-                 )}
-                   {scanning && (
-                   <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black bg-opacity-50">
-                     <div className="relative overflow-hidden border-4 border-white rounded-lg shadow-xl w-72 h-72">
-                       <video
-                         ref={videoRef}
-                         className="absolute object-cover w-full h-full"
-                         autoPlay
-                         muted
-                         playsInline
-                       />
-                       <div className="absolute w-full h-1 bg-red-500 animate-scan" />
-                     </div>
-                     <button
-                       onClick={() => {
-                         const stream = videoRef.current?.srcObject;
-                         stream?.getTracks().forEach((track) => track.stop());
-                 
-                         if (codeReaderRef.current?.reset && typeof codeReaderRef.current.reset === "function") {
-                           codeReaderRef.current.reset();
-                         }
-                 
-                         setScanning(false);
-                       }}
-                       className="px-4 py-2 mt-6 text-white bg-red-600 rounded hover:bg-red-700"
-                     >
-                       Cancel
-                     </button>
-                   </div>
-                 )}
-                 
-                  </div>
-                </div>
-
-                {/* third row */}
-               
-
-
-
-                {/* fourth row */}
-                <div className='flex w-full gap-5 px-4'>
-                  <div className='flex flex-col w-full'>
-                    <label htmlFor="">From Date</label>
-                    <input type="date" name="type" className="w-full px-2 py-1 border-2 rounded-md"  onChange={(e)=>setDateFrom(e.target.value)}/>
-                  </div>
-                  <div className='flex flex-col w-full'>
-                    <label htmlFor="">To Date</label>
-                    <input type="date" name="type" className="w-full px-2 py-1 border-2 rounded-md"  onChange={(e)=>setDateTo(e.target.value)}/>
-                  </div>
-                </div>
-
-              </div>
+                <SaleItemReportPage />
+                {/* Add padding to the bottom of the content to avoid overlap with the sticky footer */}
+                <div className="h-16 mb-16 bg-black md:hidden shrink-0"></div>
             </div>
-
-            <div className='flex flex-col w-full mt-5 bg-white border-t-4 border-gray-400'>
-              
-
-            
-             <div className='flex w-full px-2 py-2'>
-  <div className='w-full'>
-    <h4 className='text-gray-700'>Records Table</h4>
-  </div>
-  <div className="relative">
-    <button 
-      onClick={() => setShowExportDropdown(!showExportDropdown)}
-      className="flex items-center px-4 py-2 text-white bg-blue-500 rounded hover:bg-blue-600"
-    >
-      <FaBars className="mr-2" />
-      Export
-      <span className="ml-2 text-sm">▼</span>
-    </button>
-    
-    {/* Dropdown menu - now controlled by state */}
-    {showExportDropdown && (
-      <div 
-        className="absolute right-0 z-10 w-40 mt-2 bg-white rounded-md shadow-lg"
-        onMouseLeave={() => setShowExportDropdown(false)}
-      >
-        <div className="py-1">
-          <button 
-            onClick={() => {
-              exportToExcel();
-              setShowExportDropdown(false);
-            }}
-            className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-          >
-            <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-            </svg>
-            Excel
-          </button>
-          <button 
-            onClick={() => {
-              exportToPDF();
-              setShowExportDropdown(false);
-            }}
-            className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-          >
-            <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-            </svg>
-            PDF
-          </button>
+             {isSidebarOpen && <div onClick={() => setSidebarOpen(false)} className="fixed inset-0 z-20 bg-black bg-opacity-50 lg:hidden"></div>}
         </div>
-      </div>
-    )}
-  </div>
-</div>
-{/* second row */}
-              <div className='flex w-full px-2 py-2'>
-                <div className='w-full'>
-                  <table className="min-w-full gap-2 border-separate">
-                    <thead>
-                      <tr>
-                        <th className="px-4 py-2 text-sm text-white bg-blue-500">#</th>
-                        <th className="px-4 py-2 text-sm text-white bg-blue-500">Invoice No.</th>
-                        <th className="px-4 py-2 text-sm text-white bg-blue-500">Sales Date</th>
-                        <th className="px-4 py-2 text-sm text-white bg-blue-500">Customer Name</th>
-                        <th className="px-4 py-2 text-sm text-white bg-blue-500">Item Name</th>
-                        <th className="px-4 py-2 text-sm text-white bg-blue-500">Category</th>
-                        <th className="px-4 py-2 text-sm text-white bg-blue-500">Quantity</th>
-                        <th className="px-4 py-2 text-sm text-white bg-blue-500">Unit Price(Rs.)</th>
-                        <th className="px-4 py-2 text-sm text-white bg-blue-500">Total(Rs.)</th>
-                       
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {/* Add your data rows here */}
-                     
-                      {
-                        filteredTransfers.length>0 && filteredTransfers.map((item,index)=>(
-                          <tr key={index} className='bg-gray-100 border-2 border-black'>
-                            <td className="px-4 py-2">{index+1}</td>
-                            <td className="px-4 py-2">{item.saleCode}</td>
-                            <td className="px-4 py-2">{ new Date(item.saleDate).toDateString()}</td>
-                            <td className="px-4 py-2">{item.customer?.customerName || "NA"}</td>
-                            <td className="px-4 py-2">{item.items?.map((it,index)=>(
-                             
-                                <span>{index+1 }.{it.item?.itemName || "NA"} <br /></span>
-                             
-                            ))}</td>
-                                 <td className="px-4 py-2">{item.items?.map((it,index)=>(
-                                <span>{index+1 }.{it.item?.category?.name || "No category"} <br /></span>
-                                 ))}</td> 
-                                   
-                                      <td className="px-4 py-2">{item.items?.map((it,index)=>(
-                                      <span>{it.quantity } <br /></span>
-                                 ))}</td>
-                                  
-                         
-                                  <td className="px-4 py-2">{item.items?.map((it,index)=>(
-                                      <span>{it.unitPrice } <br /></span>
-                                 ))}</td> 
-                                      <td className="px-4 py-2">{(item.grandTotal).toFixed(2)}</td>
-                          </tr>
-                        ))
-                      }
-                      {
-                        filteredTransfers.length===0 && (
-                          <tr className='bg-gray-100 border-2 border-black' >
-                          <td className="px-4 py-2 text-center" colSpan='10'><h5>No Data Found</h5></td>
-                        </tr>
-                        )
-                      }
-                       {
-                        filteredTransfers.length>0 && (
-                          <tr className='bg-gray-100 border-2 border-black' >
-                          <td className="px-4 py-2 text-right" colSpan='8'><h7 className="font-semibold">Total:</h7></td>
-                          <td className="py-2 font-semibold text-center" >{(total).toFixed(2)}</td>
-                        </tr>
-                        )
-                      }
-                      
-                      {/* Repeat for more rows */}
-                    </tbody>
-                  </table>
-
-                </div>
-
-              </div>
-              
-              
-            </div>
-            
-    
-        
-           
-            
-          </div>
-        </div>
-      </div>
     );
 }

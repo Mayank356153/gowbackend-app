@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { use, useEffect, useState } from 'react';
 import { Link, useNavigate, NavLink } from 'react-router-dom';
 import Navbar from "../Navbar";
 import Sidebar from "../Sidebar";
@@ -9,7 +9,10 @@ import RiderImagesView from "./RiderImagesView"
 import { utils, writeFile } from 'xlsx';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import {Device} from '@capacitor/device';
+import { FaPrint } from 'react-icons/fa';
 const RiderList = () => {
+    
     const link="https://pos.inspiredgrow.in/vps"
 
   const [loading, setLoading] = useState(false);
@@ -24,6 +27,12 @@ const RiderList = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const[data,setData]=useState([])
   const[view,setView]=useState(false)
+  const [connectedDevice, setConnectedDevice] = useState(null);
+  useEffect(() => {
+    const address=localStorage.getItem('printerAddress');
+    setConnectedDevice(address);  
+},[])
+
   // load sidebar open/closed
   useEffect(() => {
     if (window.innerWidth < 768) setSidebarOpen(false);
@@ -219,6 +228,7 @@ const handlePrint = () => {
       alert('Table data copied to clipboard!');
     });
 };
+
 const exportToCSV = () => {
   // Prepare headers
   const headers = [
@@ -258,6 +268,40 @@ const exportToCSV = () => {
   link.click();
   document.body.removeChild(link);
 };
+
+
+
+    const printRiderDetails =async (rider) => {
+        if (!connectedDevice) {
+            alert('No printer connected. Please connect a printer first.');
+            return;
+        }
+
+        const dataToPrint = `
+        *** RIDER DETAILS ***\n
+------------------------------------------\n
+Name: ${rider.firstname} ${rider.lastname}\n
+Username: ${rider.username}\n
+Mobile: ${rider.mobile}\n
+Email: ${rider.email}\n
+Store: ${Array.isArray(rider.store) ? rider.store.map(s => s.StoreName).join(", ") : rider.store?.StoreName ?? "N/A"}\n
+Status: ${status.includes(rider._id) ? 'Inactive' : 'Active'}\n
+------------------------------------------\n
+\n\n
+        `;
+
+         window.bluetoothSerial.write(
+            dataToPrint,
+            () => alert(`Printing details for ${rider.firstname}...`),
+            (failure) => alert(`Failed to print: ${failure}`)
+        );
+    
+    };
+
+
+
+
+
   if (loading) return <LoadingScreen />;
 
   return (
@@ -307,13 +351,19 @@ const exportToCSV = () => {
                                 <span className="text-sm">Entries</span>
                             </div>
                             
-                            <div className="flex justify-end flex-1 gap-1 mt-2 mb-2 ">
+                            <div className="flex flex-col justify-end flex-1 gap-1 mt-2 mb-2">
+                                <div className='flex items-center flex-1 gap-1'>
+                                    
                             <button onClick={copyToClipboard} className="w-full px-3 py-2 text-sm text-white bg-cyan-500 lg:w-auto">Copy</button>
                 <button onClick={exportToExcel} className="w-full px-3 py-2 text-sm text-white bg-cyan-500 lg:w-auto">Excel</button>
                 <button onClick={exportToPDF} className="w-full px-3 py-2 text-sm text-white bg-cyan-500 lg:w-auto">PDF</button>
                 <button onClick={handlePrint} className="w-full px-3 py-2 text-sm text-white bg-cyan-500 lg:w-auto">Print</button>
                 <button onClick={exportToCSV} className="w-full px-3 py-2 text-sm text-white bg-cyan-500 lg:w-auto">CSV</button>
+                                </div>
+                <div>
+                    
                                 <input type="text" placeholder="Search" className="w-full p-2 text-sm border border-gray-300 md:w-auto" onChange={(e)=>setSearchTerm(e.target.value)}/>
+                </div>
                             </div>
          </div>
 
@@ -367,7 +417,6 @@ const exportToCSV = () => {
     </span>
   )}
 </td>
-
 <td className="relative p-1 border">
   <button
     className="px-3 py-1 text-white transition duration-300 rounded-full bg-cyan-600 hover:bg-cyan-700"
@@ -377,12 +426,18 @@ const exportToCSV = () => {
   </button>
 
   {actionMenu === u._id && (
-    <div className="absolute right-0 z-10 w-32 mt-2 bg-white border rounded-md shadow-lg animate-fade-in">
+    <div className="absolute right-0 z-50 w-32 mt-2 bg-white border rounded-md shadow-lg animate-fade-in">
       <button
         className="w-full px-3 py-2 text-sm text-left text-green-600 transition hover:bg-gray-100"
         onClick={() => navigate(`/rider/add?id=${u._id}`)}
       >
         ✏️ Edit
+      </button>
+      <button
+        className="flex items-center w-full px-3 py-2 text-sm text-left text-blue-600 transition hover:bg-gray-100"
+        onClick={() => printRiderDetails(u)}
+      >
+        <FaPrint className="mr-2" /> Print
       </button>
       <button
         className="w-full px-3 py-2 text-sm text-left text-red-600 transition hover:bg-gray-100"
@@ -393,6 +448,7 @@ const exportToCSV = () => {
     </div>
   )}
 </td>
+
 
                       </tr>
                     ))
@@ -431,3 +487,4 @@ const exportToCSV = () => {
 };
 
 export default RiderList;
+

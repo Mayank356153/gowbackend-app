@@ -6,7 +6,7 @@ import { App } from "@capacitor/app";
 import { useLocation,useNavigate } from 'react-router-dom'
 import { FaPlus,FaChevronRight,FaCalendarAlt } from 'react-icons/fa';
 export default function Purchase1({
-    options,handleSelectChange,setActiveTab
+    options,handleSelectChange,setActiveTab,sWarehouse,setSWarehouse
 ,formData,setShowSupplierPop,handleChange}) {
 
  const location=useLocation()
@@ -55,7 +55,7 @@ export default function Purchase1({
     
  <div className="p-4 bg-white rounded-lg shadow-sm">
   {/* Header Section */}
-  <div className="pb-4 border-b border-gray-200">
+  <div className="border-b border-gray-200 ">
     <div className="flex items-center justify-between">
       <div>
         <h2 className="text-xl font-bold text-gray-800">New Purchase Order</h2>
@@ -72,19 +72,23 @@ export default function Purchase1({
   {/* Form Section */}
   <div className="mt-6 space-y-6">
     {/* Warehouse Selection */}
-    <div className="grid grid-cols-1 gap-6 md:grid-cols-12">
+    <div className="grid md:grid-cols-12">
       <div className="md:col-span-3">
         <label className="block text-sm font-medium text-gray-700">
           Warehouse <span className="text-red-500">*</span>
         </label>
-        <p className="mt-1 text-xs text-gray-500">Select where items will be stored</p>
+        
       </div>
       <div className="md:col-span-9">
         <Select
           className="w-full max-w-md"
           options={options.warehouse}
-          onChange={(selectedOption) => handleSelectChange(selectedOption, "warehouse")}
-          value={options.warehouse.find(opt => opt.value === formData.warehouse) || null}
+          onChange={(option) => {
+            setSWarehouse(option)
+            handleSelectChange(option, "warehouse")
+          }
+        }
+          value={options.warehouse.find(opt => opt.value === sWarehouse) || null}
           placeholder="Select Warehouse"
           styles={{
             control: (base) => ({
@@ -101,12 +105,11 @@ export default function Purchase1({
     </div>
 
     {/* Supplier Selection */}
-    <div className="grid grid-cols-1 gap-6 md:grid-cols-12">
+    <div className="grid md:grid-cols-12">
       <div className="md:col-span-3">
         <label className="block text-sm font-medium text-gray-700">
           Supplier <span className="text-red-500">*</span>
         </label>
-        <p className="mt-1 text-xs text-gray-500">Select or add a supplier</p>
       </div>
       <div className="md:col-span-9">
         <div className="flex max-w-md space-x-2">
@@ -139,12 +142,11 @@ export default function Purchase1({
     </div>
 
     {/* Reference Number */}
-    <div className="grid grid-cols-1 gap-6 md:grid-cols-12">
+    <div className="grid md:grid-cols-12">
       <div className="md:col-span-3">
         <label className="block text-sm font-medium text-gray-700">
           Reference No.
         </label>
-        <p className="mt-1 text-xs text-gray-500">Auto-generated reference</p>
       </div>
       <div className="md:col-span-9">
         <input
@@ -159,7 +161,7 @@ export default function Purchase1({
     </div>
 
     {/* Purchase Date */}
-    <div className="grid grid-cols-1 gap-6 md:grid-cols-12">
+    <div className="grid md:grid-cols-12">
       <div className="md:col-span-3">
         <label className="block text-sm font-medium text-gray-700">
           Purchase Date

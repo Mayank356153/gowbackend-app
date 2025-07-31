@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, useCallback } from "react";
 import {
   FaHandPaper,
   FaLayerGroup,
@@ -26,8 +26,105 @@ import POS2 from "./POS2";
 import POS3 from "./POS3";
 import Swal from 'sweetalert2';
 import playSound from "../../../utility/sound";
+import Print from "./Print";
+import {Geolocation} from "@capacitor/geolocation";
+
+
+function buildInvoiceHTML(order, payments = [], store, cust, rows, sellerName = "–", setPrint, setActiveTab) {
+  const {
+    logo, storeName, tagline, address, gst, phone, email
+  } = store;
+
+  const today = new Date(order.createdAt || Date.now());
+  const totalQuantity = rows.reduce((sum, r) => sum + r.quantity, 0);
+
+  // 2️⃣ “Before Tax” is pure quantity × rate, no discounts
+  const rawTotal = rows.reduce((sum, r) => sum + (r.quantity * r.salesPrice), 0);
+
+  // 3️⃣ Your existing order.totalDiscount and taxAmount
+  const disc = order.totalDiscount || 0;
+  const taxAmt = order.taxAmount || 0;
+
+  // 4️⃣ Net total after discount, before adding tax
+  const netBeforeTax = rawTotal - disc;
+
+  // 5️⃣ Paid & previous due
+  const paid = payments.reduce((s, p) => s + p.amount, 0);
+  const prevDue = order.previousBalance || 0;
+
+  // 6️⃣ Final due
+  const totalDue = prevDue + netBeforeTax + taxAmt - paid;
+
+  // build your rows as before…
+  const body = rows.map((r, i) => `
+    <tr>
+      <td>${i + 1}</td>
+      <td>${r.itemName}</td>
+      <td class="r">${r.quantity}</td>
+      <td class="r">${r.mrp.toFixed(2)}</td>
+      <td class="r">${r.salesPrice.toFixed(2)}</td>
+      <td class="r">${(r.quantity * r.salesPrice).toFixed(2)}</td>
+    </tr>`
+  ).join("");
+
+  const payRows = payments.map((p, i) => `
+    <tr><td>${i + 1}</td><td>${p.paymentNote || "-"}</td><td class="r">${(p.amount)}</td></tr>`
+  ).join("");
+  
+  // REMOVED THE ALERT
+  // alert("asd") 
+  
+  // setPrint({
+  //   order,
+  //   payments,
+  //   store: {
+  //      storeName, tagline, address, gst, phone, email
+  //   },
+  //   customer: cust,
+  //   items: rows,
+  //   seller: sellerName,
+  //   dues: { previousDue: totalDue }
+  // });
+     return({
+    order:{  rows:rows,...order },
+    payments:payments,
+    store: {
+      storeName, tagline, address, gst, phone, email
+    },
+    customer: {customerName: cust.customerName || "–"},
+    seller: {sellerName: sellerName},
+    dues: { previousDue: totalDue }
+  }); 
+  // This will now correctly switch to the print view after the state has been set.
+  // setActiveTab("print");
+}
+
+
+
+
+
+
 export default function POSM() {
   const link="https://pos.inspiredgrow.in/vps"
+  const [location, setLocation] = useState(null);
+
+  useEffect(() => {
+    const getLocation = async () => {
+      try {
+      
+        const permission = await Geolocation.requestPermissions();
+    const position = await Geolocation.getCurrentPosition();
+
+    const { latitude, longitude } = position.coords;
+          setLocation([ latitude, longitude ]);
+      } catch (err) {
+        console.error('Location error:', err);
+      }
+    };
+
+    getLocation();
+  }, []);
+  
    useEffect(() => {
       const request = async () => {
         await Camera.requestPermissions({
@@ -93,7 +190,13 @@ export default function POSM() {
   const [orderToEdit, setOrderToEdit] = useState(null);
   const [defaultWarehouse, setDefaultWarehouse]   = useState("");
   const prevWarehouseRef = useRef();    
-  
+  const[print,setPrint]=useState({})
+
+  useEffect(()=>{
+     setSelectedWarehouse(localStorage.getItem("deafultWarehouse") || null);
+  },[])
+   
+    
   // ─── HELPERS ────────────────────────────────────────────────────────
   const authHeaders = () => ({
     headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
@@ -104,6 +207,7 @@ export default function POSM() {
 
   const esc = (s) => s.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, "\\$&");
 
+  
   useEffect(() => {
   // skip the very first render (prevWarehouseRef === undefined)
   if (
@@ -131,9 +235,18 @@ export default function POSM() {
   prevWarehouseRef.current = selectedWarehouse;
 }, [selectedWarehouse, items.length]);
 
+
+useEffect(() => {
+  const role = localStorage.getItem("role");
+     
+        const data = JSON.parse(localStorage.getItem("user"));
+      setUser(data);
+      setStoreName(data.storeName || "Grocery on Wheels");
+      setDefaultWarehouse(data.defaultWarehouse || "");
+},[])
+
   // ─── FETCHERS ───────────────────────────────────────────────────────
   useEffect(() => {
-    fetchProfile();
     fetchLookups();
     fetchHeld();
     if (editId) {
@@ -160,25 +273,6 @@ export default function POSM() {
   useEffect(() => {
   fetchItems();
 }, [selectedWarehouse])
-
-  async function fetchProfile() {
-    setLoadingUser(true);
-    try {
-      const role = localStorage.getItem("role");
-      const url =
-        role === "admin"
-          ? `${link}/auth/profile`
-          : `${link}/admiaddinguser/profile`;
-      const { data } = await axios.get(url, authHeaders());
-      setUser(data);
-      setStoreName(data.storeName || "Grocery on Wheels");
-      setDefaultWarehouse(data.defaultWarehouse || "");
-    } catch {
-      setUser({ name: "Guest", role: "Guest" });
-    } finally {
-      setLoadingUser(false);
-    }
-  }
   
 async function fetchLookups() {
     // ── 1) Warehouses ─────────────────────────────────────
@@ -344,11 +438,10 @@ async function fetchLookups() {
   try {
      const {data} = await axios.get(`${link}/api/items`, {
           headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-        params: { warehouse: selectedWarehouse }
+        params: { warehouse: selectedWarehouse,inStock:true }
       });
-      
-    console.log("item")
-    console.log(data.data)
+      console.log("a")
+     console.log(data);
     const rawItems = data.data || [] ;
 
       const flatItems = rawItems
@@ -368,17 +461,7 @@ async function fetchLookups() {
 
       console.log(
         "Flattened items:",
-        flatItems.map((i) => ({
-          _id: i._id,
-          parentId: i.parentId,
-          variantId: i.variantId,
-          itemName: i.itemName,
-          itemCode: i.itemCode,
-          barcode: i.barcode,
-          barcodes: i.barcodes,
-          isVariant: !!i.variantId,
-          warehouseId: i.warehouse?._id,
-        }))
+        flatItems
       );
       setAllItems(flatItems);
     } catch (err) {
@@ -498,7 +581,7 @@ async function fetchLookups() {
       disc = 0;
     items.forEach((i) => {
       qty += i.quantity;
-      amt += i.quantity * i.salesPrice;
+      amt += i.subtotal ;
       disc += i.discount || 0;
     });
     setQuantity(qty);
@@ -579,20 +662,20 @@ async function fetchLookups() {
 useEffect(() => {
   if (editId) return;                  // skip if we’re editing an existing order
   if (!warehouses.length) return;      // need the list loaded
-  if (defaultWarehouse) {
-    // user has a default → honor it
-    setSelectedWarehouse(defaultWarehouse);
-  } else {
-    // fallback to restricted / first active
-    const restricted = warehouses.find(
-      (w) => w.isRestricted && w.status === "Active"
-    );
-    setSelectedWarehouse(
-      restricted?._id ||
-        warehouses.find((w) => w.status === "Active")?._id ||
-        ""
-    );
-  }
+  // if (defaultWarehouse) {
+  //   // user has a default → honor it
+  //   setSelectedWarehouse(defaultWarehouse);
+  // } else {
+  //   // fallback to restricted / first active
+  //   const restricted = warehouses.find(
+  //     (w) => w.isRestricted && w.status === "Active"
+  //   );
+  //   setSelectedWarehouse(
+  //     restricted?._id ||
+  //       warehouses.find((w) => w.status === "Active")?._id ||
+  //       ""
+  //   );
+  // }
 }, [warehouses, defaultWarehouse, editId]);
 
  const videoRef       = useRef(null);
@@ -699,24 +782,54 @@ const stopScanner = () => {
   setMatchedItems([])
 };
 
+function applyOfferLogic(itemList) {
+  return itemList.map((item) => {
+    const { discountPolicy, quantity, requiredQty, freeQty, salesPrice, discount = 0 } = item;
+
+    if (discountPolicy === "BuyXGetY" && quantity >= requiredQty) {
+      const groups = Math.floor(quantity / requiredQty); // how many times requiredQty fits
+      const totalFree = groups * freeQty;
+      const discountAmount = totalFree * salesPrice;
+
+      return {
+        ...item,
+        subtotal: quantity * salesPrice - discountAmount,
+        effectiveFreeQty: totalFree // optional: if you want to show how many were free
+      };
+    }
+
+    return {
+      ...item,
+      subtotal: quantity * salesPrice - discount,
+    };
+  });
+}
+
   // ─── ITEM HANDLERS ─────────────────────────────────────────────────
 function addItem(it) {
+ 
   if (!it || !it.parentId) {
     console.error("Invalid item, missing parentId:", it);
     return;
   }
-  console.log("it")
-  console.log(it)
-  const parentExists = allItems.some((ai) => ai._id === it.parentId && !ai.variantId);
+
+  const parentExists = allItems.some(
+    (ai) => ai._id === it.parentId && !ai.variantId
+  );
   if (!parentExists && !it.variantId) {
     console.error(`Parent item not found for parentId: ${it.parentId}`, it);
     return;
   }
 
   if (it.variantId) {
-    const variantValid = allItems.some((ai) => ai._id === it.variantId && ai.parentId === it.parentId);
+    const variantValid = allItems.some(
+      (ai) => ai._id === it.variantId && ai.parentId === it.parentId
+    );
     if (!variantValid) {
-      console.error(`Invalid variantId: ${it.variantId} for parentId: ${it.parentId}`, it);
+      console.error(
+        `Invalid variantId: ${it.variantId} for parentId: ${it.parentId}`,
+        it
+      );
       return;
     }
   }
@@ -733,22 +846,36 @@ function addItem(it) {
     const existing = updated[existingIdx];
     const newQty = existing.quantity + quantityToAdd;
 
-    updated[existingIdx] = {
-      ...existing,
-      quantity: newQty,
-      subtotal: newQty * existing.salesPrice - (existing.discount || 0),
-    };
+    if (newQty <= existing.currentStock) {
+      playSound("/sounds/item-exists.mp3");
+      updated[existingIdx] = {
+        ...existing,
+        quantity: newQty,
+        subtotal: newQty * existing.salesPrice - (existing.discount || 0),
+      };
 
-    setItems(updated);
+      const updatedWithOffer = applyOfferLogic(updated); // 🔁 OFFER HERE
+      setItems(updatedWithOffer);
+      setSearchItemCode("");
+      return;
+    }
+
+    setSearchItemCode("");
+    return;
   } else {
-    // New item → add it to the list
+    playSound("/sounds/item-added.mp3");
     const newItem = {
+      discountPolicy: it.discountPolicy || "None",
+      requiredQty: it.requiredQuantity || 0,
+      freeQty: it.freeQuantity || 0,
+      stock: it.currentStock || 0,
       item: it.parentId,
       variant: it.variantId || null,
       itemName: it.itemName,
       itemCode: it.itemCode || "",
       openingStock: it.openingStock || 0,
-      currentStock: it.currentStock != null ? it.currentStock : (it.openingStock || 0),
+      currentStock:
+        it.currentStock != null ? it.currentStock : it.openingStock || 0,
       salesPrice: it.salesPrice || 0,
       quantity: quantityToAdd,
       discount: it.discount || 0,
@@ -757,7 +884,8 @@ function addItem(it) {
       unit: it.unit || null,
       mrp: it.mrp || 0,
       expiryDate: it.expiryDate || null,
-      subtotal: quantityToAdd * (it.salesPrice || 0) - (it.discount || 0),
+      subtotal:
+        quantityToAdd * (it.salesPrice || 0) - (it.discount || 0),
     };
 
     if (newItem.salesPrice <= 0) {
@@ -765,45 +893,141 @@ function addItem(it) {
       return;
     }
 
-    setItems((prev) => [...prev, newItem]);
+    const updatedWithNewItem = [...items, newItem];
+    const updatedWithOffer = applyOfferLogic(updatedWithNewItem); // 🔁 OFFER HERE
+   
+    setItems(updatedWithOffer);
+    setSearchItemCode("");
+  }
+}
+function addItemsInBatch(matchedItems) {
+  let updated = [...items];
+
+  for (const it of matchedItems) {
+    if (!it || !it.parentId) {
+      console.error("Invalid item, missing parentId:", it);
+      continue;
+    }
+
+    const parentExists = allItems.some(
+      (ai) => ai._id === it.parentId && !ai.variantId
+    );
+    if (!parentExists && !it.variantId) {
+      console.error(`Parent item not found for parentId: ${it.parentId}`, it);
+      continue;
+    }
+
+    if (it.variantId) {
+      const variantValid = allItems.some(
+        (ai) => ai._id === it.variantId && ai.parentId === it.parentId
+      );
+      if (!variantValid) {
+        console.error(
+          `Invalid variantId: ${it.variantId} for parentId: ${it.parentId}`,
+          it
+        );
+        continue;
+      }
+    }
+
+    const quantityToAdd = it.quantity || 1;
+    const existingIdx = updated.findIndex(
+      (r) => r.item === it.parentId && r.variant === (it.variantId || null)
+    );
+
+    if (existingIdx !== -1) {
+      const existing = updated[existingIdx];
+      const newQty = existing.quantity + quantityToAdd;
+
+      if (newQty <= existing.currentStock) {
+        playSound("/sounds/item-exists.mp3");
+        updated[existingIdx] = {
+          ...existing,
+          quantity: newQty,
+          subtotal: newQty * existing.salesPrice - (existing.discount || 0),
+        };
+      }
+      continue;
+    } else {
+      playSound("/sounds/item-added.mp3");
+      const newItem = {
+        discountPolicy: it.discountPolicy || "None",
+        requiredQty: it.requiredQuantity || 0,
+        freeQty: it.freeQuantity || 0,
+        stock: it.currentStock || 0,
+        item: it.parentId,
+        variant: it.variantId || null,
+        itemName: it.itemName,
+        itemCode: it.itemCode || "",
+        openingStock: it.openingStock || 0,
+        currentStock:
+          it.currentStock != null ? it.currentStock : it.openingStock || 0,
+        salesPrice: it.salesPrice || 0,
+        quantity: quantityToAdd,
+        discount: it.discount || 0,
+        tax: it.tax?._id || null,
+        taxRate: it.tax?.taxPercentage || 0,
+        unit: it.unit || null,
+        mrp: it.mrp || 0,
+        expiryDate: it.expiryDate || null,
+        subtotal:
+          quantityToAdd * (it.salesPrice || 0) - (it.discount || 0),
+      };
+
+      if (newItem.salesPrice <= 0) {
+        alert("Item sales price must be greater than zero.");
+        continue;
+      }
+
+      updated.push(newItem);
+    }
   }
 
+  const updatedWithOffer = applyOfferLogic(updated);
+  setItems(updatedWithOffer);
   setSearchItemCode("");
 }
 
 
-
-  function updateItem(idx, field, val) {
+function updateItem(idx, field, val) {
   const numericVal = Number(val);
   const row = items[idx];
 
-  // ❗ Block salesPrice from ever exceeding MRP
+  // ❗ Prevent salesPrice > MRP
   if (field === "salesPrice" && numericVal > row.mrp) {
     alert(`❗ Sales Price (${numericVal}) cannot exceed the MRP (${row.mrp})`);
     return;
   }
 
-  // your existing non-zero check
-  if ((field === "salesPrice") && numericVal <= 0) {
+  // ❗ Prevent salesPrice <= 0
+  if (field === "salesPrice" && numericVal <= 0) {
     alert(`${field.charAt(0).toUpperCase() + field.slice(1)} must be greater than zero.`);
     return;
   }
 
-  setItems((prev) =>
-    prev.map((r, i) =>
-      i === idx
-        ? {
-            ...r,
-            [field]: numericVal || 0,
-            subtotal:
-              (field === "salesPrice" ? numericVal : r.salesPrice) *
-                (field === "quantity" ? numericVal : r.quantity) -
-              (field === "discount" ? numericVal : r.discount || 0),
-          }
-        : r
-    )
+  // ❗ Prevent quantity > currentStock
+  if (field === "quantity" && numericVal > row.currentStock) {
+    return;
+  }
+
+  const updatedItems = items.map((r, i) =>
+    i === idx
+      ? {
+          ...r,
+          [field]: numericVal || 0,
+        }
+      : r
   );
+
+  const withOffer = applyOfferLogic(updatedItems);
+
+  // ✅ Ensure all subtotals are accurate after offer logic
+  
+
+  setItems(withOffer);
 }
+
+
 
 
   function removeItem(idx) {
@@ -977,6 +1201,7 @@ function addItem(it) {
     }
 
     const payload = {
+      location:location,
       warehouse: selectedWarehouse,
       customer: selectedCustomer,
       account: selectedAccount,
@@ -997,28 +1222,41 @@ function addItem(it) {
   }
 
   async function sendOrder(payload, method = "post", id) {
-    try {
-      const url = id ? `${link}/api/pos/${id}` : `${link}/api/pos`;
-      const { data } = await axios[method](url, payload, authHeaders());
-      const generated = data.order.saleCode;
-      setInvoiceCode(generated);
+    
+ 
 
-      generateInvoicePDF(data.order, payload.payments);
-
-      alert(`✔️ Saved! Your Invoice Code is ${generated}`);
-      fetchHeld();
-      navigate("/sale-list");
-    } catch (err) {
-      console.error("Send order error details:", {
-        message: err.message,
-        response: err.response?.data,
-        status: err.response?.status,
-        payload: payload,
-      });
-      alert(
-        `Failed to save order: ${err.message}${err.response?.data?.message ? ` - ${err.response.data.message}` : ""}`
-      );
-    }
+  try {
+    console.log("Sending order with payload:", payload);
+    
+    /* ---- 2️⃣ Save the order ---- */
+    const url  = id ? `${link}/api/pos/${id}` : `${link}/api/pos`;
+    const { data } = await axios[method](url, payload, authHeaders());
+     console.log("Order saved:", data);
+    /* ---- 3️⃣ Build the final invoice HTML ---- */
+    const custObj = customers.find(c => c._id === selectedCustomer) || {};
+    
+    const r= buildInvoiceHTML(
+      data.order,
+      payload.payments,
+      storeInfo,
+      custObj,
+      items,
+      sellerDisplayName(user),
+      setActiveTab,setPrint          
+    );
+    console.log("Generated invoice HTML:", r);
+    setPrint(r);
+    setActiveTab("print")
+    /* ---- 5️⃣ House-keeping ---- */
+    setInvoiceCode(data.order.saleCode);
+    // resetForm();
+    // fetchHeld();
+    Swal.fire("Saved!", "", "success");
+  } catch (err) {
+    // if (previewWin) previewWin.close();   // don’t leave a blank tab
+    console.error("Send order error details:", err);
+    Swal.fire("Error", err.response?.data?.message || err.message, "error");
+  }
   }
 
   function resetForm() {
@@ -1034,7 +1272,7 @@ function addItem(it) {
     setAdvancePaymentAmount(0);
     setCurrentOrderId("");
     setSelectedCustomer(customers[0]?._id || "");
-    setSelectedWarehouse(warehouses[0]?._id || "");
+    setSelectedWarehouse(localStorage.getItem("defaultWarehouse") || null);
     setSelectedAccount(accounts[0]?._id || "");
     setOrderPaymentMode("");
   }
@@ -1067,6 +1305,7 @@ function addItem(it) {
 
   // 3️⃣  Build payload (your code) -----------------
   const payload = {
+    location: location,
     warehouse: selectedWarehouse,
     customer: selectedCustomer,
     account: selectedAccount,
@@ -1167,6 +1406,25 @@ function addItem(it) {
     }
   }
 
+
+  
+  const sellerDisplayName = (u = {}) =>
+  // ① show what’s in the navbar
+  u.name?.trim() ||
+  // ② otherwise try first + last
+  [u.FirstName, u.LastName].filter(Boolean).join(" ").trim() ||
+  // ③ fall back to email or phone
+  u.userName || u.Mobile || "–";
+  const storeInfo = {
+  logo:        "/logo/inspiredgrow.jpg",                       //  40-50 px square looks right
+  storeName:   storeName,                                //  already in state
+  tagline:     "GROCERY ON WHEELS",
+  address:     "Basement 210-211 new Rishi Nagar near Shree Shyam Baba Mandir Gali No. 9, Hisar – 125001",
+  gst:         "06AAGCI0630K1ZR",
+  phone:       "9050092092",
+  email:       "INSPIREDGROW@GMAIL.COM",
+};
+
   // ─── HELPER: Edit / Delete held invoices ─────────────────────────────
   async function handleEditInvoice(id) {
     const inv = await fetchPosById(id);
@@ -1213,6 +1471,8 @@ function addItem(it) {
     bank: orderPaymentMode === "bank" ? "border-4 border-yellow-400 shadow-lg" : "border border-gray-300",
   };
 
+
+  
   if (isLoadingEdit) {
     return <LoadingScreen />;
   }
@@ -1220,7 +1480,7 @@ function addItem(it) {
   return (
     <div className="flex flex-col min-h-screen ">
       {/* Navbar */}
-      <nav className="flex items-baseline justify-between px-4 text-white shadow-lg bg-gradient-to-r from-gray-800 to-gray-900">
+<nav className="sticky top-0 z-50 flex flex-col items-center justify-between gap-2 px-6 pt-4 text-white bg-gray-900 md:gap-0 md:flex-row">
         <div className="flex items-center gap-4">
           <h1
             className="text-xl font-bold transition-colors cursor-pointer hover:text-yellow-400"
@@ -1234,32 +1494,7 @@ function addItem(it) {
           >
             <FaBars />
           </button>
-          <div className="hidden gap-4 md:flex">
-            <div
-              className="flex items-center gap-1 transition-colors cursor-pointer hover:text-yellow-400"
-              onClick={() => navigate("/sale-list")}
-            >
-              <FaList className="text-yellow-500" /> Sales List
-            </div>
-            <div
-              className="flex items-center gap-1 transition-colors cursor-pointer hover:text-yellow-400"
-              onClick={() => navigate("/customer/view")}
-            >
-              <FaUsers className="text-yellow-500" /> Customers
-            </div>
-            <div
-              className="flex items-center gap-1 transition-colors cursor-pointer hover:text-yellow-400"
-              onClick={() => navigate("/item-list")}
-            >
-              <FaBox className="text-yellow-500" /> Items
-            </div>
-            <div
-              className="flex items-center gap-1 transition-colors cursor-pointer hover:text-yellow-400"
-              onClick={resetForm}
-            >
-              <FaFileInvoice className="text-yellow-500" /> New Invoice
-            </div>
-          </div>
+        
         </div>
         <div className="items-center hidden gap-4 md:flex">
           <div
@@ -1275,49 +1510,8 @@ function addItem(it) {
             className="text-xl transition-colors cursor-pointer hover:text-yellow-400"
             onClick={toggleFullScreen}
           />
-          <div
-            className="relative flex items-center gap-2 cursor-pointer"
-            onClick={() => setShowProfileDropdown((v) => !v)}
-          >
-            <img
-              src="/userlogoprof.png"
-              alt="Profile"
-              className="w-10 h-10 border-2 border-gray-300 rounded-full shadow-sm"
-            />
-            <span className="transition-colors hover:text-yellow-400">
-              {loadingUser ? "Loading..." : user.name}
-            </span>
-            {showProfileDropdown && (
-              <div className="absolute right-0 z-20 w-64 p-4 text-black bg-white border border-gray-200 rounded-lg shadow-xl top-full">
-                <div className="flex flex-col items-center">
-                  <img
-                    src="/userlogoprof.png"
-                    alt="Profile"
-                    className="w-16 h-16 border-2 border-gray-400 rounded-full shadow-sm"
-                  />
-                  <h3 className="mt-2 font-bold text-gray-800">{user.name}</h3>
-                  <p className="text-sm text-blue-600">Role: {user.role}</p>
-                </div>
-                <div className="flex flex-col gap-2 mt-4">
-                  <button className="px-4 py-2 transition-colors bg-gray-200 rounded hover:bg-gray-300">
-                    Profile
-                  </button>
-                  <button
-                    onClick={handleLogout}
-                    className="px-4 py-2 text-white transition-colors bg-red-500 rounded hover:bg-red-600"
-                  >
-                    Sign Out
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
-          <div
-            className="flex items-center gap-1 transition-colors cursor-pointer hover:text-yellow-400"
-            onClick={() => navigate("/dashboard")}
-          >
-            <MdOutlineDashboard className="text-yellow-500" /> Dashboard
-          </div>
+          
+        
         </div>
       </nav>
 
@@ -1365,13 +1559,13 @@ function addItem(it) {
 )}
 
       {/* Main content */}
-      <div className="flex flex-col flex-grow gap-6 bg-white lg:flex-row">
+      <div className="flex flex-col bg-white lg:flex-row">
            {activeTab==="pos1" && <POS1 selectedWarehouse={selectedWarehouse} setSelectedWarehouse={setSelectedWarehouse} warehouses={warehouses} invoiceCode={invoiceCode} selectedCustomer={selectedCustomer} setSelectedCustomer={setSelectedCustomer}
                        customers={customers} setActiveTab={setActiveTab}  
                          startScanner={startScanner}   filteredItems={filteredItems} scanning={scanning} setScanning={setScanning} videoRef={videoRef} orderPaymentMode={orderPaymentMode}    
                           previousBalance={previousBalance}
            />}
-           {activeTab==="pos2" && <POS2  matchedItems={matchedItems} setMatchedItems={setMatchedItems}  searchItemCode={searchItemCode} setActiveTab={setActiveTab} setSearchItemCode={setSearchItemCode} updateItem={updateItem} removeItem={removeItem} items={items} setItems={setItems} stopScanner={stopScanner}
+           {activeTab==="pos2" && <POS2 addItemsInBatch={addItemsInBatch} matchedItems={matchedItems} setMatchedItems={setMatchedItems}  searchItemCode={searchItemCode} setActiveTab={setActiveTab} setSearchItemCode={setSearchItemCode} updateItem={updateItem} removeItem={removeItem} items={items} setItems={setItems} stopScanner={stopScanner}
                                             allItems={allItems}  codeReaderRef={codeReaderRef} addItem={addItem} startScanner={startScanner} setScanning={setScanning} selectedWarehouse={selectedWarehouse}  filteredItems={filteredItems} scanning={scanning} videoRef={videoRef} orderPaymentMode={orderPaymentMode}    
            />}
            {activeTab==="pos3" && <POS3 allItems={allItems} showHoldList={showHoldList} heldInvoices={heldInvoices} handleEditInvoice={handleEditInvoice}
@@ -1382,6 +1576,7 @@ function addItem(it) {
            isPaymentModalOpen={isPaymentModalOpen} PaymentModal={PaymentModal} setIsPaymentModalOpen={setIsPaymentModalOpen} paymentTypes={paymentTypes} accounts={accounts} terminals={terminals} advancePaymentAmount={advancePaymentAmount} selectedAccount={selectedAccount} setSelectedAccount={setSelectedAccount}
            paymentSummary={paymentSummary} sendOrder={sendOrder} buildPayload={buildPayload} currentOrderId={currentOrderId} setAdjustAdvancePayment={setAdjustAdvancePayment} customers={customers}
 />}       
+           {activeTab==="print" && <Print setActiveTab={setActiveTab} print={print}/>}
       </div>
     </div>
   );

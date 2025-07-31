@@ -11,6 +11,8 @@ import POSScanner from "./POSScanner";
 import { useState,useRef,useEffect } from "react";
 import { App } from "@capacitor/app";
 import { useLocation,useNavigate } from 'react-router-dom'
+import MinimalOfferView from "./OfferView";
+import { add } from "date-fns";
 export default function POS2({
   searchItemCode,
   setSearchItemCode,
@@ -20,10 +22,7 @@ export default function POS2({
   items,
   setItems,
   setActiveTab,
-  startScanner,
-  videoRef,codeRedaerRef,
-  matchedItems,setMatchedItems,
-  stopScanner,canvasRef
+  addItemsInBatch,
 }) {
   const confirmBack = async () => {
     const result = await Swal.fire({
@@ -44,6 +43,8 @@ export default function POS2({
       navigate(0);
     }
   };
+  const [offerView, setOfferView] = useState(false);
+  const [offerItem, setOfferItem] = useState(null);
    const location=useLocation()
     const navigate=useNavigate()
       const initialLocationRef = useRef(location);
@@ -72,28 +73,63 @@ confirmBack();
     }, [navigate]);
     
   const[itemScan,setItemScan]=useState(false)
+
+
   
-  const handleQuanity=(id,type)=>{
-    if(type==="remove"){
-      setItems(prev=> prev.filter(it => it.item!==id))
-      return
-    }
-    const itemformat=items.map(item=>
-      (item.item===id)?{
-        ...item,
-        quantity:type==="plus"?item.quantity+1:item.quantity-1
-      }:item
-    )
-    setItems(itemformat.filter(it=>it.quantity!==0))
+  const handleQuanity = (id, type) => {
+  if (type === "remove") {
+    const filtered = items.filter((it) => it.item !== id);
+    const withOffer = applyOfferLogic(filtered);
+    setItems(withOffer);
+    return;
   }
-  useEffect(()=>{console.log(items)},[items])
-  if(itemScan) return <POSScanner  allItems={allItems} handleQuanity={handleQuanity}  addItem={addItem} setItemScan={setItemScan}/>
+
+  const updated = items.map((item) => {
+    if (item.item === id) {
+      const newQty = type === "plus" ? item.quantity + 1 : item.quantity - 1;
+
+      return {
+        ...item,
+        quantity: newQty,
+        subtotal: newQty * item.salesPrice - (item.discount || 0),
+      };
+    }
+    return {
+      ...item,
+      subtotal: item.quantity * item.salesPrice - (item.discount || 0), // ensure all items stay accurate
+    };
+  });
+
+  const filtered = updated.filter((it) => it.quantity !== 0);
+  const withOffer = applyOfferLogic(filtered);
+  setItems(withOffer);
+};
+
+
+function applyOfferLogic(itemList) {
+  let count = 0;
+  return itemList.map((item) => {
+    if (
+      item.discountPolicy === "BuyXGetY" &&
+      item.quantity >= item.requiredQty
+    ) {
+      
+      return {
+        ...item,
+        subtotal: item.subtotal - (item.salesPrice * item.freeQty), // or custom discount logic
+      };
+    }
+    return item;
+  });
+}
+
+  if(itemScan) return <POSScanner addItemsInBatch={addItemsInBatch}  allItems={allItems} items={items} handleQuanity={handleQuanity}  addItem={addItem} setItemScan={setItemScan}/>
   return (
 
     
 <div className="relative min-h-screen bg-gray-50/50 pb-28">
   {/* Modern App Header with Glass Morphism */}
-  <header className="sticky top-0 z-30 p-4 border-b border-gray-100 bg-white/80 backdrop-blur-lg">
+  <header className="p-4 border-b border-gray-100">
     <div className="flex items-center gap-3">
       <button 
         onClick={() => setActiveTab("pos1")}
@@ -101,6 +137,10 @@ confirmBack();
       >
         <FaArrowLeft className="text-xl text-gray-700" />
       </button>
+      {
+      offerView && offerItem && (
+        <MinimalOfferView setOfferView={setOfferView}  offerItem={offerItem} />)
+      }
       
       <div className="relative flex-1">
         <div className="absolute inset-y-0 left-0 flex items-center pl-4">
@@ -110,7 +150,7 @@ confirmBack();
           type="text"
           value={searchItemCode}
            onChange={(e) => {
-          const val = e.target.value.trim();
+          const val = e.target.value;
           setSearchItemCode(val);
           const hit = allItems.find((i) => i.barcodes?.includes(val));
           if (hit) {
@@ -224,9 +264,10 @@ confirmBack();
                 <div className="flex items-baseline justify-between">
                   <h3 className="text-sm font-semibold text-gray-900 line-clamp-1">{it.itemName}</h3>
                   <span className="ml-1 text-sm font-bold text-purple-600 whitespace-nowrap">
-                    ₹{(it.salesPrice * item.quantity).toFixed(2)}
+                    ₹{(item.subtotal)?.toFixed(2) || 0}
                   </span>
                 </div>
+               
                 <p className="mt-0.5 text-xs text-gray-500 line-clamp-1">
                   {it.description || "No description available"}
                 </p>
@@ -249,9 +290,7 @@ confirmBack();
                     >
                       <FaMinus className="w-3.5 h-3.5" />
                     </button>
-                    <span className="text-sm font-medium text-gray-800 min-w-[20px] text-center">
-                      {item.quantity}
-                    </span>
+                     
                     <button
                       onClick={() => handleQuanity(it._id, "plus")}
                       className="p-1.5 text-gray-600 hover:text-purple-600 rounded-full active:bg-gray-200 transition-colors"
@@ -265,9 +304,44 @@ confirmBack();
             </div>
 
             {/* Price Breakdown (Subtle) */}
-            <div className="flex justify-end pt-2 mt-2 text-xs text-gray-500 border-t border-gray-100/70">
-              <span>₹{it.salesPrice} × {item.quantity}</span>
-            </div>
+           <div className="flex items-center justify-between pt-2 mt-2 text-xs text-gray-500 border-t border-gray-100/70">
+  
+  {/* Offer Button */}
+
+
+  {
+    it.discountPolicy!=="None" && (
+<button
+    onClick={() => {
+      setOfferView(true);
+      setOfferItem({
+        itemName: it.itemName,
+        
+          requiredQty: it.requiredQuantity || 0,
+          freeQty: it.freeQuantity || 0
+        
+      });
+    }}
+    className="flex items-center gap-1 px-3 py-1 text-xs font-semibold text-blue-600 transition-colors bg-blue-100 rounded-full hover:bg-blue-200"
+  >
+    <svg
+      className="w-3.5 h-3.5 text-blue-500"
+      fill="currentColor"
+      viewBox="0 0 20 20"
+    >
+      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l.7 2.148a1 1 0 00.95.69h2.262c.969 0 1.371 1.24.588 1.81l-1.833 1.33a1 1 0 00-.364 1.118l.7 2.148c.3.921-.755 1.688-1.538 1.118l-1.834-1.33a1 1 0 00-1.175 0l-1.833 1.33c-.783.57-1.838-.197-1.538-1.118l.7-2.148a1 1 0 00-.364-1.118L3.55 7.575c-.783-.57-.38-1.81.588-1.81H6.4a1 1 0 00.95-.69l.7-2.148z" />
+    </svg>
+    View Offer
+  </button>
+    )
+  }
+  
+
+  {/* Price Text */}
+  <span className="font-medium text-gray-700">₹{it.salesPrice} × {item.quantity}</span>
+</div>
+
+
           </div>
         );
       })}
@@ -298,3 +372,5 @@ confirmBack();
 
   );
 }
+
+

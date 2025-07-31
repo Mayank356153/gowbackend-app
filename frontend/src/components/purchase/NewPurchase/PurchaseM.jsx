@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef ,useCallback} from 'react';
 import Navbar from "../../Navbar.jsx";
 import Sidebar from "../../Sidebar.jsx";
 import { useNavigate,  useSearchParams } from 'react-router-dom';
@@ -11,19 +11,43 @@ import Purchase1 from './Purchase1.jsx';
 import Purchase2 from './Purchase2.jsx';
 import Purchase3 from './Purchase3.jsx';
 import { Camera } from '@capacitor/camera';
+import playSound from "../../../utility/sound";
 // Generate reference number
 const generateReferenceNo = (lastReferenceNo) => {
   const currentYear = new Date().getFullYear();
+
+  // If not present, return starting PO ref
   if (!lastReferenceNo || typeof lastReferenceNo !== 'string') {
     return `PO/${currentYear}/01`;
   }
+
+  // Split into parts
   const parts = lastReferenceNo.split("/");
-  if (parts.length !== 3 || parts[0] !== "PO" || !/^\d{4}$/.test(parts[1]) || isNaN(parseInt(parts[2]))) {
-    return `PO/${currentYear}/01`;
+
+  // Case 1: PO format => PO/2025/03
+  if (
+    parts.length === 3 &&
+    parts[0] === "PO" &&
+    /^\d{4}$/.test(parts[1]) &&
+    !isNaN(parseInt(parts[2]))
+  ) {
+    const lastNumber = parseInt(parts[2], 10);
+    return `PO/${parts[1]}/${String(lastNumber + 1).padStart(2, "0")}`;
   }
-  const lastNumber = parseInt(parts[2], 10);
-  return `PO/${parts[1]}/${String(lastNumber + 1).padStart(2, "0")}`;
+
+  // Case 2: BULK format => BULK/1753680742051
+  if (
+    parts.length === 2 &&
+    parts[0] === "BULK" &&
+    /^\d+$/.test(parts[1])
+  ) {
+    return `BULK/${Date.now()}`;
+  }
+
+  // Default fallback (invalid format): start fresh
+  return `PO/${currentYear}/01`;
 };
+
 
 // Handle item field changes
 const handleItemFieldChange = (index, field, value, formData, setFormData, operation = null) => {
@@ -85,6 +109,7 @@ const PurchaseM= () => {
   const [showSupplierPop, setShowSupplierPop] = useState(false);
   const prevWarehouse = useRef(null);
   const [defaultWarehouse, setDefaultWarehouse] = useState(null);
+  const[sWarehouse,setSWarehouse]=useState(null)
   const [options, setOptions] = useState({
     warehouse: [],
     items: [],
@@ -115,11 +140,28 @@ const PurchaseM= () => {
     createdBy: "",
     createdByModel: "",
   });
+  
+    useEffect(()=>{
+       setSWarehouse(localStorage.getItem("deafultWarehouse") || null);
+    },[])
+     
 
   const navigate = useNavigate();
   const videoRef = useRef(null);
   const codeReaderRef = useRef(null);
-
+  
+ const playBeep = useCallback(() => {
+      const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+      oscillator.type = "sine";
+      oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
+      gainNode.gain.setValueAtTime(2.0, audioContext.currentTime);
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+      oscillator.start();
+      oscillator.stop(audioContext.currentTime + 0.15);
+    }, []);
   
 
   useEffect(() => {
@@ -206,70 +248,51 @@ useEffect(() => {
   // Set sidebar state based on screen size
  
 
-  // Fetch all items
-  const fetchItems = async () => {
-    setLoading(true);
-    const token = localStorage.getItem("token");
-    if (!token) {
-      console.log("No token found, redirecting...");
-      navigate("/");
+  
+    async function fetchItems() {
+    if (!sWarehouse) {
+      setAllItems([]);
       return;
     }
+  
     try {
-      const data  = await axios.get(
-      `${link}/api/items/all?warehouse=${formData.warehouse}`,
-      {
-          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-      }
-    );
-        const rawItems = data.data || [];
-
-      const flatItems = rawItems
-        .filter((it) => it._id && it.warehouse?._id)
-        .map((it) => {
-          const isVariant = Boolean(it.parentItemId);
-          return {
-            ...it,
-            parentId: isVariant ? it.parentItemId : it._id,
-            variantId: isVariant ? it._id : null,
-            itemName: isVariant ? `${it.itemName} / ${it.variantName || "Variant"}` : it.itemName,
-            barcode: it.barcode || "",
-            barcodes: it.barcodes || [],
-            itemCode: it.itemCode || "",
-          };
+       const {data} = await axios.get(`${link}/api/items`, {
+            headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+          params: { warehouse: sWarehouse }
         });
-
-      console.log(
-        "Flattened items:",
-        flatItems.map((i) => ({
-          _id: i._id,
-          parentId: i.parentId,
-          variantId: i.variantId,
-          itemName: i.itemName,
-          itemCode: i.itemCode,
-          barcode: i.barcode,
-          barcodes: i.barcodes,
-          isVariant: !!i.variantId,
-          warehouseId: i.warehouse?._id,
-        }))
-      );
-      
-      setAllItems(flatItems);
-    } catch (error) {
-      alert(error.response?.data?.message || error.message);
-      setAllItems([]);
-    } finally {
-      setLoading(false);
+        
+     
+      const rawItems = data.data || [] ;
+  
+        const flatItems = rawItems
+          .filter((it) => it._id && it.warehouse?._id)
+          .map((it) => {
+            const isVariant = Boolean(it.parentItemId);
+            return {
+              ...it,
+              parentId: isVariant ? it.parentItemId : it._id,
+              variantId: isVariant ? it._id : null,
+              itemName: isVariant ? `${it.itemName} / ${it.variantName || "Variant"}` : it.itemName,
+              barcode: it.barcode || "",
+              barcodes: it.barcodes || [],
+              itemCode: it.itemCode || "",
+            };
+          });
+  
+        
+        setAllItems(flatItems);
+      } catch (err) {
+        console.error("Fetch items error:", err.message);
+      }
     }
-  };
 
   useEffect(() => {
-    if (formData.warehouse) {
-      fetchItems();
+    if (sWarehouse) {
+      fetchItems(sWarehouse);
     } else {
       setAllItems([]);
     }
-  }, [formData.warehouse]);
+  }, [sWarehouse]);
 
   // Fetch purchase data for editing
   const fetchPurchase = async () => {
@@ -428,6 +451,9 @@ useEffect(() => {
           label: supplier.supplierName,
           value: supplier._id,
         }));
+        if(newSuppliers.length ===1 ) {
+          handleSelectChange(newSuppliers[0].value, "supplier");
+        }
       setOptions((prev) => ({ ...prev, suppliers: newSuppliers }));
     } catch (error) {
       alert(error.response?.data?.message || error.message);
@@ -555,8 +581,10 @@ useEffect(() => {
 
   // Calculate totals
   useEffect(() => {
+  
     const sub = (formData?.items || []).reduce((acc, item) => {
-      const itemTotal = (item.quantity || 0) * (item.mrp || 0) - (item.discount || 0);
+   
+      const itemTotal = (item.quantity || 0) * (item.purchasePrice || 0) - (item.discount || 0);
       return acc + itemTotal;
     }, 0);
 
@@ -576,6 +604,8 @@ useEffect(() => {
       discountOnAll: discountAmount,
     }));
   }, [formData.items, discount, discountType, otherCharges]);
+
+  
    useEffect(() => {
     if (!id) {
       setFormData(prev => ({
@@ -726,11 +756,16 @@ const addItem = (it) => {
 
   if (existingIndex !== -1) {
     // Item already exists: increase quantity
+
+    
     setFormData((prev) => {
       const updatedItems = [...prev.items];
       const existing = updatedItems[existingIndex];
 
       const newQuantity = existing.quantity + 1;
+      if(newQuantity > (existing.currentStock || 0)) {
+        return prev; // Don't allow quantity to exceed opening stock
+      }
       const discountAmount = getDiscountAmount(existing);
       const totalAmount = newQuantity * (existing.mrp || 0) - discountAmount;
 
@@ -739,10 +774,11 @@ const addItem = (it) => {
         quantity: newQuantity,
         totalAmount,
       };
-
+          playSound("/sounds/item-exists.mp3");
       return { ...prev, items: updatedItems };
     });
   } else {
+     playSound("/sounds/item-added.mp3");
     // Item does not exist: add new
     const discountAmount = getDiscountAmount(it);
     const totalAmount = (it.mrp || 0) - discountAmount;
@@ -791,6 +827,101 @@ const addItem = (it) => {
   setResult("");
 };
 
+const addItemsInBatch = (matchedItems) => {
+  setFormData((prev) => {
+    const updatedItems = [...(prev.items || [])];
+
+    const getDiscountAmount = (item) => {
+      if (!item.discount) return 0;
+      return item.discountType?.toLowerCase() === "percentage"
+        ? ((item.discount || 0) * (item.mrp || 0)) / 100
+        : item.discount || 0;
+    };
+
+    matchedItems.forEach((it) => {
+      if (!it || !it.parentId) {
+        console.error("Invalid item, missing parentId:", it);
+        return;
+      }
+
+      const parentId = it.parentId;
+      const variantId = it.variantId || null;
+
+      const existingIndex = updatedItems.findIndex(
+        (item) => item.item === parentId && item.variant === variantId
+      );
+
+      if (existingIndex !== -1) {
+        const existing = updatedItems[existingIndex];
+        const newQuantity = existing.quantity + 1;
+
+        if (newQuantity > (existing.currentStock || 0)) {
+          return; // skip if exceeding stock
+        }
+
+        const discountAmount = getDiscountAmount(existing);
+        const totalAmount = newQuantity * (existing.mrp || 0) - discountAmount;
+
+        updatedItems[existingIndex] = {
+          ...existing,
+          quantity: newQuantity,
+          totalAmount,
+        };
+
+        playSound("/sounds/item-exists.mp3");
+      } else {
+        const discountAmount = getDiscountAmount(it);
+        const totalAmount = (it.mrp || 0) - discountAmount;
+
+        const newItem = {
+          purchasePrice: it.purchasePrice || 0,
+          item: parentId,
+          variant: variantId,
+          itemName: it.itemName,
+          itemCode: it.itemCode || "",
+          openingStock: it.openingStock || 0,
+          currentStock:
+            it.currentStock != null
+              ? it.currentStock
+              : it.openingStock || 0,
+          salesPrice: it.salesPrice || 0,
+          quantity: it.quantity || 1,
+          discount: it.discount || 0,
+          tax: it.tax?._id || null,
+          taxRate: it.tax?.taxPercentage || 0,
+          unit: it.unit || null,
+          mrp: it.mrp || 0,
+          expiryDate: it.expiryDate || null,
+          totalAmount,
+        };
+
+        updatedItems.push(newItem);
+        playSound("/sounds/item-added.mp3");
+      }
+    });
+
+    return {
+      ...prev,
+      items: updatedItems,
+    };
+  });
+
+  // Optional: update options too
+  setOptions((prev) => ({
+    ...prev,
+    items: [
+      ...(prev.items || []),
+      ...matchedItems.map((it) => ({
+        ...it,
+        parentId: it.parentId,
+        variantId: it.variantId || null,
+        itemName: it.itemName,
+      })),
+    ],
+  }));
+
+  setResult("");
+};
 
 
 
@@ -804,21 +935,22 @@ const addItem = (it) => {
   const handleSelectChange = (selectedOption, name) => {
     setFormData((prev) => ({
       ...prev,
-      [name]: selectedOption ? selectedOption.value : null,
+      [name]: selectedOption ? selectedOption : null,
     }));
   };
 
   // Handle payment select changes
   const handlePaymentSelect = (name) => (selectedOption) => {
-    alert(selectedOption)
+    
     setFormData((prev) => ({
       ...prev,
       payments: [{
         ...prev.payments[0],
-        [name]: selectedOption ? selectedOption.value : null,
+        [name]: selectedOption ? selectedOption : null,
       }],
     }));
   };
+  useEffect(()=>{console.log("formData",formData)},[formData])
 
   // Derive cash accounts and terminals
   const selectedWarehouse = options.warehouse.find(w => w.value === formData.warehouse);
@@ -845,10 +977,10 @@ const addItem = (it) => {
           <form onSubmit={handleSubmit}>
 
           {
-            activeTab==="p1" && <Purchase1 options={options} setActiveTab={setActiveTab} handleSelectChange={handleSelectChange} formData={formData} setFormData={setFormData} setShowSupplierPop={setShowSupplierPop} />
+            activeTab==="p1" && <Purchase1 options={options} sWarehouse={sWarehouse} setSWarehouse={setSWarehouse} setActiveTab={setActiveTab} handleSelectChange={handleSelectChange} formData={formData} setFormData={setFormData} setShowSupplierPop={setShowSupplierPop} />
           }
            {
-            activeTab==="p2" && <Purchase2  updateItem={updateItem} items={formData.items} removeItem={handleRemoveItem}  selectedWarehouse={formData.warehouse} setActiveTab={setActiveTab} formData={formData} setFormData={setFormData} result={result} setResult={setResult} allItems={allItems} addItem={addItem} handleAddItem={handleAddItem}filteredItems={filteredItems}  options={options} handleItemFieldChange={handleItemFieldChange} handleRemoveItem={handleRemoveItem}
+            activeTab==="p2" && <Purchase2 addItemsInBatch={addItemsInBatch} updateItem={updateItem} items={formData.items} removeItem={handleRemoveItem}  selectedWarehouse={formData.warehouse} setActiveTab={setActiveTab} formData={formData} setFormData={setFormData} result={result} setResult={setResult} allItems={allItems} addItem={addItem} handleAddItem={handleAddItem}filteredItems={filteredItems}  options={options} handleItemFieldChange={handleItemFieldChange} handleRemoveItem={handleRemoveItem}
             />
           }
             {

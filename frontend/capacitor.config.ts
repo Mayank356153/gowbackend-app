@@ -7,10 +7,10 @@ const config: CapacitorConfig = {
   android: {
     allowMixedContent: true,
     captureInput: true,
-    backgroundColor: '#ffffff'
+  backgroundColor: '#ffffff',
   },
   // server:{
-  //   url:"http://192.168.1.5:3000",
+  //   url:"http://192.168.1.4:3000/",
   //   cleartext: true,
   // },
   plugins: {
@@ -18,7 +18,12 @@ const config: CapacitorConfig = {
     parent: 'camera-container',
     className: 'cameraPreview',
     toBack: false, // or true if you set transparency
-  }
+  },
+   StatusBar: {
+      backgroundColor: "#ffffff",
+      style: "Dark" // or "Light"
+    }
+
 }
 };
 

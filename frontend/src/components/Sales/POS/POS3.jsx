@@ -1,182 +1,266 @@
-import React from 'react'
-import { useState,useRef,useEffect } from 'react'
-import {App} from '@capacitor/app'
-import { FaBarcode,FaHandPaper,FaLayerGroup,FaMoneyBill,FaCreditCard ,FaPlus,FaMinus,FaTrash,FaBoxOpen} from 'react-icons/fa'
-import { CameraIcon } from '@heroicons/react/outline'
-import { FaUser,FaWarehouse,FaFileInvoice,FaEdit,FaMoneyBillWave,FaTimes} from 'react-icons/fa'
-import { FaBox,FaInfoCircle,FaChevronLeft } from 'react-icons/fa'
-import { useLocation,useNavigate } from 'react-router-dom'
-export default function POS3({
-    showHoldList,
-    heldInvoices,selectedCustomer,selectedWarehouse,setSelectedWarehouse,setSelectedCustomer,handleDeleteInvoice,handleEditInvoice,
-    allItems,filteredItems,warehouses,invoiceCode,customers,searchItemCode,setSearchItemCode,addItem,startScanner,scanning,videoRef,codeReaderRef,
-    setScanning,orderPaymentMode,items,updateItem,removeItem,onHold,previousBalance,buttonStyles,onOpenModal,quantity,totalAmount,totalDiscount,couponCode,setCouponCode,
-    isPaymentModalOpen,setIsPaymentModalOpen,PaymentModal,paymentMode,paymentTypes,accounts,terminals,buildPayload,selectedAccount,advancePaymentAmount,paymentSummary,sendOrder,
-    currentOrderId,setAdvancePaymentAmount,setSelectedAccount,setActiveTab,setAdjustAdvancePayment
-}) {
-  const location=useLocation()
-  const navigate=useNavigate()
-    const initialLocationRef = useRef(location);
 
-  // Hardware back
-  useEffect(() => {
-    const backHandler = App.addListener('backButton', () => {
-      setActiveTab('pos2');
-    });
+// Redesigned POS3 for Clean Mobile UI
+import React, { useEffect, useState } from 'react';
+import { App } from '@capacitor/app';
+import { useNavigate } from 'react-router-dom';
+import { FaBoxOpen, FaBox, FaPlus, FaMinus, FaTrash, FaChevronLeft, FaHandPaper, FaLayerGroup, FaMoneyBill, FaCreditCard } from 'react-icons/fa';
 
-    return () => backHandler.remove();
-  }, []);
-
-  // Intercept swipe back or browser back
-  useEffect(() => {
-    const unblock = navigate((_, action) => {
-      if (action === 'POP') {
-        setActiveTab('pos2');
-        return false; // Prevent actual navigation
-      }
-    });
-
-    return unblock;
-  }, [navigate]);
-    const [selectedItem,setSelectedItem]=React.useState(null)
-
-    
-    
- return (
-    <div className="min-h-screen ">
-      {/* Held Invoices Drawer for Mobile */}
-    {showHoldList && (
-  <div className="fixed inset-0 z-50 flex items-end bg-black bg-opacity-50 md:items-center md:justify-end">
-    {/* Slide-up panel for mobile, right-panel for tablet/desktop */}
-    <div className="w-full md:w-96 bg-white rounded-t-2xl md:rounded-xl shadow-2xl p-4 max-h-[80vh] overflow-y-auto">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-base font-semibold text-gray-800">Held Invoices</h3>
-        <button
-          className="text-xl text-gray-500 hover:text-gray-700"
-          // onClick={() => setShowHoldList(false)}
-        >
-          &times;
-        </button>
-      </div>
-
-      {/* Invoice List */}
-      {heldInvoices.length ? (
-        heldInvoices.map((inv) => (
-          <div
-            key={inv._id}
-            className="p-3 mb-3 bg-white border-l-4 shadow-sm border-cyan-500 rounded-xl"
-          >
-            <div className="flex items-start justify-between gap-2">
-              <div className="text-sm">
-                <p className="font-semibold text-gray-800">
-                  {inv.saleCode || inv.items?.[0]?.itemName || inv._id.slice(0, 6)}
-                </p>
-                {inv.items?.length > 1 && (
-                  <p className="mt-1 text-xs text-gray-500">
-                    +{inv.items.length - 1} more item{inv.items.length - 1 > 1 ? 's' : ''}
-                  </p>
-                )}
-              </div>
-
-              <div className="flex flex-col items-end gap-1 text-sm">
-                <button
-                  onClick={() => handleEditInvoice(inv._id)}
-                  className="text-blue-600 hover:text-blue-800"
-                >
-                  Edit
-                </button>
-                <button
-                  onClick={() => handleDeleteInvoice(inv._id)}
-                  className="text-red-600 hover:text-red-800"
-                >
-                  Delete
-                </button>
-              </div>
-            </div>
-          </div>
-        ))
-      ) : (
-        <p className="mt-6 text-sm text-center text-gray-500">No held invoices</p>
-      )}
-    </div>
+// No changes needed for these sub-components
+const Info = ({ label, value }) => (
+  <div>
+    <p className="text-xs text-gray-500">{label}</p>
+    <p className="font-semibold text-gray-800 truncate">{value}</p>
   </div>
-)}
+);
+
+const Summary = ({ label, value, isGrandTotal = false }) => (
+  <div className="flex justify-between py-1.5 text-sm">
+    <span className={isGrandTotal ? "font-bold text-gray-800" : "text-gray-600"}>{label}</span>
+    <span className={isGrandTotal ? "font-bold text-lg text-gray-900" : "font-medium text-gray-800"}>{value}</span>
+  </div>
+);
+
+// --- COMPONENT REFACTORED FOR BETTER MOBILE UX ---
+const ItemsList = ({ items,couponCode,setCouponCode, updateItem, removeItem, setSelectedItem ,totalAmount ,totalDiscount}) => (
+  <section className="overflow-y-auto">
+    <div className="divide-y divide-gray-200 ">
+      {items.length === 0 ? (
+        <div className="p-10 text-center">
+          <FaBoxOpen size={40} className="mx-auto text-gray-400" />
+          <h3 className="mt-4 text-base font-semibold text-gray-800">Your Cart is Empty</h3>
+          <p className="mt-1 text-sm text-gray-500">Add items to get started.</p>
+        </div>
+      ) : (
+        items.map((item, idx) => (
+          <div key={item.id || idx} className="flex items-center gap-4 p-3">
+            {/* Item Name & Details */}
+            <div className="flex-grow cursor-pointer" onClick={() => setSelectedItem(item)}>
+              <p className="font-semibold leading-tight text-gray-800" title={item.itemName}>
+                {item.itemName}
+              </p>
+              <p className="text-xs text-gray-500">
+                @ ₹{item.salesPrice.toFixed(2)}
+              </p>
+            </div>
+
+            {/* Quantity Stepper & Price */}
+            <div className="flex flex-col items-end gap-2">
+  <div className="flex items-center bg-gray-100 rounded-lg">
+    <button
+      onClick={() => updateItem(idx, 'quantity', Math.max(1, item.quantity - 1))}
+      className="px-3 py-1 rounded-l-lg text-cyan-600 hover:bg-gray-200"
+      aria-label="Decrease quantity"
+    >
+      <FaMinus size={12} />
+    </button>
+
+    <input
+      type="text"
+      value={item.quantity}
+      onChange={(e) => {
+        const val = parseInt(Number(e.target.value));
+        updateItem(idx, 'quantity', val);
+      }}
+      className="w-12 text-base font-bold text-center bg-white border-none focus:ring-0"
+    />
+
+    <button
+      onClick={() => updateItem(idx, 'quantity', item.quantity + 1)}
+      className="px-3 py-1 rounded-r-lg text-cyan-600 hover:bg-gray-200"
+      aria-label="Increase quantity"
+    >
+      <FaPlus size={12} />
+    </button>
+  </div>
+
+  <p className="text-base font-bold text-gray-900">
+    ₹{item.subtotal.toFixed(2)}
+  </p>
+</div>
 
 
-      {/* Back Button */}
-      <button onClick={() => setActiveTab('pos2')} className="fixed z-40 p-2 top-15 left-4">
-        <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 20 20" fill="currentColor">
-          <path fillRule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clipRule="evenodd" />
-        </svg>
-      </button>
-
-      <div className="flex flex-col gap-6 p-4">
-        {/* Invoice Info */}
-        <div className="p-4 space-y-2 bg-white ">
-          
-          <div className="grid grid-cols-2 text-sm">
-            <InfoBlock label="Warehouse" value={warehouses.find(w => w._id === selectedWarehouse)?.warehouseName || 'NA'} />
-            <InfoBlock label="Invoice #" value={invoiceCode} />
-            <InfoBlock label="Customer" value={customers.find(c => c._id === selectedCustomer)?.customerName || 'NA'} />
-            <InfoBlock label="Payment" value={orderPaymentMode ? orderPaymentMode[0].toUpperCase() + orderPaymentMode.slice(1) : 'None'} />
-          </div>
-
-          <div className='flex justify-end'>
-            <button className='flex items-center px-2 text-sm font-semibold text-white rounded-lg bg-cyan-600 hover:bg-cyan-700' onClick={()=>setActiveTab("pos2")}>
-              <FaPlus /> Add Item
+            {/* Remove Button */}
+            <button
+              onClick={() => removeItem(idx)}
+              className="p-2 text-gray-400 rounded-full hover:bg-red-50 hover:text-red-500"
+              aria-label="Remove item"
+            >
+              <FaTrash size={16} />
             </button>
           </div>
+        ))
+      )}
+    </div>
+    
+          <Summary label="Subtotal" value={`₹${totalAmount.toFixed(2)}`} />
+          <Summary label="Discount" value={`- ₹${totalDiscount.toFixed(2)}`} />
+          <div className="my-2 border-t border-dashed" />
+          <Summary label="Grand Total" value={`₹${(totalAmount - totalDiscount).toFixed(2)}`} isGrandTotal={true} />
 
-          <ItemsTable items={items} updateItem={updateItem} removeItem={removeItem} setSelectedItem={setSelectedItem} />
-          {selectedItem && (
-  <ItemInfoPage 
-  allItems={allItems}
-    selectedItem={selectedItem}
-    onClose={() => setSelectedItem(null)}
-    onAddToInvoice={(item) => {
-      // Your logic to add item to invoice
-      setSelectedItem(null);
-    }}
-  />
-)}
-        </div>
-
-<div className='flex-1 overflow-y-auto bg-gray-50'>
-    <div className="flex flex-wrap justify-between gap-4 p-4 bg-white">
-          <ActionButton icon={<FaHandPaper />} label="Hold" className="bg-red-600 hover:bg-red-700" onClick={onHold} />
-          <ActionButton icon={<FaLayerGroup />} label="Multiple" className="bg-blue-600 hover:bg-blue-700" onClick={() => onOpenModal('multiple')} />
-          <ActionButton icon={<FaMoneyBill />} label="Cash" className="bg-green-600 hover:bg-green-700" onClick={() => onOpenModal('cash')} />
-          <ActionButton icon={<FaCreditCard />} label="Bank" className="bg-purple-600 hover:bg-purple-700" onClick={() => onOpenModal('bank')} />
-        </div>
-
-        {/* Summary */}
-        <div className="p-4 bg-white ">
-          {[['Quantity:', quantity], ['Total Amount (₹):', totalAmount.toFixed(2)], ['Total Discount (₹):', totalDiscount.toFixed(2)], ['Grand Total (₹):', (totalAmount - totalDiscount).toFixed(2)]].map(([label, value]) => (
-            <div key={label} className="flex justify-between mb-3 text-base text-gray-700">
-              <span className="font-semibold">{label}</span>
-              <span>{value}</span>
-            </div>
-          ))}
-
-          <div className="mt-4">
-            <label className="block mb-1 text-sm font-medium text-gray-700">Coupon Code</label>
+          <div >
+            <label className="block mb-1 text-xs font-medium text-gray-600">Apply Coupon</label>
             <input
               type="text"
-              placeholder="Enter Coupon Code"
               value={couponCode}
               onChange={(e) => setCouponCode(e.target.value)}
-              className="w-full p-3 border rounded-lg outline-none bg-gray-50 focus:ring-2 focus:ring-cyan-400"
+              placeholder="Enter coupon code"
+              className="w-full p-2 text-sm border-2 border-gray-300 rounded-md focus:ring-cyan-500 focus:border-cyan-500"
             />
           </div>
-        </div>
-</div>
-        {/* Payment Buttons */}
-      
-        
-      </div>
+         <div className='h-44'></div>
+  </section>
+);
 
-      {/* Payment Modal */}
+
+// --- COMPONENT REFACTORED FOR BETTER MOBILE UX ---
+const ItemDetailModal = ({ selectedItem, allItems, onClose }) => {
+  const item = allItems.find(it => it._id === selectedItem.item);
+  console.log(item);
+  if (!item) return null;
+
+  return (
+    // CHANGED: Full-screen modal with flex-col layout for sticky footer
+    <div className="fixed inset-0 z-50 flex flex-col bg-white">
+      <header className="flex items-center justify-between flex-shrink-0 p-4 border-b">
+        <button onClick={onClose} className="p-2 -ml-2 text-gray-600">
+          <FaChevronLeft size={20} />
+        </button>
+        <h2 className="text-lg font-semibold">Item Details</h2>
+        <div className="w-6" /> {/* Spacer */}
+      </header>
+
+      {/* CHANGED: Scrollable content area */}
+      <main className="flex-grow p-4 overflow-y-auto ">
+        <div className="space-y-6">
+          <div className="flex items-center gap-4">
+            <div className="flex items-center justify-center flex-shrink-0 w-20 h-20 bg-gray-100 rounded-lg">
+              {item.image ? (
+                <img src={item.image} alt="item" className="object-cover w-full h-full rounded-lg" />
+              ) : (
+                <FaBox size={32} className="text-gray-400" />
+              )}
+            </div>
+            <div>
+              <p className="text-xl font-bold">{item.itemName}</p>
+              <p className="text-sm text-gray-500">SKU: {item.sku || 'N/A'}</p>
+              <p className="text-lg font-semibold text-cyan-600">₹{item.salesPrice}</p>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-4 text-sm">
+            <Info label="Category" value={item.category?.name || 'N/A'} />
+            <Info label="Brand" value={item.brand?.brandName || 'N/A'} />
+            <Info label="Stock" value={item.currentStock || 0} />
+            <Info label="Barcode" value={item.barcode || item.barcodes?.[0] || 'N/A'} />
+          </div>
+          {item.description && (
+            <div>
+              <p className="text-xs font-medium text-gray-500 uppercase">Description</p>
+              <p className="mt-1 text-sm text-gray-700">{item.description}</p>
+            </div>
+          )}
+        </div>
+      </main>
+
+      {/* CHANGED: Sticky footer */}
+      <footer className="flex-shrink-0 p-4 bg-white border-t">
+        <button onClick={onClose} className="w-full py-3 font-semibold text-white rounded-lg bg-cyan-600 hover:bg-cyan-700">
+          Close
+        </button>
+      </footer>
+    </div>
+  );
+};
+
+
+export default function POS3({
+selectedCustomer, selectedWarehouse, 
+ allItems,  warehouses, invoiceCode, customers,
+  orderPaymentMode, items, updateItem, removeItem, onHold,  onOpenModal,
+  totalAmount, totalDiscount, couponCode, setCouponCode, isPaymentModalOpen, setIsPaymentModalOpen,
+  PaymentModal, paymentMode, paymentTypes, accounts, terminals, buildPayload, selectedAccount,
+  advancePaymentAmount, paymentSummary, sendOrder, currentOrderId, setAdvancePaymentAmount,
+  setSelectedAccount, setActiveTab, setAdjustAdvancePayment
+}) {
+  const [selectedItem, setSelectedItem] = useState(null);
+
+  useEffect(() => {
+    const backHandler = App.addListener('backButton', () => setActiveTab('pos2'));
+    return () => backHandler.remove();
+  }, [setActiveTab]);
+  useEffect(()=>{
+    console.log("Ad")
+    console.log(items)
+  }, [items]);
+
+  return (
+    // CHANGED: Added pb-32 for padding at the bottom so content isn't hidden by the sticky footer
+    <div className="text-gray-900 ">
+     
+
+      {/* CHANGED: Adjusted padding and spacing for a cleaner look */}
+      <main className="px-3 pt-2 space-y-4">
+        {/* Invoice Info Section */}
+        <section className="pt-2 ">
+          <div className="grid grid-cols-2 text-sm gap-x-4 ">
+            <Info label="Warehouse" value={warehouses.find(w => w._id === selectedWarehouse)?.warehouseName || 'N/A'} />
+            <Info label="Invoice #" value={invoiceCode} />
+            <Info label="Customer" value={customers.find(c => c._id === selectedCustomer)?.customerName || 'N/A'} />
+            <Info label="Payment" value={orderPaymentMode || 'None'} />
+          </div>
+          <div className="border-t border-gray-200 ">
+            <button onClick={() => setActiveTab('pos2')} className="w-full px-4 py-2 text-sm font-medium text-center rounded-lg text-cyan-600 bg-cyan-50 hover:bg-cyan-100">
+              <FaPlus className="inline mb-px mr-1" /> Add More Items
+            </button>
+          </div>
+        </section>
+
+        {/* Items List */}
+        <ItemsList items={items} couponCode={couponCode} setCouponCode={setCouponCode} totalAmount={totalAmount} totalDiscount={totalDiscount} updateItem={updateItem} removeItem={removeItem} setSelectedItem={setSelectedItem} />
+
+        {/* Order Summary Section */}
+        {/* <section className="">
+          <Summary label="Subtotal" value={`₹${totalAmount.toFixed(2)}`} />
+          <Summary label="Discount" value={`- ₹${totalDiscount.toFixed(2)}`} />
+          <div className="my-2 border-t border-dashed" />
+          <Summary label="Grand Total" value={`₹${(totalAmount - totalDiscount).toFixed(2)}`} isGrandTotal={true} />
+
+          <div className="mt-4">
+            <label className="block mb-1 text-xs font-medium text-gray-600">Apply Coupon</label>
+            <input
+              type="text"
+              value={couponCode}
+              onChange={(e) => setCouponCode(e.target.value)}
+              placeholder="Enter coupon code"
+              className="w-full p-2 text-sm border-gray-300 rounded-md focus:ring-cyan-500 focus:border-cyan-500"
+            />
+          </div>
+        </section> */}
+      </main>
+
+      {/* --- CHANGED: STICKY FOOTER FOR ACTIONS --- */}
+      <footer className="fixed bottom-0 left-0 right-0 z-10 p-3 bg-white border-t border-gray-200">
+          <h6>Grand Total:{`₹${(totalAmount - totalDiscount).toFixed(2)}`}</h6>
+        <div className="grid grid-cols-2 gap-3">
+          <button onClick={onHold} className="flex items-center justify-center gap-2 px-4 py-3 text-sm font-semibold text-yellow-800 bg-yellow-400 rounded-lg">
+            <FaHandPaper /> Hold
+          </button>
+          <button onClick={() => onOpenModal('multiple')} className="flex items-center justify-center gap-2 px-4 py-3 text-sm font-semibold text-white text-blue-800 bg-blue-400 rounded-lg">
+            <FaLayerGroup /> Multiple
+          </button>
+          <button onClick={() => onOpenModal('cash')} className="flex items-center justify-center gap-2 px-4 py-3 text-sm font-semibold text-white bg-green-600 rounded-lg">
+            <FaMoneyBill /> Cash
+          </button>
+          <button onClick={() => onOpenModal('bank')} className="flex items-center justify-center gap-2 px-4 py-3 text-sm font-semibold text-white bg-purple-600 rounded-lg">
+            <FaCreditCard /> Bank
+          </button>
+        </div>
+      </footer>
+
+
+      {selectedItem && (
+        <ItemDetailModal selectedItem={selectedItem} allItems={allItems} onClose={() => setSelectedItem(null)} />
+      )}
+
       {isPaymentModalOpen && (
         <PaymentModal
           onClose={() => setIsPaymentModalOpen(false)}
@@ -198,217 +282,5 @@ export default function POS3({
         />
       )}
     </div>
-);
-}
-
-
-const InfoBlock = ({ label, value }) => (
-  <div>
-    <p className="text-xs text-gray-500">{label}</p>
-    <p className="font-semibold text-gray-800 truncate">{value}</p>
-  </div>
-);
-
-const ActionButton = ({ icon, label, className, onClick }) => (
-  <button
-    onClick={onClick}
-    className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 text-white rounded-lg ${className}`}
-  >
-    {icon} {label}
-  </button>
-);
-
-
-const ItemsTable = ({ items, updateItem, removeItem, setSelectedItem }) => (
-  <div className="flex flex-col min-h-96">
-    {items.length > 0 ? (
-      <div className="my-1 overflow-y-auto border border-gray-200 divide-y divide-gray-200 rounded-lg max-h-96 ">
-        {items.map((item, index) => (
-          <div key={index} className="p-3 transition-colors bg-white hover:bg-gray-50">
-            <div className="flex items-start justify-between">
-              {/* Item Info */}
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center">
-                  <div className="flex items-center justify-center flex-shrink-0 w-10 h-10 mr-3 bg-gray-100 rounded-md">
-                    <FaBox className="text-lg text-gray-400" />
-                  </div>
-                  <div className="truncate">
-                    <p className="text-sm font-medium text-gray-900 truncate">{item.itemName}</p>
-                    {item.sku && (
-                      <p className="text-xs text-gray-500 truncate">SKU: {item.sku}</p>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              {/* Quantity Control */}
-              <div className="flex-shrink-0 ml-2">
-                <div className="relative">
-                 <div className="flex items-center space-x-1">
-  <button type="button"
-    onClick={() =>
-      updateItem(index, 'quantity', Math.max(1, Number(item.quantity) - 1))
-    }
-    className="px-2 py-1 text-sm font-semibold text-gray-600 bg-gray-100 rounded hover:bg-gray-200"
-  >
-    -
-  </button>
-  <input
-    type="number"
-    value={item.quantity}
-    onChange={(e) =>
-      updateItem(index, 'quantity',  Number(e.target.value))
-    }
-    className="w-16 px-2 py-1 text-sm text-center border border-gray-300 rounded"
-  />
-  <button type="button"
-    onClick={() =>
-      updateItem(index, 'quantity', Number(item.quantity) + 1)
-    }
-    className="px-2 py-1 text-sm font-semibold text-gray-600 bg-gray-100 rounded hover:bg-gray-200"
-  >
-    +
-  </button>
-</div>
-
-                  
-                </div>
-              </div>
-            </div>
-
-            {/* Action Buttons */}
-            <div className="flex justify-end mt-2 space-x-2">
-              <button 
-                onClick={() => setSelectedItem(item)}
-                className="inline-flex items-center px-2.5 py-1 text-xs font-medium text-cyan-700 bg-cyan-50 rounded hover:bg-cyan-100"
-              >
-                <FaInfoCircle className="mr-1" /> Details
-              </button>
-              <button
-                onClick={() => removeItem(index)}
-                className="p-2 text-gray-400 rounded-full hover:text-red-500 hover:bg-red-50"
-                aria-label="Remove item"
-              >
-                <FaTrash className="text-sm" />
-              </button>
-            </div>
-          </div>
-        ))}
-      </div>
-    ) : (
-      <div className="p-6 text-center border-2 border-gray-300 border-dashed rounded-lg">
-        <FaBoxOpen className="w-12 h-12 mx-auto text-gray-400" />
-        <h3 className="mt-2 text-sm font-medium text-gray-900">No items</h3>
-        <p className="mt-1 text-sm text-gray-500">Add items to create an invoice</p>
-      </div>
-    )}
-
-    {items.length > 0 && (
-      <div className="px-3 py-2 text-center rounded-lg bg-gray-50">
-        <p className="text-sm text-gray-700">
-          {items.length} item{items.length !== 1 ? 's' : ''} in this invoice
-        </p>
-      </div>
-    )}
-  </div>
-);
-
-const ItemInfoPage = ({ selectedItem, onClose, onAddToInvoice ,allItems}) => {
-  const itemexist=allItems.find(it=>it._id===selectedItem.item)
-  console.log(itemexist)
-  if (!selectedItem) return null;
-
-  return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-gray-100">
-      {/* Header */}
-      <div className="sticky top-0 z-10 flex items-center justify-between p-4 bg-white border-b border-gray-200 shadow-sm">
-        <button 
-          onClick={onClose}
-          className="p-1 text-gray-500 rounded-full hover:bg-gray-100"
-        >
-          <FaChevronLeft className="w-5 h-5" />
-        </button>
-        <h2 className="text-lg font-semibold text-gray-800">Item Details</h2>
-        <div className="w-5"></div> {/* Spacer for alignment */}
-      </div>
-
-      {/* Item Content */}
-      <div className="p-4 space-y-6">
-        {/* Item Header */}
-        <div className="flex items-start gap-4 p-4 bg-white rounded-lg shadow-sm">
-          <div className="flex items-center justify-center flex-shrink-0 w-16 h-16 bg-gray-100 rounded-lg">
-            {itemexist.image ? (
-              <img 
-                src={selectedItem.image} 
-                alt={selectedItem.itemName}
-                className="object-contain w-full h-full rounded-lg"
-              />
-            ) : (
-              <FaBox className="text-2xl text-gray-400" />
-            )}
-          </div>
-          <div>
-            <h3 className="text-lg font-bold text-gray-900">{itemexist.itemName}</h3>
-            <p className="text-sm text-gray-500">SKU: {itemexist.sku || 'N/A'}</p>
-            <p className="mt-1 text-sm font-semibold text-cyan-600">
-              ₹{itemexist.salesPrice?.toFixed(2) || '0.00'}
-            </p>
-          </div>
-        </div>
-
-        {/* Details Section */}
-        <div className="p-4 bg-white rounded-lg shadow-sm">
-          <h3 className="mb-3 text-base font-semibold text-gray-800">Details</h3>
-          
-          <div className="grid grid-cols-2 gap-4 text-sm">
-            <InfoRow label="Category" value={itemexist.category?.name || 'N/A'} />
-            <InfoRow label="Brand" value={itemexist.brand?.brandName || 'N/A'} />
-            <InfoRow label="Barcode" value={itemexist.barcode || 'N/A'} />
-            <InfoRow label="Stock" value={itemexist.openingStock || '0'} />
-          </div>
-
-          {selectedItem.description && (
-            <div className="mt-4">
-              <h4 className="text-sm font-medium text-gray-500">Description</h4>
-              <p className="mt-1 text-sm text-gray-700">{selectedItem.description}</p>
-            </div>
-          )}
-        </div>
-
-        {/* Variants (if any) */}
-        {selectedItem.variants?.length > 0 && (
-          <div className="p-4 bg-white rounded-lg shadow-sm">
-            <h3 className="mb-3 text-base font-semibold text-gray-800">Variants</h3>
-            <div className="space-y-2">
-              {selectedItem.variants.map((variant, index) => (
-                <div key={index} className="p-2 border rounded-lg">
-                  <p className="font-medium">{variant.name}</p>
-                  <p className="text-sm text-gray-500">Price: ₹{variant.price.toFixed(2)}</p>
-                  <p className="text-sm text-gray-500">Stock: {variant.stock}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Fixed Action Button */}
-      <div className="sticky bottom-0 p-4 bg-white border-t border-gray-200">
-        <button
-          onClick={() => onAddToInvoice(selectedItem)}
-          className="flex items-center justify-center w-full gap-2 px-4 py-3 text-white rounded-lg bg-cyan-600 hover:bg-cyan-700"
-        >
-          Close
-        </button>
-      </div>
-    </div>
   );
-};
-
-// Helper component for info rows
-const InfoRow = ({ label, value }) => (
-  <div>
-    <p className="text-xs text-gray-500">{label}</p>
-    <p className="text-sm font-medium text-gray-800">{value}</p>
-  </div>
-);
+}

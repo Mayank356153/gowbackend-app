@@ -197,7 +197,7 @@ const AddAccount = () => {
                 <FaTachometerAlt className="mr-1" /> Home
               </a>
               <BiChevronRight className="mx-2" />
-              <a href="/account-list">Accounts List</a>
+              <a href="/account-list1">Accounts List</a>
             </nav>
           </header>
 

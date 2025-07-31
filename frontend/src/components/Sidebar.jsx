@@ -70,7 +70,8 @@ const Sidebar = ({ isSidebarOpen }) => {
     order:false,
     audit:false,
     imageManagement:false,
-    deliverySlot:false
+    deliverySlot:false,
+    salesLocation:false,
   });
   const [localPermissions, setLocalPermissions] = useState([]);
 
@@ -128,8 +129,10 @@ const Sidebar = ({ isSidebarOpen }) => {
     "reports",
     "settings",
     "help",
-    "deliverySlot"
+    "deliverySlot",
+    "printer"
   ];
+
 
   
   const reportsList = [
@@ -139,6 +142,7 @@ const Sidebar = ({ isSidebarOpen }) => {
     { name: "GSTR-1 Report", path: "/reports/gstr-1" },
     {name:"Stock Transfer Report",path:"/reports/stock-transfer"},
     {name:"Sale Items Report",path:"/reports/sale-item"},
+    { name: "ClubBill Report", path: "/reports/club-bill" },
     {name:"Stock Report",path:"/reports/stock"},
     {name:"Item Compare",path:"/reports/item-compare"},
     {name:"Item Transfer",path:"/reports/item-transfer"},
@@ -166,7 +170,7 @@ const Sidebar = ({ isSidebarOpen }) => {
             <div
               className="flex items-center justify-between p-2 cursor-pointer hover:bg-gray-700"
               onClick={() => handleDropdownToggle("user")}
-            >
+            > 
               <div className="flex items-center space-x-2">
                 <FaUsers />
                 <span>Users</span>
@@ -290,6 +294,55 @@ const Sidebar = ({ isSidebarOpen }) => {
           </li>
         )}
 
+{/* 
+        {(isAdmin || hasPermissionFor("sales", "View") ) && (
+          <li>
+            <div
+              className="flex items-center justify-between p-2 cursor-pointer hover:bg-gray-700"
+              onClick={() => handleDropdownToggle("salesLocation")}
+            >
+              <div className="flex items-center space-x-2">
+                <FaCartPlus />
+                <span>Sales Location</span>
+              </div>
+              {dropdowns.salesLocation ? <FaAngleUp /> : <FaAngleDown />}
+            </div>
+            <Transition
+              show={dropdowns.salesLocation}
+              enter="transition-all duration-300 ease-out"
+              enterFrom="transform opacity-0 -translate-y-2"
+              enterTo="transform opacity-100 translate-y-0"
+              leave="transition-all duration-300 ease-in"
+              leaveFrom="transform opacity-100 translate-y-0"
+              leaveTo="transform opacity-0 -translate-y-2"
+            >
+              <ul className="pl-4">
+                {hasPermissionFor("posorders", "Add") && (
+                  <li
+                    className="flex items-center p-2 space-x-2 text-sm cursor-pointer hover:bg-gray-700"
+                    onClick={() => navigate("/pos-main")}
+                  >
+                    <FaCashRegister />
+                    <span>Sales Location</span>
+                  </li>
+                )}
+              </ul>
+            </Transition>
+          </li>
+        )} */}
+
+
+
+           <li onClick={() => navigate("/printer-settings")}>
+            <div
+              className="flex items-center justify-between p-2 cursor-pointer hover:bg-gray-700"
+            >
+              <div className="flex items-center space-x-2">
+                <FaCartPlus />
+                <span>Printer Settings</span>
+              </div>
+            </div>
+          </li>
 
 
 
@@ -959,7 +1012,7 @@ const Sidebar = ({ isSidebarOpen }) => {
                 {hasPermissionFor("accounts", "View") && (
                   <li
                     className="flex items-center p-2 text-sm cursor-pointer hover:bg-gray-700"
-                    onClick={() => navigate("/account-list")}
+                    onClick={() => navigate("/account-list1")}
                   >
                     <FaListAlt />
                     <span>Account List</span>

@@ -6,7 +6,9 @@ import { BiChevronRight } from "react-icons/bi";
 import { FaTachometerAlt } from "react-icons/fa";
 import LoadingScreen from "../../Loading";
 import axios from "axios";
+import {CapacitorThermalPrinter} from 'capacitor-thermal-printer';
 
+import scanAndConnect from "../../utility/bluetooth_connect";
 const UserList = () => {
     const link="https://pos.inspiredgrow.in/vps"
   const [loading, setLoading] = useState(false);
@@ -34,6 +36,35 @@ const UserList = () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
+
+  
+  const printReceipt = async () => {
+  const address = localStorage.getItem('printer_address');
+  if (!address){
+    scanAndConnect();
+  }
+
+  await CapacitorThermalPrinter.connect({ address });
+
+  await CapacitorThermalPrinter.begin()
+    .align('center')
+    .text('My Grocery Store\n')
+    .newline()
+    .align('left')
+    .text('Item A   ₹10\n')
+    .text('Item B   ₹15\n')
+    .newline()
+    .align('right')
+    .text('Total: ₹25\n')
+    .newline()
+    .align('center')
+    .text('Thank you!\n')
+    .cutPaper()
+    .write();
+
+  alert('Printed!');
+};
+
 
   // Initial setup and fetch users
   useEffect(() => {

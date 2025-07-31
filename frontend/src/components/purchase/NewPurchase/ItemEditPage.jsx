@@ -1,6 +1,6 @@
-
 import { useState, useEffect } from 'react';
-
+import { useLocation, useNavigate } from 'react-router-dom';
+import { App } from '@capacitor/app';
 const ItemEditPage = ({ item,edit,setEdit,id,setFormData,formData }) => {
   const [form, setForm] = useState({
     expiryDate: '',
@@ -10,6 +10,32 @@ const ItemEditPage = ({ item,edit,setEdit,id,setFormData,formData }) => {
     salesPrice: 0,
   });
 
+
+ 
+useEffect(() => {
+  const handler = App.addListener('backButton', (event) => {
+    if (edit) {
+      event.preventDefault(); // stop default back behavior
+      setEdit(false);         // close popup
+    }
+  });
+
+  return () => {
+    handler.remove();
+  };
+}, [edit]);
+
+
+const hasPermissionFor = (module, action) => {
+    const localPermissions = JSON.parse(localStorage.getItem('permissions')) || [];
+    return localPermissions.some(
+      (perm) =>
+        perm.module.toLowerCase() === module.toLowerCase() &&
+        perm.actions.map((a) => a.toLowerCase()).includes(action.toLowerCase())
+    );
+  };
+  
+    
   useEffect(() => {
     if (item) {
       setForm({
@@ -23,7 +49,14 @@ const ItemEditPage = ({ item,edit,setEdit,id,setFormData,formData }) => {
   }, [item]);
 
   const handleChange = (field, value) => {
-    let updatedForm = { ...form, [field]: value };
+    if(field === 'expiryDate') {
+       let updatedForm = { ...form, [field]: (value) };
+
+    // Auto-calculate salesPrice if discount or MRP changes
+    setForm(updatedForm);
+    return;
+    }
+    let updatedForm = { ...form, [field]: Number(value) };
 
     // Auto-calculate salesPrice if discount or MRP changes
     setForm(updatedForm);
@@ -31,10 +64,15 @@ const ItemEditPage = ({ item,edit,setEdit,id,setFormData,formData }) => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    if(form.salesPrice<form.purchasePrice){
+      alert("Sales Price cannot be less than Purchase Price");
+      return;
+    }
     const updateditem=formData.items.map(it=>
         it.item===id?{...it, ...form } : it 
     )
-    
+    console.log(updateditem)
+    console.log(form)
   setFormData(prev=>({
     ...prev,
     items: updateditem, 
@@ -48,13 +86,15 @@ const ItemEditPage = ({ item,edit,setEdit,id,setFormData,formData }) => {
     salesPrice: 0,
   })
   setEdit(false);
-  
   };
 
-  
+
+  useEffect(() => {
+    console.log("Form data updated:", formData.items);
+  }, [formData.items]);
   return (
     <div
-      className="absolute w-full p-4 mt-10 space-y-3 transition-all duration-200 bg-white shadow-sm rounded-xl"
+      className="absolute w-screen h-full p-4 space-y-3 transition-all duration-200 bg-white shadow-sm rounded-xl"
     >
         
       <h2 className="text-base font-semibold text-center text-gray-900 ">Edit Item</h2>
@@ -63,7 +103,7 @@ const ItemEditPage = ({ item,edit,setEdit,id,setFormData,formData }) => {
         <label className="block mb-1 text-xs font-medium text-gray-600">Expiry Date</label>
         <input
           type="date"
-          value={form.expiryDate}
+        value={form.expiryDate}
           onChange={(e) => handleChange('expiryDate', e.target.value)}
           className="w-full px-2 py-1.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500/50 transition-colors duration-200"
         />
@@ -92,7 +132,7 @@ const ItemEditPage = ({ item,edit,setEdit,id,setFormData,formData }) => {
       </div>
 
       <div>
-        <label className="block mb-1 text-xs font-medium text-gray-600">Discount (%)</label>
+        <label className="block mb-1 text-xs font-medium text-gray-600">Discount (Rs.)</label>
         <input
           type="number"
           value={form.discount}
@@ -106,7 +146,7 @@ const ItemEditPage = ({ item,edit,setEdit,id,setFormData,formData }) => {
       <div>
         <label className="block mb-1 text-xs font-medium text-gray-600">Sales Price</label>
         <input
-          type="number"
+          type="number" disabled={!hasPermissionFor('salesPrice', 'edit')}
           value={form.salesPrice}
           onChange={(e) => handleChange('salesPrice', e.target.value)}
           className="w-full px-2 py-1.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500/50 transition-colors duration-200"

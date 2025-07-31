@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect,useCallback } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import axios from "axios";
 import Navbar from "../../Navbar.jsx";
@@ -13,6 +13,7 @@ import { BrowserMultiFormatReader } from '@zxing/browser';
 import { useRef } from "react";
 import { Camera } from "@capacitor/camera";
 import playSound from "../../../utility/sound.js";
+import { set } from "date-fns";
 /* Change this if your base URL differs */
 const API = "";
 
@@ -27,6 +28,18 @@ function Sm() {
     request();
   }, []);
     
+   const playBeep = useCallback(() => {
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+        oscillator.type = "sine";
+        oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
+        gainNode.gain.setValueAtTime(2.0, audioContext.currentTime);
+        oscillator.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+        oscillator.start();
+        oscillator.stop(audioContext.currentTime + 0.15);
+      }, []);
 const codeReaderRef = useRef(null);
 const videoRef = useRef(null);
 const [scanning, setScanning] = useState(false);
@@ -59,6 +72,13 @@ const[matchedItems,setMatchedItems]=useState([])
     note: "",
   });
 
+  useEffect(()=>{ 
+     setFormData((prev) => ({
+      ...prev,
+      fromWarehouse: localStorage.getItem("deafultWarehouse") || null,
+    }));
+  },[])
+   
   // ─── FETCH WAREHOUSES ───────────────────────────────────────────────────
   const fetchWarehouses = async () => {
     try {
@@ -92,13 +112,12 @@ const[matchedItems,setMatchedItems]=useState([])
   // ─── FETCH ITEMS WHEN fromWarehouse CHANGES ─────────────────────────────
   const fetchItems = async (warehouseId = formData.fromWarehouse) => {
     try {
-      setLoading(true);
-      const token = localStorage.getItem("token");
-      const params = warehouseId ? { warehouse: warehouseId } : {};
-      const { data } = await axios.get(`${link}/api/items`, {
-        headers: { Authorization: `Bearer ${token}` },
-        params,
+     
+      const {data} = await axios.get(`${link}/api/items`, {
+          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+        params: { warehouse: warehouseId,inStock:true }
       });
+      
       const items = data.data || [];
       const flattenedItems = items
         .map((item) => {
@@ -109,7 +128,7 @@ const[matchedItems,setMatchedItems]=useState([])
             variantId: isVariant ? item._id : null,
             displayName: isVariant
               ? `${item.itemName} / ${item.variantName || "Variant"}`
-              : item.itemName,
+              : item.itemName || "NA",
             itemCode: item.itemCode || "",
             barcode: item.barcodes?.[0] || "",
             barcodes: item.barcodes || [],
@@ -121,7 +140,6 @@ const[matchedItems,setMatchedItems]=useState([])
         .filter((item) => item.currentStock > 0); // Only include items that have stock > 0
 
       setAllItems(flattenedItems);
-      setFilteredItemsByWarehouse(flattenedItems);
     } catch (err) {
       console.error("items:", err.message);
       setAllItems([]);
@@ -160,7 +178,7 @@ const[matchedItems,setMatchedItems]=useState([])
         ) || {};
         return {
           itemId: it.item?._id || it.item,
-          itemName: itemDoc.displayName || it.item?.itemName || "Unknown Item",
+          itemName: itemDoc.displayName || it.itemName || "Unknown Item",
           quantity: it.quantity || 1,
           isVariant: itemDoc.isVariant || false,
           variantName: itemDoc.variantName || "",
@@ -250,7 +268,7 @@ const startScanner = async () => {
           (i) =>
             i.itemCode === text ||
             i.barcodes?.includes(text) ||
-            i.itemName.toLowerCase() === text.toLowerCase()
+            i.itemName?.toLowerCase() === text.toLowerCase()
         );
 
         if (match) {
@@ -333,35 +351,149 @@ const startScanner = async () => {
     : [];
 
   // ─── ADD ITEM TO SELECTED LIST ────────────────────────────────────────
-  const handleAddItem = (targetItem) => {
-  if (!targetItem) return;
+  const handleAddItem = (it) => {
+  console.log(it)
+  if (!it || !it.parentId) {
+    console.error("Invalid item, missing parentId:", it);
+    return;
+  }
+  
+  const parentExists = allItems.some((ai) => ai._id === it.parentId && !ai.variantId);
+  if (!parentExists && !it.variantId) {
+    console.error(`Parent item not found for parentId: ${it.parentId}`, it);
+    return;
+  }
 
-  setSelectedItems((prevItems) => {
-    const existingIndex = prevItems.findIndex(
-      (item) => item.itemId === targetItem._id
-    );
-
-    if (existingIndex !== -1) {
-      // If item exists, increase quantity
-      const updatedItems = [...prevItems];
-      updatedItems[existingIndex] = {
-        ...updatedItems[existingIndex],
-        quantity: updatedItems[existingIndex].quantity + 1,
-      };
-      return updatedItems;
-    } else {
-      // New item, add it
-      return [
-        ...prevItems,
-        {
-          itemId: targetItem._id,
-          itemName: targetItem.displayName,
-          quantity: 1,
-          isVariant: targetItem.isVariant,
-          variantName: targetItem.variantName,
-        },
-      ];
+  if (it.variantId) {
+    const variantValid = allItems.some((ai) => ai._id === it.variantId && ai.parentId === it.parentId);
+    if (!variantValid) {
+      console.error(`Invalid variantId: ${it.variantId} for parentId: ${it.parentId}`, it);
+      return;
     }
+  }
+
+  const quantityToAdd = it.quantity || 1;
+
+  const existingIdx = selectedItems.findIndex(
+    (r) => r.item === it.parentId && r.variant === (it.variantId || null)
+  );
+
+  if (existingIdx !== -1) {
+    // Item already exists → update quantity by quantityToAdd
+    const updated = [...selectedItems];
+    const existing = updated[existingIdx];
+    const newQty = existing.quantity + quantityToAdd;
+    if(newQty >= updated[existingIdx].currentStock){
+      console.log("newQty",newQty)
+      console.log(newQty => updated[existingIdx].currentStock)
+      console.log(updated[existingIdx].currentStock)
+      setSearchQuery("");
+      return alert("No more stock available for this item.");
+    }
+     playSound("/sounds/item-exists.mp3");
+    updated[existingIdx] = {
+      ...existing,
+      quantity: newQty,
+      subtotal: newQty * existing.salesPrice - (existing.discount || 0),
+    };
+
+    setSelectedItems(updated);
+  } else {
+    playSound("/sounds/item-added.mp3");
+    // New item → add it to the list
+    const newItem = {
+      stock:it.openingStock || 0,
+      item: it.parentId,
+      variant: it.variantId || null,
+      itemName: it.itemName || "NA",
+      itemCode: it.itemCode || "",
+      openingStock: it.openingStock || 0,
+      currentStock: it.currentStock != null ? it.currentStock : (it.openingStock || 0),
+      salesPrice: it.salesPrice || 0,
+      quantity: quantityToAdd,
+      discount: it.discount || 0,
+      tax: it.tax?._id || null,
+      taxRate: it.tax?.taxPercentage || 0,
+      unit: it.unit || null,
+      mrp: it.mrp || 0,
+      expiryDate: it.expiryDate || null,
+      subtotal: quantityToAdd * (it.salesPrice || 0) - (it.discount || 0),
+    };
+
+    if (newItem.salesPrice <= 0) {
+      alert("Item sales price must be greater than zero.");
+      return;
+    }
+
+    setSelectedItems((prev) => [...prev,newItem]);
+    
+  }
+
+ 
+
+  setSearchQuery("");
+};
+
+const handleAddItemsBatch = (itemsToAdd) => {
+  setSelectedItems((prevItems) => {
+    const updated = [...prevItems];
+
+    itemsToAdd.forEach((it) => {
+      if (!it || !it.parentId) return;
+
+      const parentExists = allItems.some((ai) => ai._id === it.parentId && !ai.variantId);
+      if (!parentExists && !it.variantId) return;
+
+      if (it.variantId) {
+        const variantValid = allItems.some((ai) => ai._id === it.variantId && ai.parentId === it.parentId);
+        if (!variantValid) return;
+      }
+
+      const quantityToAdd = it.quantity || 1;
+      const idx = updated.findIndex((r) => r.item === it.parentId && r.variant === (it.variantId || null));
+
+      if (idx !== -1) {
+        const existing = updated[idx];
+        const newQty = existing.quantity + quantityToAdd;
+
+        if (newQty >= existing.currentStock) {
+          return; // Skip if exceeding stock
+        }
+
+        updated[idx] = {
+          ...existing,
+          quantity: newQty,
+          subtotal: newQty * existing.salesPrice - (existing.discount || 0),
+        };
+        playSound("/sounds/item-exists.mp3");
+      } else {
+        const newItem = {
+          stock: it.openingStock || 0,
+          item: it.parentId,
+          variant: it.variantId || null,
+          itemName: it.itemName || "NA",
+          itemCode: it.itemCode || "",
+          openingStock: it.openingStock || 0,
+          currentStock: it.currentStock != null ? it.currentStock : (it.openingStock || 0),
+          salesPrice: it.salesPrice || 0,
+          quantity: quantityToAdd,
+          discount: it.discount || 0,
+          tax: it.tax?._id || null,
+          taxRate: it.tax?.taxPercentage || 0,
+          unit: it.unit || null,
+          mrp: it.mrp || 0,
+          expiryDate: it.expiryDate || null,
+          subtotal: quantityToAdd * (it.salesPrice || 0) - (it.discount || 0),
+        };
+
+        if (newItem.salesPrice > 0) {
+          updated.push(newItem);
+          playSound("/sounds/item-added.mp3");
+        }
+      }
+    });
+
+    return updated;
   });
 
   setSearchQuery("");
@@ -429,10 +561,12 @@ const startScanner = async () => {
       const payload = {
         ...formData,
         items: selectedItems.map((it) => ({
-          item: it.itemId,
+          item: it.item,
           quantity: parseInt(it.quantity, 10) || 1,
         })),
       };
+      console.log(selectedItems)
+      console.log("Payload:", payload);
       const token = localStorage.getItem("token");
       if (id) {
         await axios.put(
@@ -468,7 +602,7 @@ const startScanner = async () => {
       <div className="flex flex-grow">
         <Sidebar isSidebarOpen={isSidebarOpen} />
 
-        <div className="w-full p-4 ">
+        <div className="w-full ">
           {/* Header */}
           
 
@@ -479,7 +613,7 @@ const startScanner = async () => {
           >
             {/* ─── Row 1: Date / From / To ───────────────────────────────── */}
            {activeTab==="s1" && <S1 formData={formData} setActiveTab={setActiveTab} setFormData={setFormData} warehouses={warehouses}/>}
-           {activeTab==="s2" && <S2  searchQuery={searchQuery}
+           {activeTab==="s2" && <S2  searchQuery={searchQuery} handleAddItemsBatch={handleAddItemsBatch}
   setSearchQuery={setSearchQuery}
   allItems={allItems} scanning={scanning} stopScanner={stopScanner} startScanner={startScanner}
   handleAddItem={handleAddItem}  matchedItems={matchedItems}

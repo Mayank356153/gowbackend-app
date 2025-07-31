@@ -12,7 +12,9 @@ import axios from 'axios';
 import Select from 'react-select'
 import { useNavigate } from 'react-router-dom';
 import LoadingScreen from '../../Loading.jsx';
+import BluetoothDevicesPage from '../../pages/BluetoothDevicesPage.jsx';  
 const PurchaseOverview = () => {
+  const [device, setDevice] = useState(false);
   const link="https://pos.inspiredgrow.in/vps"
   const[loading,setLoading]=useState(false)
   const[warehouse,setWarehouse]=useState([])
@@ -218,6 +220,225 @@ const handlePageChange = (pageNumber) => {
 };
 
 
+const generatePlainTextReceipt = (data) => {
+   console.log(data)
+  const store={
+      logo:        "/logo/inspiredgrow.jpg",                       //  40-50 px square looks right
+  storeName:   "Grocery on Wheels",                                //  already in state
+  tagline:     "GROCERY ON WHEELS",
+  address:     "Basement 210-211 new Rishi Nagar near\nShree Shyam Baba Mandir Gali No. 9, Hisar – 125001",
+  gst:         "06AAGCI0630K1ZR",
+  phone:       "9050092092",
+  email:       "INSPIREDGROW@GMAIL.COM",
+  }
+  
+  const lineWidth = 42; // Standard for 3-inch (80mm) Epson P80 printers
+  const line = '-'.repeat(lineWidth) + '\n';
+
+  // --- Helper Functions ---
+  const pad = (str, len, char = ' ') => (str + char.repeat(len)).substring(0, len);
+  const padRight = (str, len, char = ' ') => (String(str) + char.repeat(len)).substring(0, len);
+  const padLeft = (str, len, char = ' ') => (char.repeat(len) + String(str)).slice(-len);
+  
+  const wrapText = (text, width) => {
+    if (!text || width <= 0) return [];
+    const words = text.split(' ');
+    const lines = [];
+    let currentLine = '';
+    words.forEach(word => {
+      if ((currentLine + ' ' + word).trim().length <= width) {
+        currentLine += (currentLine ? ' ' : '') + word;
+      } else {
+        if (currentLine) lines.push(currentLine);
+        currentLine = word;
+      }
+    });
+    if (currentLine) lines.push(currentLine);
+    return lines.length > 0 ? lines : [''];
+  };
+
+  const centerText = (text) => {
+    if (!text) return '\n';
+    const space = Math.max(0, Math.floor((lineWidth - text.length) / 2));
+    return ' '.repeat(space) + text;
+  };
+
+  const twoColumn = (left, right) => {
+    const space = lineWidth - left.length - right.length;
+    return left + ' '.repeat(Math.max(0, space)) + right;
+  };
+  
+ 
+  
+  // Adjusted total to fit, let's recalculate: 3+18+4+7+7 = 39. Left for total = 3. Too small.
+  // Let's use the previous stable widths.
+  const finalColWidths = {
+    sno: 3,
+    item: 15,
+    qty: 4,
+    mrp: 7,
+    rate: 7,
+    total: 6,
+  };
+
+  
+  // =================================================================
+  // THIS IS THE NEW, SIMPLER, AND CORRECTED ITEM ROW FORMATTER
+  // =================================================================
+  const formatItemRow = (item, index) => {
+    const snoStr = `${index + 1}.`;
+    
+    // 1. Wrap the entire item name into lines first.
+    const nameLines = wrapText(item.item.itemName, finalColWidths.item);
+    
+    let rowText = '';
+
+    // 2. Loop through each line of the wrapped name.
+    nameLines.forEach((line, i) => {
+      if (i === 0) {
+        // For the FIRST line, print the name part AND all the numbers.
+        rowText += padRight(snoStr, finalColWidths.sno) +
+                   padRight(line, finalColWidths.item) +
+                   padLeft(item.quantity, finalColWidths.qty) +
+                   padLeft(item.purchasePrice?.toFixed(2), finalColWidths.mrp) +
+                   padLeft(item.purchasePrice?.toFixed(2), finalColWidths.rate) +
+                   padLeft((item.quantity * item.purchasePrice)?.toFixed(2), finalColWidths.total) + '\n';
+      } else {
+        // For ALL OTHER wrapped lines, print only the name part.
+        // The rest of the line will be blank, ensuring left alignment.
+        rowText += padRight('', finalColWidths.sno) +
+                   padRight(line, finalColWidths.item) + '\n';
+      }
+    });
+    
+    return rowText;
+  };
+
+  
+  let text = '';
+
+  // --- Header ---
+  text += centerText(data.warehouse.warehouseName) + '\n';
+  // wrapText(store.address, lineWidth).forEach(wrappedLine => {
+  //     text += centerText(wrappedLine) + '\n';
+  // });
+  text += centerText(" Basement 210-211 new Rishi Nagar near \n Shree Shyam Baba Mandir Gali No. 9,Hisar-125001") + '\n';
+  text += line;
+  
+  // --- Order Info ---
+  const now = new Date();
+  const dateStr = now.toLocaleDateString('en-IN');
+  const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  text += twoColumn(`Date: ${data.purchaseDate.substring(0,10)}`, `Time: ${data.purchaseDate.substring(11,16)}`) + '\n';
+   text+=`Supplier: ${data.supplier.supplierName || "" }`+'\n';
+  text += line;
+
+  // --- Items Table Header ---
+  text += padRight('#', finalColWidths.sno) + 
+          padRight('Item', finalColWidths.item) + 
+          padLeft('Qty', finalColWidths.qty) +
+          padLeft('MRP', finalColWidths.mrp) +
+          padLeft('Rate', finalColWidths.rate) +
+          padLeft('Total', finalColWidths.total) + '\n';
+  
+  // --- Items Table Body ---
+  data.items.forEach((item, index) => {
+    console.log(`Formatting item ${index + 1}:`, item);
+    text += formatItemRow(item, index);
+  });
+  text += line;
+
+  // --- Full Summary Section ---
+ 
+
+   const totalQuantity = data.items.reduce((sum, item) => sum + item.quantity, 0);
+                
+
+        const rawTotal = data.items.reduce((sum, item) => sum + (item.quantity * item.purchasePrice), 0);
+                
+            // a
+        const disc = data.totalDiscount || 0;
+        const taxAmt = data.taxAmount || 0;
+                
+
+        const netBeforeTax = rawTotal - disc;
+        
+const totalM=data.items.reduce((sum, item) => sum + (item.quantity * item.purchasePrice), 0);
+const totalSales=data.items.reduce((sum, item) => sum + (item.quantity * item.salesPrice), 0);
+
+
+const paid = data.payments.reduce((sum, p) => sum + p.amount, 0);
+      // a
+const prevDue = data.previousBalance  || 0;
+
+const totalDue = prevDue + netBeforeTax + taxAmt - paid;
+
+    text += `${pad('Total Quantity:', 34)} ${padLeft(totalQuantity||0, 6)}\n`;
+    text += `${pad('Other Charges:', 34)} ${padLeft(data.otherCharges||0, 6)}\n`;
+    text += `${pad('Before Tax:', 34)} ${padLeft(`${(totalM)?.toFixed(2)||0}`, 6)}\n`;
+    text += `${pad('Total Discount:', 34)} ${padLeft(`-${(totalM-totalSales)?.toFixed(2)||0}`, 6)}\n`;
+
+
+    text += `${pad('Net Before Tax:', 34)} ${padLeft(totalSales?.toFixed(2)||0, 6)}\n`;
+
+    text += `${pad('Tax Amount:', 34)} ${padLeft(taxAmt?.toFixed(2)||0, 6)}\n`;
+    text += `${pad('SubTotal:', 34)} ${padLeft(((taxAmt || 0)+ totalSales)?.toFixed(2)||0, 6)}\n`;
+    text += `${pad('Other Charges:', 34)} ${padLeft(data.otherCharges?.toFixed(2)||0, 6)}\n`;
+    text += `${pad('Total:', 34)} ${padLeft(((taxAmt || 0)+ totalSales + (data.otherCharges || 0))?.toFixed(2)||0, 6)}\n`;
+    text += `${pad('Paid Payment:', 34)} ${padLeft(paid?.toFixed(2)||0, 6)}\n`;
+    text += `${pad('Previous Due:', 34)} ${padLeft(prevDue?.toFixed(2)||0, 6)}\n`;
+    text += `${pad('Total Due:', 34)} ${padLeft((((taxAmt || 0)+ totalSales + (data.otherCharges || 0))-paid)?.toFixed(2)||0, 6)}\n`;
+    text += line;
+
+    // Payment type
+    data.payments.forEach((p, i) => {
+        text += `Payment Type: ${p.paymentNote} ₹${p.amount?.toFixed(2)||0}\n`;
+    });
+
+    text+=line;
+  
+  // --- Footer ---
+  text += centerText('------Thank You & Visit Again!------') + '\n\n\n';
+  console.log(text)
+  return text;
+};
+
+
+
+    // --- Action Handlers ---
+   const handleBluetoothPrint = (sale) => {
+  try {
+    setLoading(true);
+    const printinfo = generatePlainTextReceipt(sale);
+
+    if (!window.bluetoothSerial) {
+      alert("Bluetooth plugin not found. Please run on a real Android device.");
+      return;
+    }
+
+    window.bluetoothSerial.isConnected(
+      () => {
+        // ✅ If connected, proceed to write
+        window.bluetoothSerial.write(
+          printinfo,
+          () => alert("✅ Print success"),
+          (failure) => alert(`❌ Print failed: ${failure}`)
+        );
+      },
+      () => {
+        // ❌ Not connected
+         setDevice(true);
+      }
+    );
+  } catch (error) {
+    console.error("Bluetooth print error:", error);
+    alert("An unexpected error occurred while printing.");
+  } finally {
+    setLoading(false);
+  }
+};
+
+
 
 
 
@@ -236,6 +457,9 @@ if(loading) <LoadingScreen />
                 
               <Sidebar isSidebarOpen={isSidebarOpen} />
               </div>
+              {
+                device && <BluetoothDevicesPage setDevice={setDevice} />
+              }
               
                  {/* Content */}
          <div className={`overflow-x-auto  flex flex-col p-2 md:p-2 min-h-screen w-full`}>
@@ -412,11 +636,23 @@ if(loading) <LoadingScreen />
        {hasPermissionFor("Purchases","Delete") && (
         <button
         className="flex items-center w-full px-3 py-2 text-red-600 hover:bg-gray-100"
-        onClick={() => handledelete(item._id)}
+        onClick={() => {
+          handledelete(item._id);
+          setDropdownIndex(null);
+        }}
       >
         <FaTrash className="mr-2" /> Delete
       </button>
       )}
+         <button
+                                className="w-full px-2 py-1 text-left text-blue-500 hover:bg-gray-100"
+                                onClick={() => {
+handleBluetoothPrint(item);
+setDropdownIndex(null);
+                                } }
+                              >
+                                📄 Print
+                              </button>
     </div>
   )}
 </td>

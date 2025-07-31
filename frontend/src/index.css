@@ -3,6 +3,17 @@
 @tailwind utilities;
 
 
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 0.3;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.2);
+  }
+}
 /* Mobile First Styles */
 @media (max-width: 768px) {
   .sidebar {

@@ -11,7 +11,7 @@ export default function AddVanCash() {
   const navigate = useNavigate();
   const token = localStorage.getItem("token") || "";
   axios.defaults.headers.common = { Authorization: `Bearer ${token}` };
-    const [isSidebarOpen, setSidebarOpen] = useState(true);
+    const [isSidebarOpen, setSidebarOpen] = useState(false);
 
   const [warehouses, setWarehouses] = useState([]);
   const [form, setForm] = useState({

@@ -14,8 +14,10 @@ import { jsPDF } from "jspdf";
 import Select from 'react-select';
 import axios from 'axios';
 import LoadingScreen from "../../Loading";
-
+import {Browser} from '@capacitor/browser';
+import BluetoothDevicesPage from '../../pages/BluetoothDevicesPage.jsx';  
 const PurchaseOverview = () => {
+  const [device, setDevice] = useState(false);
       const link="https://pos.inspiredgrow.in/vps"
   const navigate = useNavigate();
   const [warehouses, setWarehouses] = useState([]);
@@ -81,7 +83,7 @@ const PurchaseOverview = () => {
     if (inv.source === "Sale") {
       navigate(`/add-sale?id=${inv._id}`);
     } else {
-      navigate(`/pos?id=${inv._id}`);
+      navigate(`/pos-main?id=${inv._id}`);
     }
   };
 
@@ -319,6 +321,7 @@ const PurchaseOverview = () => {
         `${link}/api/pos/invoices`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
+      console.log("Fetched invoices:", data);
       setSalesList(data);
     } catch (err) {
       alert(`Could not load invoices: ${err.message}`);
@@ -518,15 +521,244 @@ const PurchaseOverview = () => {
     calculate();
   }, [currentUsers]);
 
+
+
+
+
+
+      // --- Bluetooth Functions ---
+
+const generatePlainTextReceipt = (data) => {
+   console.log(data)
+  const store={
+      logo:        "/logo/inspiredgrow.jpg",                       //  40-50 px square looks right
+  storeName:   "Grocery on Wheels",                                //  already in state
+  tagline:     "GROCERY ON WHEELS",
+  address:     "Basement 210-211 new Rishi Nagar near\nShree Shyam Baba Mandir Gali No. 9,Hisar-125001",
+  gst:         "06AAGCI0630K1ZR",
+  phone:       "9050092092",
+  email:       "INSPIREDGROW@GMAIL.COM",
+  }
+  
+  const lineWidth = 42; // Standard for 3-inch (80mm) Epson P80 printers
+  const line = '-'.repeat(lineWidth) + '\n';
+
+  // --- Helper Functions ---
+  const pad = (str, len, char = ' ') => (str + char.repeat(len)).substring(0, len);
+  const padRight = (str, len, char = ' ') => (String(str) + char.repeat(len)).substring(0, len);
+  const padLeft = (str, len, char = ' ') => (char.repeat(len) + String(str)).slice(-len);
+  
+  const wrapText = (text, width) => {
+    if (!text || width <= 0) return [];
+    const words = text.split(' ');
+    const lines = [];
+    let currentLine = '';
+    words.forEach(word => {
+      if ((currentLine + ' ' + word).trim().length <= width) {
+        currentLine += (currentLine ? ' ' : '') + word;
+      } else {
+        if (currentLine) lines.push(currentLine);
+        currentLine = word;
+      }
+    });
+    if (currentLine) lines.push(currentLine);
+    return lines.length > 0 ? lines : [''];
+  };
+
+  const centerText = (text) => {
+    if (!text) return '\n';
+    const space = Math.max(0, Math.floor((lineWidth - text.length) / 2));
+    return ' '.repeat(space) + text;
+  };
+
+  const twoColumn = (left, right) => {
+    const space = lineWidth - left.length - right.length;
+    return left + ' '.repeat(Math.max(0, space)) + right;
+  };
+  
+ 
+  
+  // Adjusted total to fit, let's recalculate: 3+18+4+7+7 = 39. Left for total = 3. Too small.
+  // Let's use the previous stable widths.
+  const finalColWidths = {
+    sno: 3,
+    item: 15,
+    qty: 4,
+    mrp: 7,
+    rate: 7,
+    total: 6,
+  };
+
+  
+  // =================================================================
+  // THIS IS THE NEW, SIMPLER, AND CORRECTED ITEM ROW FORMATTER
+  // =================================================================
+  const formatItemRow = (item, index) => {
+    const snoStr = `${index + 1}.`;
+    
+    // 1. Wrap the entire item name into lines first.
+    const nameLines = wrapText(item.item.itemName, finalColWidths.item);
+    
+    let rowText = '';
+
+    // 2. Loop through each line of the wrapped name.
+    nameLines.forEach((line, i) => {
+      if (i === 0) {
+        // For the FIRST line, print the name part AND all the numbers.
+        rowText += padRight(snoStr, finalColWidths.sno) +
+                   padRight(line, finalColWidths.item) +
+                   padLeft(item.quantity, finalColWidths.qty) +
+                   padLeft(item.item?.mrp?.toFixed(2), finalColWidths.mrp) +
+                   padLeft(item.price?.toFixed(2), finalColWidths.rate) +
+                   padLeft((item.quantity * item.price)?.toFixed(2), finalColWidths.total) + '\n';
+      } else {
+        // For ALL OTHER wrapped lines, print only the name part.
+        // The rest of the line will be blank, ensuring left alignment.
+        rowText += padRight('', finalColWidths.sno) +
+                   padRight(line, finalColWidths.item) + '\n';
+      }
+    });
+    
+    return rowText;
+  };
+
+  
+  let text = '';
+
+  // --- Header ---
+  text += centerText(data.warehouse.warehouseName) + '\n';
+  // wrapText(store.address, lineWidth).forEach(wrappedLine => {
+  //     text += centerText(wrappedLine) + '\n';
+  // });
+  text += centerText(" Basement 210-211 new Rishi Nagar near \n Shree Shyam Baba Mandir Gali No. 9,Hisar-125001") + '\n';
+  text += line;
+  
+  // --- Order Info ---
+  const now = new Date();
+  const dateStr = now.toLocaleDateString('en-IN');
+  const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  text += twoColumn(`Date: ${data.saleDate.substring(0,10)}`, `Time: ${data.saleDate.substring(11,16)}`) + '\n';
+   text+=`Customer: ${data.customer.customerName || 'walk-in customer'}`+'\n';
+  text += line;
+
+  // --- Items Table Header ---
+  text += padRight('#', finalColWidths.sno) + 
+          padRight('Item', finalColWidths.item) + 
+          padLeft('Qty', finalColWidths.qty) +
+          padLeft('MRP', finalColWidths.mrp) +
+          padLeft('Rate', finalColWidths.rate) +
+          padLeft('Total', finalColWidths.total) + '\n';
+  
+  // --- Items Table Body ---
+  data.items.forEach((item, index) => {
+    console.log(`Formatting item ${index + 1}:`, item);
+    text += formatItemRow(item, index);
+  });
+  text += line;
+
+  // --- Full Summary Section ---
+ 
+
+   const totalQuantity = data.items.reduce((sum, item) => sum + item.quantity, 0);
+                
+
+        const rawTotal = data.items.reduce((sum, item) => sum + (item.quantity * item.item.salesPrice), 0);
+                
+            // a
+        const disc = data.totalDiscount || 0;
+        const taxAmt = data.taxAmount || 0;
+                
+
+        const netBeforeTax = rawTotal - disc;
+        
+const totalM=data.items.reduce((sum, item) => sum + (item.quantity * item.item.mrp), 0);
+const totalSales=data.items.reduce((sum, item) => sum + (item.quantity * item.item.salesPrice), 0);
+
+
+const paid = data.payments.reduce((sum, p) => sum + p.amount, 0);
+      // a
+const prevDue = data.previousBalance  || 0;
+
+const totalDue = prevDue + netBeforeTax + taxAmt - paid;
+
+    text += `${pad('Total Quantity:', 34)} ${padLeft(totalQuantity||0, 6)}\n`;
+    text += `${pad('Other Charges:', 34)} ${padLeft(data.otherCharges||0, 6)}\n`;
+    text += `${pad('Before Tax:', 34)} ${padLeft(`${(totalM)?.toFixed(2)||0}`, 6)}\n`;
+    text += `${pad('Total Discount:', 34)} ${padLeft(`-${(totalM-totalSales)?.toFixed(2)||0}`, 6)}\n`;
+
+
+    text += `${pad('Net Before Tax:', 34)} ${padLeft(totalSales?.toFixed(2)||0, 6)}\n`;
+
+    text += `${pad('Tax Amount:', 34)} ${padLeft(taxAmt?.toFixed(2)||0, 6)}\n`;
+    text += `${pad('SubTotal:', 34)} ${padLeft(((taxAmt || 0)+ totalSales)?.toFixed(2)||0, 6)}\n`;
+    text += `${pad('Other Charges:', 34)} ${padLeft(data.otherCharges?.toFixed(2)||0, 6)}\n`;
+    text += `${pad('Total:', 34)} ${padLeft(((taxAmt || 0)+ totalSales + (data.otherCharges || 0))?.toFixed(2)||0, 6)}\n`;
+    text += `${pad('Paid Payment:', 34)} ${padLeft(paid?.toFixed(2)||0, 6)}\n`;
+    text += `${pad('Previous Due:', 34)} ${padLeft(prevDue?.toFixed(2)||0, 6)}\n`;
+    text += `${pad('Total Due:', 34)} ${padLeft((((taxAmt || 0)+ totalSales + (data.otherCharges || 0))-paid)?.toFixed(2)||0, 6)}\n`;
+    text += line;
+
+    // Payment type
+    data.payments.forEach((p, i) => {
+        text += `Payment Type: ${p.paymentType?.paymentTypeName} ₹${p.amount?.toFixed(2)||0}\n`;
+    });
+
+    text+=line;
+  
+  // --- Footer ---
+  text += centerText('------Thank You & Visit Again!------') + '\n\n\n';
+  console.log(text)
+  return text;
+};
+
+
+
+    // --- Action Handlers ---
+   const handleBluetoothPrint = (sale) => {
+  try {
+    setLoading(true);
+
+    const printinfo = generatePlainTextReceipt(sale);
+    console.log(printinfo);
+
+    window.bluetoothSerial.isConnected(
+      () => {
+        // ✅ Device is connected, proceed with print
+        window.bluetoothSerial.write(
+          printinfo,
+          () => alert('✅ Print success'),
+          (failure) => alert(`❌ Print failed: ${failure}`)
+        );
+      },
+      () => {
+        // ❌ No device connected
+       setDevice(true);
+      }
+    );
+
+  } catch (error) {
+    console.error("Bluetooth print error:", error);
+    alert("❌ Unexpected error occurred.");
+  } finally {
+    setLoading(false);
+  }
+};
+
+
+
   if (loading) return (<LoadingScreen />);
 
   return (
     <div className="flex flex-col">
+          
       <Navbar isSidebarOpen={isSidebarOpen} setSidebarOpen={setSidebarOpen} />
       <div className="box-border flex min-h-screen">
         <div className="w-auto">
           <Sidebar isSidebarOpen={isSidebarOpen} />
         </div>
+        {
+                  device && <BluetoothDevicesPage setDevice={setDevice} />
+                }  
         <div className="flex flex-col w-full p-2 mx-auto overflow-x-auto md:p-2">
           <header className="flex flex-col items-center justify-between px-2 py-2 mb-2 bg-gray-100 rounded-md shadow md:flex-row">
             <div className="flex items-baseline gap-1 text-center sm:flex-row sm:text-left">
@@ -726,7 +958,7 @@ const PurchaseOverview = () => {
                         <td className="px-2 py-1 border">₹{inv.amount.toFixed(2)}</td>
                         <td className="px-2 py-1 border">₹{totalPaid.toFixed(2)}</td>
                         <td className="px-2 py-1 border">{inv.source}</td>
-                        <td className="px-2 py-1 border">
+                        <td className="px-2 py-1 border" onClick={()=>handleEditPaymentType(inv)}>
                           <span
                             className={`inline-block px-2 py-1 text-xs font-semibold rounded 
                               ${inv.paymentStatus === 'Paid'
@@ -762,37 +994,43 @@ const PurchaseOverview = () => {
                             <div className="absolute right-0 z-50 w-48 mt-2 bg-white border shadow-lg">
                               <button
                                 className="w-full px-2 py-1 text-left text-blue-500 hover:bg-gray-100"
-                                onClick={() => handleViewSales(inv)}
+                                onClick={() => {handleViewSales(inv);setActionMenu(null);}}
                               >
                                 📄 View Sales
                               </button>
                               <button
                                 className="w-full px-2 py-1 text-left text-green-500 hover:bg-gray-100"
-                                onClick={() => handleEdit(inv)}
+                                onClick={() => {handleEdit(inv);setActionMenu(null);}}
                               >
                                 ✏️ Edit
                               </button>
                               <button
                                 className="w-full px-2 py-1 text-left text-teal-500 hover:bg-gray-100"
-                                onClick={() => handleEditPaymentType(inv)}
+                                onClick={() => {handleEditPaymentType(inv); setActionMenu(null);}}
                               >
                                 💵 Edit Payment Type
                               </button>
                               <button
                                 className="w-full px-2 py-1 text-left text-purple-500 hover:bg-gray-100"
-                                onClick={() => handleViewPayments(inv)}
+                                onClick={() => {handleViewPayments(inv); setActionMenu(null);}}
                               >
                                 💳 View Payments
                               </button>
                               <button
                                 className="w-full px-2 py-1 text-left text-indigo-500 hover:bg-gray-100"
-                                onClick={() => handleDownloadPDF(inv)}
+                                onClick={() => {handleDownloadPDF(inv); setActionMenu(null);} }
                               >
                                 📥 PDF
                               </button>
+                               <button
+                                className="w-full px-2 py-1 text-left text-blue-500 hover:bg-gray-100"
+                                onClick={() => {handleBluetoothPrint(inv); setActionMenu(null);} }
+                              >
+                                📄 Print
+                              </button>
                               <button
                                 className="w-full px-2 py-1 text-left text-red-500 hover:bg-gray-100"
-                                onClick={() => handleDelete(inv._id, inv.source)}
+                                onClick={() => {handleDelete(inv._id, inv.source); setActionMenu(null);}}
                               >
                                 🗑️ Delete
                               </button>

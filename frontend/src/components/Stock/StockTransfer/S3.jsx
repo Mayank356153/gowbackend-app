@@ -1,383 +1,325 @@
-import React,{useState,useEffect,useRef} from 'react'
-import { FaChevronLeft,FaPlus,FaBox,FaBoxOpen,FaTrash,FaInfoCircle } from 'react-icons/fa';
-import { useLocation,useNavigate } from 'react-router-dom'
-import {App} from '@capacitor/app'
+import React, { useState, useEffect, useRef } from 'react';
+import dayjs from 'dayjs';
+import { FaChevronLeft, FaPlus, FaBox,FaEdit, FaBoxOpen, FaTrash, FaMinus } from 'react-icons/fa';
+import { useNavigate } from 'react-router-dom';
+import { App } from '@capacitor/app';
+
+// Main Component
 export default function S3({
-     formData,
-     setActiveTab,
-  setFormData,
-  selectedItems,
-  setSelectedItems,
-  handleItemChange,
-  handleRemoveItem,
-  warehouses,
-  id,
-  navigate,allItems
+    formData,
+    setActiveTab,
+    selectedItems,
+    setSelectedItems,
+    warehouses,
+    id,
+    allItems
 }) {
-   const location=useLocation()
-      const initialLocationRef = useRef(location);
-  
-    // Hardware back
+    const navigate = useNavigate();
+    const [detailedItem, setDetailedItem] = useState(null);
+     const [selectedItem, setSelectedItem] = useState(null);
+    
+    // Back button handling
     useEffect(() => {
-      const backHandler = App.addListener('backButton', () => {
-        setActiveTab('s2');
-      });
-  
-      return () => backHandler.remove();
-    }, []);
-  
-    // Intercept swipe back or browser back
-    useEffect(() => {
-      const unblock = navigate((_, action) => {
-        if (action === 'POP') {
-          setActiveTab('s2');
-          return false; // Prevent actual navigation
-        }
-      });
-  
-      return unblock;
-    }, [navigate]);
-    const [selectedItem, setSelectedItem] = useState(null);
-        const [showInfoModal, setShowInfoModal] = useState(false);
-        
-        const handleViewInfo = (item) => {
-            console.log(item)
-            
-          setSelectedItem(allItems.find(it=> it._id===item.itemId));
-          setShowInfoModal(true);
-        };
+        const backHandler = App.addListener('backButton', () => {
+            if (detailedItem) {
+                setDetailedItem(null);
+            } else {
+                setActiveTab('s2');
+            }
+        });
+        return () => backHandler.remove();
+    }, [setActiveTab, detailedItem]);
 
-        
-        
-         const handleQuanity=(e,id,type)=>{
-          console.log(selectedItems)
-  
-
-
-
-
+    // Quantity and delete logic
+   const handleItemQuantity = (e, itemId, type) => {
+  if (type === "delete") {
     
-    if(type==="delete"){
-      alert("p")
-      const itemformat=selectedItems.filter(it=>it.itemId!==id)
-      setSelectedItems(itemformat)
-       return;
-    }
-    
-      if(type==="change"){
-        const itemformat=selectedItems.map(item=>
-      (item.itemId===id)?{
-        ...item,
-        quantity:Number(e.target.value)
-      }:item
-    )
-       setSelectedItems(itemformat)
-       return;
-    }
-    
-    const itemformat=selectedItems.map(item=>
-      (item.itemId===id)?{
-        ...item,
-        quantity:type==="plus"?item.quantity+1:item.quantity-1
-      }:item
-    )
-    // setItems(itemformat)
-    setSelectedItems(itemformat.filter(it=>it.quantity!==0))
+      setSelectedItems(prev => prev.filter(it => it.item !== itemId));
+    return;
   }
-  
-  return (
- <div>
-  
-  <div className="sticky top-0 z-10 bg-white">
-     <div className="flex items-center justify-between">
-       <button type="button"
-         onClick={() => setActiveTab("s2")}
-         className="p-1 text-gray-600 rounded-full hover:bg-gray-100"
-       >
-         <FaChevronLeft className="w-5 h-5" />
-       </button>
-       <h1 className="text-lg font-bold text-gray-800">
-         {id ? "Edit Stock Transfer" : "New Stock Transfer"}
-       </h1>
-       <div className="w-6"></div> {/* Spacer */}
-     </div>
-   </div>
-  
 
-<div className="p-4 bg-white ">
-              <div className="grid grid-cols-2 text-sm">
-               <InfoField label="Transfer Date" value={formData.transferDate}  />
-        <InfoField label="From Warehouse" value={warehouses.find(wr => wr._id === formData.fromWarehouse)?.warehouseName || "Not Selected"} required />
-        <InfoField label="To Warehouse" value={warehouses.find(wr => wr._id === formData.toWarehouse)?.warehouseName || "Not Selected"} />
-        <InfoField label="Details" value={formData.details || "—"} />
-        <InfoField label="Note" value={formData.note || "—"} />
-              </div>
-    
-              <div className='flex justify-end mb-1'>
-                <button className='flex items-center gap-2 px-2 text-sm font-semibold text-white rounded-lg bg-cyan-600 hover:bg-cyan-700' onClick={()=>setActiveTab("s2")} type="button">
-                  <FaPlus /> Add Item
-                </button>
-              </div>
-    
-              <ItemsTable items={selectedItems} updateItem={handleQuanity} removeItem={handleQuanity} setSelectedItem={setSelectedItem} />
-              {selectedItem && (
-      <ItemInfoPage 
-      allItems={allItems}
-        selectedItem={selectedItem}
-        onClose={() => setSelectedItem(null)}
-        onAddToInvoice={(item) => {
-          // Your logic to add item to invoice
-          setSelectedItem(null);
-        }}
-      />
-    )}
-            </div>
+  const updatedItems = selectedItems.map(item => {
+     console.log(itemId)
+    if (item.item === itemId) {
+      console.log(item.itemName)
+      const stockLimit = allItems.find(i => i._id === item.item)?.currentStock || 0;
+      let newQuantity = item.quantity;
+      
+     
+     
+     
+      if (type === "plus") {
+        if (newQuantity < stockLimit) {
+          newQuantity += 1;
+        }
+      } else if (type === "minus") {
+        if (newQuantity > 1) {
+          newQuantity -= 1;
+        }
+      } else if (type === "change") {
+        const inputValue = Number(e.target.value);
+        if (!isNaN(inputValue) && inputValue >= 1) {
+          newQuantity = Math.min(inputValue, stockLimit);
+        }
+      }
+
+      return { ...item, quantity: newQuantity };
+    }
+
+    return item;
+  });
+
+  setSelectedItems(updatedItems);
+};
+
+
+    return (
+        <div className="min-h-screen bg-gray-50">
+            {detailedItem && <ItemInfoPage selectedItem={detailedItem} onClose={() => setDetailedItem(null)} />}
+
             
-  {/* Info Modal */}
-  {showInfoModal && selectedItem && (
-    <div className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-black bg-opacity-50">
-      <div className="w-full max-w-md p-6 bg-white rounded-lg shadow-xl">
-        <h2 className="mb-4 text-lg font-semibold">Item Information</h2>
-        <ul className="space-y-2 text-sm text-gray-700">
-          <li><strong>Name:</strong> {selectedItem.itemName}</li>
-          <li><strong>Code:</strong> {selectedItem.itemCode || "N/A"}</li>
-          <li><strong>MRP:</strong> ₹{selectedItem.mrp}</li>
-          <li><strong>Sales Price:</strong> ₹{selectedItem.salesPrice}</li>
-          <li><strong>Stock:</strong> {selectedItem.currentStock || selectedItem.openingStock || "N/A"}</li>
-        </ul>
-        <div className="mt-6 text-right">
-          <button
-            onClick={() => setShowInfoModal(false)}
-            className="px-4 py-2 text-white bg-blue-500 rounded hover:bg-blue-600"
-          >
-            Close
-          </button>
+            {/* Main content with padding for the sticky footer */}
+            <main className="p-3 space-y-4 pb-28">
+                {/* Transfer Details Card */}
+                <section className="p-4 bg-white shadow-sm rounded-xl">
+                    <div className="grid grid-cols-2 text-sm gap-x-4 gap-y-3">
+                        <InfoField label="Date" value={dayjs(formData.transferDate).format("DD MMM YYYY")} />
+                        <InfoField label="From Warehouse" value={warehouses.find(w => w._id === formData.fromWarehouse)?.warehouseName} />
+                        <InfoField label="To Warehouse" value={warehouses.find(w => w._id === formData.toWarehouse)?.warehouseName} />
+                        <InfoField label="Details" value={formData.details} />
+                    </div>
+                    <div className="pt-3 mt-3 border-t">
+                        <button className='flex items-center justify-center w-full gap-2 px-3 py-2 text-sm font-semibold text-white rounded-lg bg-cyan-600 hover:bg-cyan-700' onClick={() => setActiveTab("s2")} type="button">
+                            <FaPlus className="mr-1" /> Add More Items
+                        </button>
+                    </div>
+                </section>
+                <SummaryCard items={selectedItems} /> 
+                {/* Items List with POS Style */}
+                <ItemsList
+                    items={selectedItems}
+                    allItems={allItems}
+                    updateItem={handleItemQuantity}
+                    setSelectedItem={setSelectedItem}
+                />
+                
+            </main>
+
+            {/* Sticky Footer */}
+            <footer className="fixed bottom-0 left-0 right-0 p-3 bg-white border-t">
+                <div className="flex space-x-3">
+                    <button type="button" onClick={() => navigate("/transfer-list")} className="flex-1 px-4 py-3 text-sm font-medium text-gray-700 bg-gray-100 rounded-xl hover:bg-gray-200">
+                        Cancel
+                    </button>
+                    <button type="submit" className="flex-1 px-4 py-3 text-sm font-medium text-white bg-green-600 rounded-xl hover:bg-green-700">
+                        {id ? "Update Transfer" : "Save Transfer"}
+                    </button>
+                </div>
+            </footer>
+            
+      {selectedItem && (
+        <ItemDetailModal selectedItem={selectedItem} allItems={allItems} onClose={() => setSelectedItem(null)} />
+      )}
         </div>
-      </div>
-    </div>
-  )}
-
-  {/* Submit + Cancel Buttons */}
-  <div className="flex flex-col justify-center gap-3 mt-8 sm:flex-row sm:justify-end">
-    <button
-      type="submit"
-      className="px-6 py-2 text-white rounded shadow bg-cyan-500 hover:bg-cyan-600"
-    >
-      {id ? "Update" : "Save"}
-    </button>
-    <button
-      type="button"
-      onClick={() => navigate("/transfer-list")}
-      className="px-6 py-2 text-white bg-gray-400 rounded shadow hover:bg-gray-500"
-    >
-      Cancel
-    </button>
-  </div>
-</div>
-
-  )
+    );
 }
 
-// Helper Components
-const InfoField = ({ label, value, required = false }) => (
-  <div>
-    <p className="text-xs text-gray-500">{label}</p>
-    <p className="font-semibold text-gray-800 truncate">{value}</p>
-  </div>
+// --- CHILD COMPONENTS ---
+// NEW: Summary Card Component
+const SummaryCard = ({ items }) => {
+    // Calculate total quantity by summing up the quantity of each item
+    const totalQuantity = items.reduce((sum, item) => sum + item.quantity, 0);
+    const uniqueItems = items.length;
+
+    return (
+       <section className="pt-2 bg-white shadow-sm rounded-xl">
+            <div className="flex items-center justify-around text-center">
+                {/* Total Unique Items Stat */}
+                <div>
+                    <p className="text-sm ">Unique Items:{uniqueItems}</p>
+                   
+                </div>
+
+                {/* Vertical Divider */}
+
+                {/* Total Quantity Stat */}
+                <div>
+                    <p className="text-sm ">Total Quantity:{totalQuantity}</p>
+                </div>
+            </div>
+        </section>
+    );
+};
+
+const Info = ({ label, value }) => (
+    <div>
+        <p className="text-xs text-gray-500">{label}</p>
+        <p className="font-semibold text-gray-800 truncate">{value || 'N/A'}</p>
+    </div>
 );
 
-const InfoRow = ({ label, value }) => (
- <div>
-    <p className="text-xs text-gray-500">{label}</p>
-    <p className="text-sm font-medium text-gray-800">{value}</p>
-  </div>
+const InfoField = ({ label, value }) => (
+    <div>
+        <p className="text-xs text-gray-500">{label}</p>
+        <p className="font-semibold text-gray-800 truncate">{value || 'N/A'}</p>
+    </div>
 );
 
-const ItemInfoPage = ({ selectedItem, onClose, onAddToInvoice ,allItems}) => {
-  console.log(selectedItem)
-  const itemexist=allItems.find(it=>it._id===selectedItem.itemId)
-  console.log("kjh")
-  console.log(itemexist)
-  if (!selectedItem) return null;
+
+// --- COMPONENT REFACTORED FOR BETTER MOBILE UX ---
+const ItemDetailModal = ({ selectedItem, allItems, onClose }) => {
+  const item = allItems.find(it => it._id === selectedItem.item);
+  console.log(item);
+  if (!item) return null;
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-gray-100">
-      {/* Header */}
-      <div className="sticky top-0 z-10 flex items-center justify-between p-4 bg-white border-b border-gray-200 shadow-sm">
-        <button 
-          onClick={onClose}
-          className="p-1 text-gray-500 rounded-full hover:bg-gray-100"
-        >
-          <FaChevronLeft className="w-5 h-5" />
+    // CHANGED: Full-screen modal with flex-col layout for sticky footer
+    <div className="fixed inset-0 z-50 flex flex-col bg-white">
+      <header className="flex items-center justify-between flex-shrink-0 p-4 border-b">
+        <button onClick={onClose} className="p-2 -ml-2 text-gray-600" type="button">
+          <FaChevronLeft size={20} />
         </button>
-        <h2 className="text-lg font-semibold text-gray-800">Item Details</h2>
-        <div className="w-5"></div> {/* Spacer for alignment */}
-      </div>
+        <h2 className="text-lg font-semibold">Item Details</h2>
+        <div className="w-6" /> {/* Spacer */}
+      </header>
 
-      {/* Item Content */}
-      <div className="p-4 space-y-6">
-        {/* Item Header */}
-        <div className="flex items-start gap-4 p-4 bg-white rounded-lg shadow-sm">
-          <div className="flex items-center justify-center flex-shrink-0 w-16 h-16 bg-gray-100 rounded-lg">
-            {itemexist.image ? (
-              <img 
-                src={selectedItem.image} 
-                alt={selectedItem.itemName}
-                className="object-contain w-full h-full rounded-lg"
-              />
-            ) : (
-              <FaBox className="text-2xl text-gray-400" />
-            )}
+      {/* CHANGED: Scrollable content area */}
+      <main className="flex-grow p-4 overflow-y-auto ">
+        <div className="space-y-6">
+          <div className="flex items-center gap-4">
+            <div className="flex items-center justify-center flex-shrink-0 w-20 h-20 bg-gray-100 rounded-lg">
+              {item.image ? (
+                <img src={item.image} alt="item" className="object-cover w-full h-full rounded-lg" />
+              ) : (
+                <FaBox size={32} className="text-gray-400" />
+              )}
+            </div>
+            <div>
+              <p className="text-xl font-bold">{item.itemName}</p>
+              <p className="text-sm text-gray-500">SKU: {item.sku || 'N/A'}</p>
+              <p className="text-lg font-semibold text-cyan-600">₹{item.salesPrice}</p>
+            </div>
           </div>
-          <div>
-            <h3 className="text-lg font-bold text-gray-900">{itemexist.itemName}</h3>
-            <p className="text-sm text-gray-500">SKU: {itemexist.sku || 'N/A'}</p>
-            <p className="mt-1 text-sm font-semibold text-cyan-600">
-              ₹{itemexist.salesPrice?.toFixed(2) || '0.00'}
-            </p>
-          </div>
-        </div>
-
-        {/* Details Section */}
-        <div className="p-4 bg-white rounded-lg shadow-sm">
-          <h3 className="mb-3 text-base font-semibold text-gray-800">Details</h3>
-          
           <div className="grid grid-cols-2 gap-4 text-sm">
-            <InfoRow label="Category" value={itemexist.category?.name || 'N/A'} />
-            <InfoRow label="Brand" value={itemexist.brand?.brandName || 'N/A'} />
-            <InfoRow label="Barcode" value={itemexist.barcode || itemexist.barcodes[0] || 'N/A'} />
-            <InfoRow label="Stock" value={itemexist.openingStock || '0'} />
+            <Info label="Category" value={item.category?.name || 'N/A'} />
+            <Info label="Brand" value={item.brand?.brandName || 'N/A'} />
+            <Info label="Stock" value={item.currentStock || 0} />
+            <Info label="Barcode" value={item.barcode || item.barcodes?.[0] || 'N/A'} />
           </div>
-
-          {selectedItem.description && (
-            <div className="mt-4">
-              <h4 className="text-sm font-medium text-gray-500">Description</h4>
-              <p className="mt-1 text-sm text-gray-700">{selectedItem.description}</p>
+          {item.description && (
+            <div>
+              <p className="text-xs font-medium text-gray-500 uppercase">Description</p>
+              <p className="mt-1 text-sm text-gray-700">{item.description}</p>
             </div>
           )}
         </div>
+      </main>
 
-        {/* Variants (if any) */}
-        {selectedItem.variants?.length > 0 && (
-          <div className="p-4 bg-white rounded-lg shadow-sm">
-            <h3 className="mb-3 text-base font-semibold text-gray-800">Variants</h3>
-            <div className="space-y-2">
-              {selectedItem.variants.map((variant, index) => (
-                <div key={index} className="p-2 border rounded-lg">
-                  <p className="font-medium">{variant.name}</p>
-                  <p className="text-sm text-gray-500">Price: ₹{variant.price.toFixed(2)}</p>
-                  <p className="text-sm text-gray-500">Stock: {variant.stock}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Fixed Action Button */}
-      <div className="sticky bottom-0 p-4 bg-white border-t border-gray-200">
-        <button
-          onClick={() => onAddToInvoice(selectedItem)} type="button"
-          className="flex items-center justify-center w-full gap-2 px-4 py-3 text-white rounded-lg bg-cyan-600 hover:bg-cyan-700"
-        >
+      {/* CHANGED: Sticky footer */}
+      <footer className="flex-shrink-0 p-4 bg-white border-t">
+        <button onClick={onClose} className="w-full py-3 font-semibold text-white rounded-lg bg-cyan-600 hover:bg-cyan-700" type="button">
           Close
         </button>
-      </div>
+      </footer>
     </div>
   );
 };
 
-
-
-const ItemsTable = ({ items, updateItem, removeItem, setSelectedItem }) => (
-  <div className="flex flex-col max-h-80">
-    {items.length > 0 ? (
-      <div className="overflow-y-auto border border-gray-200 divide-y divide-gray-200 rounded-lg max-h-80">
-        {items.map((item, index) => (
-          <div key={index} className="p-3 transition-colors bg-white hover:bg-gray-50">
-            <div className="flex items-start justify-between">
-              {/* Item Info */}
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center">
-                  <div className="flex items-center justify-center flex-shrink-0 w-10 h-10 mr-3 bg-gray-100 rounded-md">
-                    <FaBox className="text-lg text-gray-400" />
-                  </div>
-                  <div className="truncate">
-                    <p className="text-sm font-medium text-gray-900 truncate">{item.itemName}</p>
-                    {item.sku && (
-                      <p className="text-xs text-gray-500 truncate">SKU: {item.sku}</p>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              {/* Quantity Control */}
-              <div className="flex-shrink-0 ml-2">
-                <div className="relative">
-                 <div className="flex items-center space-x-1">
-  <button type="button"
-    onClick={(e) =>
-      updateItem(e,item.itemId, "minus")
-    }
-    className="px-2 py-1 text-sm font-semibold text-gray-600 bg-gray-100 rounded hover:bg-gray-200"
-  >
-    -
-  </button>
-  <input
-    type="number"
-    value={item.quantity}
-    onChange={(e) =>
-      updateItem(e,item.itemId,"change")
-    }
-    className="w-16 px-2 py-1 text-sm text-center border border-gray-300 rounded"
-  />
-  <button type="button"
-    onClick={(e) =>
-      updateItem(e,item.itemId, "plus")
-    }
-    className="px-2 py-1 text-sm font-semibold text-gray-600 bg-gray-100 rounded hover:bg-gray-200"
-  >
-    +
-  </button>
-</div>
-                  
-                </div>
-              </div>
+// --- COMPONENT REFACTORED FOR BETTER MOBILE UX ---
+const ItemsList = ({ items, updateItem, removeItem, setSelectedItem }) => (
+  <section className="w-full overflow-y-auto bg-white shadow rounded-xl max-h-64">
+    <div className="divide-y divide-gray-200">
+      {items.length === 0 ? (
+        <div className="p-10 text-center">
+          <FaBoxOpen size={40} className="mx-auto text-gray-400" />
+          <h3 className="mt-4 text-base font-semibold text-gray-800">Your Cart is Empty</h3>
+          <p className="mt-1 text-sm text-gray-500">Add items to get started.</p>
+        </div>
+      ) : (
+        items.map((item, idx) => (
+          <div key={item.id || idx} className="flex items-center gap-4 p-3">
+            {/* Item Name & Details */}
+            <div className="flex-grow cursor-pointer" onClick={() => setSelectedItem(item)}>
+              <p className="font-semibold leading-tight text-gray-800" title={item.itemName}>
+                {item.itemName}
+              </p>
+              <p className="text-xs text-gray-500">
+                @ ₹{item.salesPrice.toFixed(2)}
+              </p>
             </div>
 
-            {/* Action Buttons */}
-            <div className="flex justify-end mt-2 space-x-2">
-              <button 
-                onClick={() => setSelectedItem(item)} type="button"
-                className="inline-flex items-center px-2.5 py-1 text-xs font-medium text-cyan-700 bg-cyan-50 rounded hover:bg-cyan-100"
-              >
-                <FaInfoCircle className="mr-1" /> Details
-              </button>
-              <button
-                onClick={(e) => removeItem(e,item.itemId, "delete")} type="button"
-                className="p-2 text-gray-400 rounded-full hover:text-red-500 hover:bg-red-50"
-                aria-label="Remove item"
-              >
-                <FaTrash className="text-sm" />
-              </button>
+            {/* Quantity Stepper & Price */}
+            <div className="flex flex-col items-end gap-2">
+              <div className="flex items-center bg-gray-100 rounded-lg">
+                <button type="button"
+                  onClick={() =>updateItem(null, item.item, "minus")}
+                  className="px-3 py-1 rounded-l-lg text-cyan-600 hover:bg-gray-200"
+                  aria-label="Decrease quantity"
+                >
+                  <FaMinus size={12} />
+                </button>
+                <span className="w-8 text-base font-bold text-center text-gray-900">{item.quantity}</span>
+                <button type="button"
+                  onClick={() => updateItem(null, item.item, "plus")}
+                  className="px-3 py-1 rounded-r-lg text-cyan-600 hover:bg-gray-200"
+                  aria-label="Increase quantity"
+                >
+                  <FaPlus size={12} />
+                </button>
+              </div>
+              <p className="text-base font-bold text-gray-900">
+                ₹{(item.salesPrice * item.quantity).toFixed(2)}
+              </p>
             </div>
+
+            {/* Remove Button */}
+            <button type="button"
+              onClick={() => updateItem(null, item.item, "delete")}
+              className="p-2 text-gray-400 rounded-full hover:bg-red-50 hover:text-red-500"
+              aria-label="Remove item"
+            >
+              <FaTrash size={16} />
+            </button>
           </div>
-        ))}
-      </div>
-    ) : (
-      <div className="p-6 text-center border-2 border-gray-300 border-dashed rounded-lg">
-        <FaBoxOpen className="w-12 h-12 mx-auto text-gray-400" />
-        <h3 className="mt-2 text-sm font-medium text-gray-900">No items</h3>
-        <p className="mt-1 text-sm text-gray-500">Add items to create an invoice</p>
-      </div>
-    )}
+        ))
+      )}
+    </div>
+  </section>
+);
 
-    {items.length > 0 && (
-      <div className="px-3 py-2 text-center rounded-lg bg-gray-50">
-        <p className="text-sm text-gray-700">
-          {items.length} item{items.length !== 1 ? 's' : ''} in this invoice
-        </p>
-      </div>
-    )}
-  </div>
+
+
+// Item Details Modal (No design changes needed, it's already good)
+const ItemInfoPage = ({ selectedItem, onClose }) => (
+    <div className="fixed inset-0 z-50 flex flex-col bg-gray-50">
+        <header className="flex items-center justify-between flex-shrink-0 p-4 bg-white border-b">
+            <button type="button" onClick={onClose} className="p-2 -ml-2 text-gray-600"><FaChevronLeft size={20} /></button>
+            <h2 className="text-lg font-semibold">Item Details</h2>
+            <div className="w-6" />
+        </header>
+        <main className="flex-grow p-3 space-y-3 overflow-y-auto">
+            <div className="flex items-center gap-4 p-4 bg-white rounded-xl">
+                <div className="flex items-center justify-center w-16 h-16 bg-gray-100 rounded-lg">
+                    {selectedItem.image ? <img src={selectedItem.image} alt={selectedItem.itemName} className="object-cover w-full h-full rounded-lg" /> : <FaBox className="text-2xl text-gray-400" />}
+                </div>
+                <div>
+                    <h3 className="text-lg font-bold text-gray-900">{selectedItem.itemName}</h3>
+                    <p className="text-sm text-gray-500">SKU: {selectedItem.sku || 'N/A'}</p>
+                </div>
+            </div>
+            <div className="p-4 bg-white rounded-xl">
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                    <InfoField label="Category" value={selectedItem.category?.name} />
+                    <InfoField label="Brand" value={selectedItem.brand?.brandName} />
+                    <InfoField label="Current Stock" value={selectedItem.openingStock || '0'} />
+                    <InfoField label="Barcode" value={selectedItem.barcode || selectedItem.barcodes?.[0]} />
+                </div>
+            </div>
+        </main>
+        <footer className="flex-shrink-0 p-3 bg-white border-t">
+            <button onClick={onClose} type="button" className="w-full py-3 font-semibold text-white rounded-xl bg-cyan-600 hover:bg-cyan-700">
+                Close
+            </button>
+        </footer>
+    </div>
 );

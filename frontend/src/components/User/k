@@ -1,0 +1,120 @@
+
+
+import React, { useState, useEffect } from 'react';
+import { Device } from '@capacitor/device';
+
+/**
+ * A React component that lists paired Bluetooth devices on an Android device.
+ * It uses the `cordova-plugin-bluetooth-serial` and `@capacitor/device` plugins.
+ * This component includes platform detection to ensure it only attempts to
+ * use Bluetooth functionality when running on a native Android platform.
+ */
+const RiderList = () => {
+    // State to hold the list of found Bluetooth devices
+    const [devices, setDevices] = useState([]);
+    // State to determine the current operating platform ('web', 'android', 'ios')
+    const [platform, setPlatform] = useState('web');
+    // State for storing and displaying any errors that occur
+    const [error, setError] = useState('');
+    // State to manage the loading status while searching for devices
+    const [isLoading, setIsLoading] = useState(false);
+
+    // On component mount, check which platform the app is running on.
+    useEffect(() => {
+        const getPlatformInfo = async () => {
+            try {
+                const info = await Device.getInfo();
+                setPlatform(info.platform);
+            } catch (e) {
+                console.error("Error getting device info", e);
+                setError("Could not determine the platform.");
+            }
+        };
+        getPlatformInfo();
+    }, []);
+
+    /**
+     * Initiates a search for paired Bluetooth devices.
+     * This function will only proceed if it detects it's running on Android
+     * and the required Bluetooth plugin is available.
+     */
+    const findPairedDevices = () => {
+        // 1. Platform Check: Abort if not on Android.
+        if (platform !== 'android') {
+            setError('This feature is only available on the native Android app.');
+            return;
+        }
+
+        // 2. Plugin Check: Verify the bluetoothSerial object exists.
+        if (typeof window.bluetoothSerial === 'undefined') {
+            setError('Bluetooth Serial plugin not found. Is the app running on a real device?');
+            return;
+        }
+        
+        // 3. Start Search: Update UI to reflect loading state.
+        setIsLoading(true);
+        setError('');
+        setDevices([]);
+
+        // 4. Call Plugin API: Use the plugin to list paired devices.
+        window.bluetoothSerial.list(
+            // Success callback
+            (foundDevices) => {
+                if (foundDevices.length === 0) {
+                   setError('No paired Bluetooth devices found. Please pair a device in Android settings.');
+                }
+                setDevices(foundDevices);
+                setIsLoading(false);
+            },
+            // Failure callback
+            (failure) => {
+                setError(`Error while searching for devices: ${failure}`);
+                setIsLoading(false);
+            }
+        );
+    };
+
+    // Conditionally render a message if the platform is not Android.
+    if (platform !== 'android') {
+      return (
+        <div className="p-4 my-4 bg-yellow-100 border-l-4 border-yellow-500 rounded-md">
+           <p className="font-semibold text-yellow-800">Bluetooth Not Available</p>
+           <p className="text-yellow-700">Device listing is an Android-only feature.</p>
+        </div>
+      )
+    }
+
+    // Render the main component UI for the Android platform.
+    return (
+        <div className="p-4 my-4 bg-white border rounded-lg shadow-md">
+            <h2 className="mb-3 text-xl font-bold text-gray-800">Bluetooth Device Manager</h2>
+            <button
+                onClick={findPairedDevices}
+                disabled={isLoading}
+                className="px-5 py-2 font-semibold text-white transition-colors duration-300 bg-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 disabled:bg-gray-400"
+            >
+                {isLoading ? 'Searching...' : 'Find Paired Devices'}
+            </button>
+
+            {/* Display any error messages */}
+            {error && <p className="mt-3 font-medium text-red-600">{error}</p>}
+
+            {/* Display the list of found devices */}
+            {devices.length > 0 && (
+                <div className="mt-4">
+                    <h3 className="text-lg font-semibold">Found Devices:</h3>
+                    <ul className="mt-2 space-y-2">
+                        {devices.map((device) => (
+                            <li key={device.id} className="p-3 bg-gray-100 border border-gray-200 rounded-md">
+                                <p className="font-bold text-gray-900">{device.name || 'Unnamed Device'}</p>
+                                <p className="text-sm text-gray-600">Address: {device.address}</p>
+                            </li>
+                        ))}
+                    </ul>
+                </div>
+            )}
+        </div>
+    );
+};
+
+export default RiderList;
