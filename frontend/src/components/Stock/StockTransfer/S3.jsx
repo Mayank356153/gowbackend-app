@@ -32,14 +32,13 @@ export default function S3({
 
     // Quantity and delete logic
    const handleItemQuantity = (e, itemId, type) => {
-  if (type === "delete") {
-    
+    if (type === "delete") {
       setSelectedItems(prev => prev.filter(it => it.item !== itemId));
     return;
   }
 
   const updatedItems = selectedItems.map(item => {
-     console.log(itemId)
+     
     if (item.item === itemId) {
       console.log(item.itemName)
       const stockLimit = allItems.find(i => i._id === item.item)?.currentStock || 0;
@@ -52,15 +51,17 @@ export default function S3({
         if (newQuantity < stockLimit) {
           newQuantity += 1;
         }
-      } else if (type === "minus") {
+      } 
+      else if (type === "minus") {
         if (newQuantity > 1) {
           newQuantity -= 1;
         }
-      } else if (type === "change") {
+      }
+       else if (type === "change") {
         const inputValue = Number(e.target.value);
-        if (!isNaN(inputValue) && inputValue >= 1) {
+          console.log("aaaa")
           newQuantity = Math.min(inputValue, stockLimit);
-        }
+        
       }
 
       return { ...item, quantity: newQuantity };
@@ -258,7 +259,15 @@ const ItemsList = ({ items, updateItem, removeItem, setSelectedItem }) => (
                 >
                   <FaMinus size={12} />
                 </button>
-                <span className="w-8 text-base font-bold text-center text-gray-900">{item.quantity}</span>
+                            <input
+  type="text"
+  value={item.quantity}
+  onChange={(e) => {
+    const val = (Number(e.target.value));
+    updateItem(e,item.item,"change");
+  }}
+  className="w-12 text-sm font-medium text-center text-gray-800 bg-transparent border-none focus:ring-0 focus:outline-none"
+/>
                 <button type="button"
                   onClick={() => updateItem(null, item.item, "plus")}
                   className="px-3 py-1 rounded-r-lg text-cyan-600 hover:bg-gray-200"

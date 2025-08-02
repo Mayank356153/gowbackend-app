@@ -158,6 +158,10 @@ const PaymentModal = ({
       },
     ]);
 
+    const removeRow = (idx) => {
+      setPaymentRows(rows => rows.filter((_, i) => i !== idx));
+    };
+
     const handleChangeRow = (idx, field, value) => {
       setPaymentRows(rows =>
         rows.map((r, i) => {
@@ -816,7 +820,7 @@ const PaymentModal = ({
 
                   {paymentMode === "multiple" && paymentRows.length > 1 && (
                     <button
-                      // onClick={() => removeRow(idx)}
+                      onClick={() => removeRow(idx)}
                       className="mt-2 text-xs text-red-600"
                     >
                       Remove this payment
@@ -836,14 +840,21 @@ const PaymentModal = ({
             )}
           </div>
         </div>
-
+         {paymentMode === "multiple" && (
+            <button
+              onClick={addRow}
+              className="px-3 py-2 mt-2 text-sm text-white bg-blue-600 rounded"
+            >
+              + Add Payment Row
+            </button>
+          )}
         {/* Action buttons */}
         <div className="flex gap-3 pt-2">
           <button
             onClick={onClose}
             className="flex-1 px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg"
           >
-            Cancel
+            Close
           </button>
           <button
             onClick={handleSave}

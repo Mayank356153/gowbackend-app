@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { App } from '@capacitor/app';
 import { useNavigate } from 'react-router-dom';
 import { FaBoxOpen, FaBox, FaPlus, FaMinus, FaTrash, FaChevronLeft, FaHandPaper, FaLayerGroup, FaMoneyBill, FaCreditCard } from 'react-icons/fa';
-
+import { Keyboard } from '@capacitor/keyboard';
 // No changes needed for these sub-components
 const Info = ({ label, value }) => (
   <div>
@@ -56,6 +56,12 @@ const ItemsList = ({ items,couponCode,setCouponCode, updateItem, removeItem, set
 
     <input
       type="text"
+       onFocus={(e) => {
+    e.target.focus(); // ensure input is focused
+    setTimeout(() => {
+      Keyboard.show(); // explicitly show the keyboard
+    }, 100); // short delay helps trigger keyboard on some Androids
+  }}
       value={item.quantity}
       onChange={(e) => {
         const val = parseInt(Number(e.target.value));
@@ -244,7 +250,7 @@ selectedCustomer, selectedWarehouse,
           <button onClick={onHold} className="flex items-center justify-center gap-2 px-4 py-3 text-sm font-semibold text-yellow-800 bg-yellow-400 rounded-lg">
             <FaHandPaper /> Hold
           </button>
-          <button onClick={() => onOpenModal('multiple')} className="flex items-center justify-center gap-2 px-4 py-3 text-sm font-semibold text-white text-blue-800 bg-blue-400 rounded-lg">
+          <button onClick={() => onOpenModal("multiple")} className="flex items-center justify-center gap-2 px-4 py-3 text-sm font-semibold text-white text-blue-800 bg-blue-400 rounded-lg">
             <FaLayerGroup /> Multiple
           </button>
           <button onClick={() => onOpenModal('cash')} className="flex items-center justify-center gap-2 px-4 py-3 text-sm font-semibold text-white bg-green-600 rounded-lg">
@@ -264,7 +270,7 @@ selectedCustomer, selectedWarehouse,
       {isPaymentModalOpen && (
         <PaymentModal
           onClose={() => setIsPaymentModalOpen(false)}
-          paymentMode={paymentMode}
+          paymentMode={"multiple"}
           paymentTypes={paymentTypes}
           accounts={accounts}
           terminals={terminals}

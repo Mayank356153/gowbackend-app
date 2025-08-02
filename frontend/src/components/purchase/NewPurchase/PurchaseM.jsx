@@ -411,16 +411,31 @@ useEffect(() => {
   }
 }, [options.warehouse, defaultWarehouse, id]);
 
+const updateItem = (e, itemId, action) => {
+  alert("This feature is not implemented yet.");
+  const updatedItems = formData.items.map((item) => {
+    if (item.item !== itemId) return item;
 
- const updateItem = (index, field, value) => {
-  const updatedItems = formData.items.map((item, i) =>
-    i === index
-      ? {
-          ...item,
-          [field]: value,
-        }
-      : item
-  );
+    let newQty = item.quantity;
+
+    if (action === "plus") {
+      newQty = item.quantity + 1;
+    } else if (action === "minus") {
+      newQty = Math.max(1, item.quantity - 1);
+    } else if (action === "change") {
+      const val = parseInt(e.target.value) || 1;
+      newQty = Math.max(1, val);
+    }
+    if (newQty > item.currentStock) {
+      alert("Quantity cannot exceed available stock");
+      newQty = item.currentStock; // Prevent exceeding stock
+    }
+    return {
+      ...item,
+      quantity: newQty,
+      subtotal: newQty * item.salesPrice - (item.discount || 0),
+    };
+  });
 
   setFormData((prev) => ({
     ...prev,
@@ -428,7 +443,7 @@ useEffect(() => {
   }));
 };
 
-  
+
 
 
 

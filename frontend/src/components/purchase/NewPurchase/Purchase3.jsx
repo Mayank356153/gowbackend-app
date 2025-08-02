@@ -33,43 +33,46 @@ export default function Purchase3({
   };
 }, [edit, setEdit, setActiveTab]);
 
+const handleQuantity = (e, id, type) => {
+  let updatedItems;
 
-    const handleQuantity = (e, id, type) => {
-       console.log(formData.items)
-        let updatedItems;
-        if (type === "delete") {
-            updatedItems = formData.items.filter(it => it.item !== id);
-        } else if (type === "change") {
-            updatedItems = formData.items.map(item =>
-                item.item === id ? { ...item, quantity: Number(e.target.value) } : item
-            );
-        } 
-        else {
-  updatedItems = formData.items.map(item => {
-        // Find the correct item to update
-        if (item.item === id) {
-            // If the user clicks "plus"
-            if (type === "plus") {
-                // Check if the current quantity is less than the available stock
-                if (item.quantity < item.currentStock) {
-                    return { ...item, quantity: item.quantity + 1 };
-                } else {
-                    // If stock limit is reached, notify the user and don't change the quantity
-                    alert("Stock limit reached!");
-                    return item;
-                }
-            }
-            // If the user clicks "minus", just decrease the quantity
-            else {
-                return { ...item, quantity: item.quantity - 1 };
-            }
+  if (type === "delete") {
+    updatedItems = formData.items.filter(it => it.item !== id);
+  } 
+  
+  else if (type === "change") {
+    const inputVal = parseInt(e.target.value);
+    updatedItems = formData.items.map(item =>
+      item.item === id
+        ? {
+            ...item,
+            quantity:Math.min(Math.max(1, isNaN(inputVal) ? 1 : inputVal), item.currentStock)
+          }
+        : item
+    );
+  } 
+  
+  else {
+    updatedItems = formData.items.map(item => {
+      if (item.item === id) {
+        if (type === "plus") {
+          if (item.quantity < item.currentStock) {
+            return { ...item, quantity: item.quantity + 1 };
+          } else {
+            return item;
+          }
+        } else if (type === "minus") {
+          const newQty = Math.max(1, item.quantity - 1);
+          return { ...item, quantity: newQty };
         }
-        // If it's not the item we're looking for, return it unchanged
-        return item;
-    }).filter(it => it.quantity > 0); 
-        }
-        setFormData(prev => ({ ...prev, items: updatedItems }));
-    };
+      }
+      return item;
+    }); // optional cleanup
+  }
+
+  setFormData(prev => ({ ...prev, items: updatedItems }));
+};
+
 
     return (
         <div className="min-h-screen bg-gray-50">
@@ -172,7 +175,7 @@ export default function Purchase3({
                                 placeholder="Select payment type"
                             />
                         </div>
-                        <div>
+                        {/* <div>
                             <label className="text-sm text-gray-600">Account</label>
                             <Select
                                 className="w-full mt-1"
@@ -181,7 +184,7 @@ export default function Purchase3({
                                 value={formData.payments[0]?.account}
                                 placeholder="Select account"
                             />
-                        </div>
+                        </div> */}
                          {isCash && (
                                           <div >
                                             <label className="text-sm text-gray-600">Account</label>

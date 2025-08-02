@@ -130,7 +130,7 @@ const[matchedItems,setMatchedItems]=useState([])
               ? `${item.itemName} / ${item.variantName || "Variant"}`
               : item.itemName || "NA",
             itemCode: item.itemCode || "",
-            barcode: item.barcodes?.[0] || "",
+            barcodes: item.barcodes || [],
             barcodes: item.barcodes || [],
             isVariant,
             currentStock: item.currentStock || 0,
@@ -340,15 +340,18 @@ const startScanner = async () => {
 
   // ─── SEARCH LOGIC FOR AUTOCOMPLETE DROPDOWN ────────────────────────────
   const filteredItems = searchQuery
-    ? filteredItemsByWarehouse.filter((it) => {
-        const q = searchQuery.toLowerCase();
-        return (
-          it.displayName?.toLowerCase().includes(q) ||
-          it.itemCode?.toLowerCase().includes(q) ||
-          (it.barcode && it.barcode.toLowerCase().includes(q))
-        );
-      })
-    : [];
+  ? filteredItemsByWarehouse.filter((it) => {
+      const q = searchQuery.toLowerCase();
+
+      const displayMatch = it.displayName?.toLowerCase().includes(q);
+      const codeMatch = it.itemCode?.toLowerCase().includes(q);
+      const barcodeMatch = it.barcodes?.some((b) =>
+        String(b).toLowerCase().includes(q)
+      );
+
+      return displayMatch || codeMatch || barcodeMatch;
+    })
+  : [];
 
   // ─── ADD ITEM TO SELECTED LIST ────────────────────────────────────────
   const handleAddItem = (it) => {

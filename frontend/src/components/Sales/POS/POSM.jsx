@@ -192,9 +192,7 @@ export default function POSM() {
   const prevWarehouseRef = useRef();    
   const[print,setPrint]=useState({})
 
-  useEffect(()=>{
-     setSelectedWarehouse(localStorage.getItem("deafultWarehouse") || null);
-  },[])
+
    
     
   // ─── HELPERS ────────────────────────────────────────────────────────
@@ -209,6 +207,9 @@ export default function POSM() {
 
   
   useEffect(() => {
+    if(editId){
+      return;
+    }
   // skip the very first render (prevWarehouseRef === undefined)
   if (
     prevWarehouseRef.current &&                     // we already had one before
@@ -268,6 +269,7 @@ useEffect(() => {
         .finally(() => setIsLoadingEdit(false));
     } else {
       loadNextInvoiceCode();
+      setSelectedWarehouse(localStorage.getItem("deafultWarehouse") || null);
     }
   }, [editId]);
   useEffect(() => {
@@ -341,6 +343,7 @@ async function fetchLookups() {
       `${link}/api/payment-types`,
       authHeaders()
     );
+    console.log("Payment types data:", data);
     setPaymentTypes(data.data || data || []);
   } catch (err) {
     console.error("❌ failed to load payment types", err);
@@ -518,7 +521,11 @@ async function fetchLookups() {
           variant: i.variant || null,
           itemName: itemDoc.itemName,
           itemCode: itemDoc.itemCode || "",
-          openingStock: itemDoc.openingStock || 0,
+          stock: itemDoc.currentStock || 0,
+          discountPolicy: itemDoc.discountPolicy || "None",
+          requiredQty: itemDoc.requiredQuantity || 0,
+          freeQty: itemDoc.freeQuantity || 0,
+          openingStock: itemDoc.currentStock || 0,
           salesPrice: i.price || itemDoc.salesPrice || 0,
           quantity: i.quantity || 1,
           discount: i.discount || 0,
@@ -588,21 +595,31 @@ async function fetchLookups() {
     setTotalAmount(amt);
     setTotalDiscount(disc);
   }, [items]);
+  
+useEffect(() => {
+  const q = searchItemCode.trim();
+  if (!q || !selectedWarehouse) return setFilteredItems([]);
 
-  useEffect(() => {
-    const q = searchItemCode.trim();
-    if (!q || !selectedWarehouse) return setFilteredItems([]);
-    const rx = new RegExp(esc(q), "i");
-    const filtered = allItems
-      .filter(
-        (it) =>
-          it.warehouse?._id === selectedWarehouse &&
-          (rx.test(it.itemName) || rx.test(it.itemCode) || rx.test(it.barcodes?.join(" ") || ""))
-      )
-      .slice(0, 15);
-    setFilteredItems(filtered);
-    console.log("Filtered items:", filtered);
-  }, [searchItemCode, selectedWarehouse, allItems]);
+  const rx = new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i");
+
+  const filtered = allItems
+    .filter((it) => {
+      const inWarehouse = it.warehouse?._id === selectedWarehouse;
+
+      const nameMatch = rx.test(String(it.itemName || ""));
+      const codeMatch = rx.test(String(it.itemCode || ""));
+      // const barcodeMatch = it.barcodes?.some((b) => rx.test(String(b))) ?? false;
+      const barcodeMatch = it.barcodes?.some((b) => rx.test(String(b))) ?? false;
+
+      return inWarehouse && (nameMatch || codeMatch || barcodeMatch);
+    })
+    .slice(0,20)
+
+  setFilteredItems(filtered);
+  console.log("Search query:", q);
+  console.log("Filtered items:", filtered);
+}, [searchItemCode, selectedWarehouse, allItems]);
+
 
   useEffect(() => {
     return () => {
@@ -1006,7 +1023,7 @@ function updateItem(idx, field, val) {
   }
 
   // ❗ Prevent quantity > currentStock
-  if (field === "quantity" && numericVal > row.currentStock) {
+  if (field === "quantity" && numericVal > row.stock) {
     return;
   }
 
@@ -1222,9 +1239,6 @@ function updateItem(idx, field, val) {
   }
 
   async function sendOrder(payload, method = "post", id) {
-    
- 
-
   try {
     console.log("Sending order with payload:", payload);
     
@@ -1355,12 +1369,19 @@ function updateItem(idx, field, val) {
 
   
   function onOpenModal(mode) {
+
+
+    
     if (!editId || mode === "multiple") {
       if (!selectedWarehouse || !selectedCustomer || !selectedAccount) {
         alert("Please select a warehouse, customer, and account before proceeding with payment.");
         return;
       }
     }
+
+
+
+    
     if (!items.length) {
       alert("Please add at least one item to the order.");
       return;

@@ -17,6 +17,7 @@ import { FaTrashAlt} from 'react-icons/fa';
 import { App } from "@capacitor/app";
 import { useLocation,useNavigate } from 'react-router-dom'
 import Swal from "sweetalert2"
+import { Keyboard } from '@capacitor/keyboard';
 export default function Purchase2({
     filteredItems,stopScanner,addItemsInBatch,
     allItems,matchedItems,setMatchedItems,setActiveTab,removeItem,updateItem,
@@ -77,16 +78,93 @@ const handleViewInfo = (item) => {
 
      const[itemScan,setItemScan]=useState(false)
      
-  const handleQuanity=(id,type)=>{
-    const itemformat=items.map(item=>
-      (item.item===id)?{
-        ...item,
-        quantity:type==="plus"?item.quantity+1:item.quantity-1
-      }:item
-    )
-    // setItems(itemformat)
-    setFormData((prev)=>({...prev,items:itemformat.filter(it=>it.quantity!==0)}))
-  }
+  const handleQuanity = (id, type) => {
+  console.log("handleQuantity", id, type);
+
+  const updatedItems = formData.items.reduce((acc, item) => {
+    if (item.item === id) {
+      let newQty = item.quantity;
+
+      if (type === "plus") {
+        newQty = item.quantity + 1;
+      } else if (type === "minus") {
+        newQty = Math.max(1, item.quantity - 1);
+      } else if (type === "remove") {
+        // Don't add this item to acc — skip it
+        return acc;
+      } else if (typeof type === "number") {
+        newQty = type; // manual entry
+      }
+
+      // Cap it at stock
+      newQty = Math.min(newQty, item.currentStock);
+
+      acc.push({ ...item, quantity: Number(newQty) });
+    } else {
+      acc.push(item);
+    }
+
+    return acc;
+  }, []);
+
+  setFormData(prev => ({
+    ...prev,
+    items: updatedItems,
+  }));
+};
+
+const lastScanRef = useRef({ code: null, time: 0 });
+
+  const SCAN_GAP = 500; // 1 second
+const debounceTimerRef = useRef(null);
+const DEBOUNCE_DELAY = 500; 
+  const canScan = (code) => {
+    const now = Date.now();
+    if (
+      lastScanRef.current.code === code &&
+      now - lastScanRef.current.time < SCAN_GAP
+    ) {
+      return false; // recently scanned
+    }
+    lastScanRef.current = { code, time: now };
+    return true;
+  };
+
+
+  
+useEffect(() => {
+    // 1. Clear the previous timer on every keystroke
+    if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+    }
+
+    // 2. If the input is not empty, set a new timer
+    if (result) {
+        debounceTimerRef.current = setTimeout(() => {
+            // 3. This code runs after the user has stopped typing for DEBOUNCE_DELAY ms
+            const exactMatches = allItems.filter((i) =>
+                i.barcodes?.some((barcode) => String(barcode) === String(result))
+            );
+            
+            // 4. If we found exactly one item that is an exact match for the typed code...
+            if (exactMatches.length === 1 && canScan(result)) {
+                // ...add it and clear the input.
+                addItem(exactMatches[0]);
+                setResult("");
+            }
+        }, DEBOUNCE_DELAY);
+    }
+
+    // Cleanup function to clear the timer if the component unmounts
+    return () => {
+        if (debounceTimerRef.current) {
+            clearTimeout(debounceTimerRef.current);
+        }
+    };
+}, [result, allItems, addItem]); // Dependencies for the effect
+
+
+  
   if(itemScan) return <PurchaseScanner addItemsInBatch={addItemsInBatch} startScanner={startScanner} matchedItems={matchedItems} setMatchedItems={setMatchedItems} stopScanner={stopScanner} allItems={allItems} handleQuanity={handleQuanity}  videoRef={videoRef}  addItem={addItem} setItemScan={setItemScan}/>
   return (
     
@@ -108,21 +186,25 @@ const handleViewInfo = (item) => {
         <input
           type="text"
           value={result}
-          onChange={(e) => {
-            const val = e.target.value;
-            setResult(val);
-            const hit = allItems.find((i) => i.barcodes?.includes(val));
-            if (hit) {
-              addItem(hit);
-              setResult("");
-            }
-          }}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" && filteredItems[0]) {
-              addItem(filteredItems[0]);
-              setResult("");
-            }
-          }}
+  //          onFocus={(e) => {
+  //   e.target.focus(); // ensure input is focused
+  //   setTimeout(() => {
+  //     Keyboard.show(); // explicitly show the keyboard
+  //   }, 100); // short delay helps trigger keyboard on some Androids
+  // }}
+           onChange={(e) => {
+        const val = e.target.value;
+        setResult(val);
+      }}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" && filteredItems[0]) {
+          const code = filteredItems[0].barcodes?.[0];
+          if (canScan(code)) {
+            addItem(filteredItems[0]);
+            setResult("");
+          }
+        }
+      }}
           className="w-full py-2.5 pl-10 pr-4 text-sm text-gray-900 bg-white border-0 rounded-full focus:ring-2 focus:ring-purple-500 focus:bg-white focus:outline-none transition-all"
           placeholder="Search items..."
         />
@@ -195,7 +277,7 @@ const handleViewInfo = (item) => {
 
     {/* Items List */}
     <div className="space-y-3">
-      {formData.items?.filter(item => item.quantity > 0).map((item, index) => {
+      {formData.items?.map((item, index) => {
         const it = allItems.find(i => i._id === item.item);
         if (!it) return null;
 
@@ -240,7 +322,7 @@ const handleViewInfo = (item) => {
                 </p>
 
                 {/* Interactive Quantity Controls */}
-                <div className="flex items-center justify-between mt-3">
+                <div className="flex items-center justify-around w-full mt-3">
                   <span className={`text-xs px-2.5 py-1 rounded-full ${
                     it.currentStock > 10 ? "bg-green-50 text-green-700" :
                     it.currentStock > 0 ? "bg-yellow-50 text-yellow-700" :
@@ -257,9 +339,15 @@ const handleViewInfo = (item) => {
                     >
                       <FaMinus className="w-3.5 h-3.5" />
                     </button>
-                    <span className="text-sm font-medium text-gray-800 min-w-[20px] text-center">
-                      {item.quantity}
-                    </span>
+                     <input
+  type="text"
+  value={item.quantity}
+  onChange={(e) => {
+    const val = (Number(e.target.value));
+    handleQuanity(it._id, val);
+  }}
+  className="w-12 text-sm font-medium text-center text-gray-800 bg-transparent border-none focus:ring-0 focus:outline-none"
+/>
                     <button type='button'
                       onClick={() => handleQuanity(it._id, "plus")}
                       className="p-1.5 text-gray-600 hover:text-purple-600 rounded-full active:bg-gray-200 transition-colors"
@@ -268,6 +356,14 @@ const handleViewInfo = (item) => {
                       <FaPlus className="w-3.5 h-3.5" />
                     </button>
                   </div>
+                    <div className="flex items-start justify-between mt-3">
+  <button
+    onClick={() => handleQuanity(it._id, "remove")}
+    className="inline-flex items-center gap-1 px-3 py-1 text-sm font-medium text-red-600 rounded-full bg-red-50 hover:bg-red-100"
+  >
+    <FaTrashAlt className="w-4 h-4" />
+  </button>
+</div>
                 </div>
               </div>
             </div>

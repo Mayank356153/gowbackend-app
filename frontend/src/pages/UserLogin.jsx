@@ -1,8 +1,9 @@
-import { useState,useEffect } from "react";
+import { useState,useEffect,useContext } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { Preferences } from '@capacitor/preferences';
 import SavedLoginsPage from "./SavedLoginPage";
+import {POSContext} from "../context/POSContext";
 // Icons ke liye placeholder (real project mein lucide-react jaisi library use karein)
 const UserIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="absolute w-5 h-5 text-gray-400 -translate-y-1/2 left-3 top-1/2">
@@ -35,7 +36,11 @@ const UserLogin = () => {
   const [rememberMe, setRememberMe] = useState(false);
  const [savedUsers, setSavedUsers] = useState([]);
  const[pop,setPop]=useState(false);
- 
+ const{ loadPOSData } = useContext(POSContext);
+
+  const handleSavedLogins = () => {
+    setPop(!pop);
+  };
 
   useEffect(() => {
     const loadSavedLogins = async () => {
@@ -72,11 +77,12 @@ const UserLogin = () => {
       localStorage.setItem("token", token);
       localStorage.setItem("role", role);
       localStorage.setItem("permissions", permissions);
-       localStorage.setItem("userId", userId);
+      localStorage.setItem("userId", userId);
       localStorage.setItem("roleId", roleId);
       localStorage.setItem("storeId", storeId);
       localStorage.setItem("stores", stores || []);
       navigate("/dashboard");
+      loadPOSData();
     }
   };
   checkToken();
@@ -103,7 +109,7 @@ const UserLogin = () => {
       );
       console.log(res.data)
       const { token, user: userInfo, permissions } = res.data;
-
+        loadPOSData();
       
        if (rememberMe) {
         alert("Saving user credentials for future logins");
@@ -163,6 +169,7 @@ const UserLogin = () => {
       alert("User logged in successfully!");
       
       navigate("/dashboard");
+       loadPOSData();
     } catch (err) {
         setError(err.response?.data?.message || err.message || "Login failed");
       console.error("Login error:", err);

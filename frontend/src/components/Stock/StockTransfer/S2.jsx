@@ -12,6 +12,7 @@ import StockScanner from './StockScanner';
 import { App } from "@capacitor/app";
 import { useLocation,useNavigate } from 'react-router-dom'
 import Swal from "sweetalert2"
+import { Keyboard } from '@capacitor/keyboard';
 export default function S2({
      searchQuery,handleAddItemsBatch,
   setSearchQuery,
@@ -80,20 +81,90 @@ export default function S2({
       setShowInfoModal(true);
     };
         const[itemScan,setItemScan]=useState(false)
-
-     
-  const handleQuanity=(id,type)=>{
-
-    const itemformat=selectedItems.map(item=>
-      (item.item===id)?{
-        ...item,
-        quantity:type==="plus"?item.quantity+1:item.quantity-1
-      }:item
-    )
-    // setItems(itemformat)
-    setSelectedItems(itemformat.filter(it=>it.quantity!==0))
+const handleQuanity = (id, type) => {
+  // Handle item removal
+  if (type === "remove") {
+    const filtered = selectedItems.filter(item => item.item !== id);
+    setSelectedItems(filtered);
+    return;
   }
 
+  const updatedItems = selectedItems.map(item => {
+    if (item.item !== id) return item;
+
+    let newQty = item.quantity;
+
+    if (type === "plus") {
+      newQty = item.quantity + 1;
+      if (item.currentStock && newQty > item.currentStock) {
+        alert("❗ Stock limit reached!");
+        return item;
+      }
+    } else if (type === "minus") {
+      newQty = Math.max(1, item.quantity - 1);
+    } else if (typeof type === "number") {
+      const inputQty =type; // prevent 0 or negative
+      newQty = item.currentStock ? Math.min(inputQty, item.currentStock) : inputQty;
+    }
+
+    return {
+      ...item,
+      quantity: newQty,
+      subtotal: newQty * item.salesPrice - (item.discount || 0),
+    };
+  });
+
+  setSelectedItems(updatedItems);
+};
+
+const lastScanRef = useRef({ code: null, time: 0 });
+
+  const SCAN_GAP = 500; // 1 second
+const debounceTimerRef = useRef(null);
+const DEBOUNCE_DELAY = 500; // Time to wait after user stops typing
+
+  const canScan = (code) => {
+    const now = Date.now();
+    if (
+      lastScanRef.current.code === code &&
+      now - lastScanRef.current.time < SCAN_GAP
+    ) {
+      return false; // recently scanned
+    }
+    lastScanRef.current = { code, time: now };
+    return true;
+  };
+  
+useEffect(() => {
+    // 1. Clear the previous timer on every keystroke
+    if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+    }
+
+    // 2. If the input is not empty, set a new timer
+    if (searchQuery) {
+        debounceTimerRef.current = setTimeout(() => {
+            // 3. This code runs after the user has stopped typing for DEBOUNCE_DELAY ms
+            const exactMatches = allItems.filter((i) =>
+                i.barcodes?.some((barcode) => String(barcode) === String(searchQuery))
+            );
+
+            // 4. If we found exactly one item that is an exact match for the typed code...
+            if (exactMatches.length === 1 && canScan(searchQuery)) {
+                // ...add it and clear the input.
+                addItem(exactMatches[0]);
+                setSearchQuery("");
+            }
+        }, DEBOUNCE_DELAY);
+    }
+
+    // Cleanup function to clear the timer if the component unmounts
+    return () => {
+        if (debounceTimerRef.current) {
+            clearTimeout(debounceTimerRef.current);
+        }
+    };
+}, [searchQuery, allItems, addItem]); // Dependencies for the effect
 
 
   
@@ -111,21 +182,26 @@ export default function S2({
       <input
         type="text"
         value={searchQuery}
+  //        onFocus={(e) => {
+  //   e.target.focus(); // ensure input is focused
+  //   setTimeout(() => {
+  //     Keyboard.show(); // explicitly show the keyboard
+  //   }, 100); // short delay helps trigger keyboard on some Androids
+  // }}
+  
         onChange={(e) => {
-          const val = e.target.value.trim();
-          setSearchQuery(val);
-          const hit = allItems.find((i) => i.barcodes?.includes(val));
-          if (hit) {
-            addItem(hit);
-            setSearchQuery("");
-          }
-        }}
-        onKeyDown={(e) => {
-          if (e.key === "Enter" && filteredItems[0]) {
+        const val = e.target.value;
+        setSearchQuery(val);
+      }}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" && filteredItems[0]) {
+          const code = filteredItems[0].barcodes?.[0];
+          if (canScan(code)) {
             addItem(filteredItems[0]);
             setSearchQuery("");
           }
-        }}
+        }
+      }}
         className="flex-grow text-sm placeholder-gray-400 bg-transparent focus:outline-none"
         placeholder="Search by name or code"
       />
@@ -187,12 +263,7 @@ export default function S2({
   {/* Selected Items */}
   <div className="mt-4 space-y-4">
     {selectedItems?.map((item, index) => {
-      console.log(item)
-      console.log("t")
       const it = allItems.find(i => i._id === item.item);
-      console.log(it)
-      if (item.quantity <= 0) return null;
-
       return (
          <div
                     key={it._id}
@@ -246,9 +317,15 @@ export default function S2({
                             >
                               <FaMinus className="w-3.5 h-3.5" />
                             </button>
-                            <span className="text-sm font-medium text-gray-800 min-w-[20px] text-center">
-                              {item.quantity}
-                            </span>
+                              <input
+  type="text"
+  value={item.quantity}
+  onChange={(e) => {
+    const val = (Number(e.target.value));
+    handleQuanity(it._id, val);
+  }}
+  className="w-12 text-sm font-medium text-center text-gray-800 bg-transparent border-none focus:ring-0 focus:outline-none"
+/>
                             <button type="button"
                               onClick={() => handleQuanity(it._id, "plus")}
                               className="p-1.5 text-gray-600 hover:text-purple-600 rounded-full active:bg-gray-200 transition-colors"
@@ -257,6 +334,15 @@ export default function S2({
                               <FaPlus className="w-3.5 h-3.5" />
                             </button>
                           </div>
+                          <div className="flex justify-end mt-3">
+  <button type="button"
+    onClick={() => handleQuanity(it._id, "remove")}
+    className="inline-flex items-center gap-1 px-3 py-1 text-sm font-medium text-red-600 rounded-full bg-red-50 hover:bg-red-100"
+  >
+    <FaTrashAlt className="w-4 h-4" />
+  </button>
+</div>
+
                         </div>
                       </div>
                     </div>

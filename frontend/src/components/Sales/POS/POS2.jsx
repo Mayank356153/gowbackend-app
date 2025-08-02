@@ -13,6 +13,7 @@ import { App } from "@capacitor/app";
 import { useLocation,useNavigate } from 'react-router-dom'
 import MinimalOfferView from "./OfferView";
 import { add } from "date-fns";
+import { Keyboard } from '@capacitor/keyboard';
 export default function POS2({
   searchItemCode,
   setSearchItemCode,
@@ -75,8 +76,7 @@ confirmBack();
   const[itemScan,setItemScan]=useState(false)
 
 
-  
-  const handleQuanity = (id, type) => {
+ const handleQuanity = (id, type) => {
   if (type === "remove") {
     const filtered = items.filter((it) => it.item !== id);
     const withOffer = applyOfferLogic(filtered);
@@ -86,22 +86,33 @@ confirmBack();
 
   const updated = items.map((item) => {
     if (item.item === id) {
-      const newQty = type === "plus" ? item.quantity + 1 : item.quantity - 1;
-
+      let newQty = item.quantity;
+      
+      if (type === "plus") {
+        newQty = item.quantity + 1;
+      } else if (type === "minus") {
+        newQty = Math.max(1, item.quantity - 1);
+      } else if (typeof type === "number") {
+        newQty =type
+      }
+ if (newQty > item.stock) {
+      newQty = item.stock; // cap it at stock
+    }
       return {
         ...item,
         quantity: newQty,
         subtotal: newQty * item.salesPrice - (item.discount || 0),
       };
     }
+
     return {
       ...item,
-      subtotal: item.quantity * item.salesPrice - (item.discount || 0), // ensure all items stay accurate
+      subtotal: item.quantity * item.salesPrice - (item.discount || 0),
     };
   });
 
-  const filtered = updated.filter((it) => it.quantity !== 0);
-  const withOffer = applyOfferLogic(filtered);
+  const withOffer = applyOfferLogic(updated);
+  console.log(withOffer);
   setItems(withOffer);
 };
 
@@ -122,6 +133,56 @@ function applyOfferLogic(itemList) {
     return item;
   });
 }
+
+const lastScanRef = useRef({ code: null, time: 0 });
+const debounceTimerRef = useRef(null);
+const SCAN_GAP = 500; // Time between identical scans
+const DEBOUNCE_DELAY = 500; // Time to wait after user stops typing
+
+const canScan = (code) => {
+    const now = Date.now();
+    if (
+        lastScanRef.current.code === code &&
+        now - lastScanRef.current.time < SCAN_GAP
+    ) {
+        return false; // recently scanned the same code
+    }
+    lastScanRef.current = { code, time: now };
+    return true;
+};
+
+// This effect handles the auto-add logic after the user stops typing
+useEffect(() => {
+    // 1. Clear the previous timer on every keystroke
+    if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+    }
+
+    // 2. If the input is not empty, set a new timer
+    if (searchItemCode) {
+        debounceTimerRef.current = setTimeout(() => {
+            // 3. This code runs after the user has stopped typing for DEBOUNCE_DELAY ms
+            const exactMatches = allItems.filter((i) =>
+                i.barcodes?.some((barcode) => String(barcode) === String(searchItemCode))
+            );
+
+            // 4. If we found exactly one item that is an exact match for the typed code...
+            if (exactMatches.length === 1 && canScan(searchItemCode)) {
+                // ...add it and clear the input.
+                addItem(exactMatches[0]);
+                setSearchItemCode("");
+            }
+        }, DEBOUNCE_DELAY);
+    }
+
+    // Cleanup function to clear the timer if the component unmounts
+    return () => {
+        if (debounceTimerRef.current) {
+            clearTimeout(debounceTimerRef.current);
+        }
+    };
+}, [searchItemCode, allItems, addItem]); // Dependencies for the effect
+
 
   if(itemScan) return <POSScanner addItemsInBatch={addItemsInBatch}  allItems={allItems} items={items} handleQuanity={handleQuanity}  addItem={addItem} setItemScan={setItemScan}/>
   return (
@@ -147,23 +208,29 @@ function applyOfferLogic(itemList) {
           <FaSearch className="text-purple-500/80" />
         </div>
         <input
-          type="text"
+          type="text" 
+  //          onFocus={(e) => {
+  //   e.target.focus(); // ensure input is focused
+  //   setTimeout(() => {
+  //     Keyboard.show(); // explicitly show the keyboard
+  //   }, 100); // short delay helps trigger keyboard on some Androids
+  // }}
           value={searchItemCode}
-           onChange={(e) => {
-          const val = e.target.value;
-          setSearchItemCode(val);
-          const hit = allItems.find((i) => i.barcodes?.includes(val));
-          if (hit) {
-            addItem(hit);
-            setSearchItemCode("");
-          }
-        }}
-        onKeyDown={(e) => {
-          if (e.key === "Enter" && filteredItems[0]) {
+          
+          
+       onChange={(e) => {
+        const val = e.target.value;
+        setSearchItemCode(val);
+      }}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" && filteredItems[0]) {
+          const code = filteredItems[0].barcodes?.[0];
+          if (canScan(code)) {
             addItem(filteredItems[0]);
             setSearchItemCode("");
           }
-        }}
+        }
+      }}
           className="w-full py-3.5 pl-12 pr-11 text-sm bg-white rounded-xl shadow-xs border border-gray-200/80 focus:outline-none focus:ring-2 focus:ring-purple-300/50 focus:border-transparent placeholder:text-gray-400"
           placeholder="Search or scan items..."
         />
@@ -227,32 +294,23 @@ function applyOfferLogic(itemList) {
 
     {/* Modern Card Design with Hover Effects */}
     <div className="grid gap-3">
-      {items.filter(i => i.quantity > 0).map((item) => {
+      {items.map((item) => {
         const it = allItems.find(i => i._id === item.item);
         if (!it) return null;
-
+        console.log(it);
         return (
           <div
             key={it._id}
             className="relative p-4 transition-all bg-white border shadow-xs rounded-2xl border-gray-200/70 hover:shadow-sm"
           >
-            {/* Floating Action Menu (Contextual) */}
-            <div className="absolute flex gap-1 top-3 ">
-              <button 
-                onClick={() => handleQuanity(it._id, "remove")}
-                className="p-1.5  text-gray-400 hover:text-red-500 rounded-full transition-colors"
-              >
-                <FaTrashAlt className="w-3.5 h-3.5" />
-              </button>
-            </div>
-
+            
             <div className="flex gap-3">
               {/* Item Visual with Gradient */}
               <div className="relative flex-shrink-0">
                 <div className="flex items-center justify-center w-12 h-12 text-lg font-bold text-white shadow-xs bg-gradient-to-br from-purple-500 to-indigo-500 rounded-xl">
                   {it.itemName?.charAt(0)?.toUpperCase() || "?"}
                 </div>
-                {it.currentStock <= 0 && (
+                {item.stock <= 0 && (
                   <div className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] px-1.5 py-0.5 rounded-full">
                     Out
                   </div>
@@ -273,13 +331,13 @@ function applyOfferLogic(itemList) {
                 </p>
 
                 {/* Interactive Quantity Controls */}
-                <div className="flex items-center justify-between mt-3">
+                <div className="flex items-center justify-between mt-2">
                   <span className={`text-xs px-2.5 py-1 rounded-full ${
                     it.currentStock > 10 ? "bg-green-50 text-green-700" :
                     it.currentStock > 0 ? "bg-yellow-50 text-yellow-700" :
                     "bg-red-50 text-red-700"
                   }`}>
-                    {it.currentStock || 0} available
+                    {item.stock || 0} available
                   </span>
 
                   <div className="flex items-center gap-2 bg-gray-100/70 rounded-full p-0.5">
@@ -290,7 +348,21 @@ function applyOfferLogic(itemList) {
                     >
                       <FaMinus className="w-3.5 h-3.5" />
                     </button>
-                     
+                     <input
+                      onFocus={(e) => {
+    e.target.focus(); // ensure input is focused
+    setTimeout(() => {
+      Keyboard.show(); // explicitly show the keyboard
+    }, 100); // short delay helps trigger keyboard on some Androids
+  }}
+  type="text"
+  value={item.quantity}
+  onChange={(e) => {
+    const val = (Number(e.target.value));
+    handleQuanity(it._id, val);
+  }}
+  className="w-12 text-sm font-medium text-center text-gray-800 bg-transparent border-none focus:ring-0 focus:outline-none"
+/>
                     <button
                       onClick={() => handleQuanity(it._id, "plus")}
                       className="p-1.5 text-gray-600 hover:text-purple-600 rounded-full active:bg-gray-200 transition-colors"
@@ -299,12 +371,26 @@ function applyOfferLogic(itemList) {
                       <FaPlus className="w-3.5 h-3.5" />
                     </button>
                   </div>
+
+
+
+
+                  
+                  <div className="flex items-start justify-between mt-3">
+  <button
+    onClick={() => handleQuanity(it._id, "remove")}
+    className="inline-flex items-center gap-1 px-3 py-1 text-sm font-medium text-red-600 rounded-full bg-red-50 hover:bg-red-100"
+  >
+    <FaTrashAlt className="w-4 h-4" />
+  </button>
+</div>
+
                 </div>
               </div>
             </div>
 
             {/* Price Breakdown (Subtle) */}
-           <div className="flex items-center justify-between pt-2 mt-2 text-xs text-gray-500 border-t border-gray-100/70">
+           <div className="flex items-center justify-between pt-2 text-xs text-gray-500 border-t border-gray-100/70">
   
   {/* Offer Button */}
 

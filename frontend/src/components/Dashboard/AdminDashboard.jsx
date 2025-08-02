@@ -6,28 +6,33 @@ import MetricCard from "./MetricCard";
 import Card from "./Card";
 import axios from "axios";
 import { FaCube,FaRegCalendarAlt ,FaMinusSquare,FaFileAlt,FaUsers,FaTruck,FaBriefcase,FaShoppingCart} from 'react-icons/fa';
-import BarChartComponent from "./BarChart";
-import TrendingItemsDonut from "./PieChart";
+// import BarChartComponent from "./BarChart";
+// import TrendingItemsDonut from "./PieChart";
 import { jsPDF } from "jspdf";
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
-import LoadingScreen from "../../Loading";
+import { useNavigate } from "react-router-dom";
 const Dashboard = () => {
+  const navigate = useNavigate();
   const link="https://pos.inspiredgrow.in/vps"
    const[data,setData]=useState([])
    const[items,setItems]=useState([])
    const[lowStock,setLowStock]=useState([])
-   const[sale,setSale]=useState([])
+   const[totalSale,setTotalSale]=useState(0)
+   const[cashSale,setCashSale]=useState(0)
+   const[bankSale,setBankSale]=useState(0)
+   const[sales,setSales]=useState([])
    const[searchTerm,setSearchTerm]=useState("")
    const[entriesPerPage,setEntriesPerPage]=useState(10)
    const[currentPage,setCurrentPage]=useState(1)
    const [isSidebarOpen, setSidebarOpen] = useState(true);
-   const[active,setActive]=useState("daily")
+   const[active,setActive]=useState("today")
    useEffect(()=>{
     if(window.innerWidth < 768){
       setSidebarOpen(false)
     }
   },[window.innerWidth])
+  
   const fetchDashboardSummary = async () => {
     try {
       const response = await axios.get(
@@ -76,29 +81,29 @@ const Dashboard = () => {
       console.log(err.message);
     } 
   };
-  const fetchSaleInvoice = async () => {
-    try {
-      const response = await axios.get(
-        `${link}/api/sales/recent?limit=10`,
-        {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          }
-        }
-      );
-      setSale(response.data.data)
-    } catch (err) {
-      console.log(err.message);
-    } 
-  };
- 
+  
+
+  const fetchSale = async () => {
+  try {
+    const response = await axios.get(`${link}/api/pos/invoices`, {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem("token")}`,
+      }
+    });
+
+   setSales(response.data);
+  } catch (err) {
+    console.error("Fetch Error:", err.message);
+  }
+};
+
   
    useEffect(()=>
     {
+      fetchSale();
       fetchDashboardSummary();
       fetchRecentlyAdded();
       fetchStockAlert();
-      fetchSaleInvoice();
     },[])
    
 // Filter the data based on search term
@@ -168,6 +173,60 @@ const handleEntriesChange = (e) => {
         document.body.removeChild(link);
     };
 
+
+    useEffect(()=>{
+
+
+      
+     const invoices=sales;
+      const period = active; // 'today', 'weekly', 'monthly', 'yearly', or 'all'
+        const now = new Date();
+  let start = null;
+    console.log("active",invoices)
+  switch (period) {
+    case 'today':
+      start = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      break;
+    case 'weekly':
+      start = new Date(now);
+      start.setDate(now.getDate() - now.getDay()); // Sunday as start
+      start.setHours(0, 0, 0, 0);
+      break;
+    case 'monthly':
+      start = new Date(now.getFullYear(), now.getMonth(), 1);
+      break;
+    case 'yearly':
+      start = new Date(now.getFullYear(), 0, 1);
+      break;
+    case 'all':
+      start = null; // don't filter by date
+      break;
+    default:
+      throw new Error('Invalid period');
+  }
+
+  let totalSale = 0;
+  let cashSale = 0;
+  let bankSale = 0;
+
+  invoices.forEach(inv => {
+    const date = new Date(inv.createdAt);
+    if (!start || date >= start) {
+      const amount = inv.totalAmount || inv.grandTotal || 0;
+      const p = inv.payments?.[0];
+      const name = p?.paymentType?.paymentTypeName;
+      const paymentAmount = p?.amount || p?.paymentAmount || 0;
+
+      totalSale += amount;
+      if (name === 'Cash') cashSale += paymentAmount;
+      if (name === 'Bank') bankSale += paymentAmount;
+    }
+  });
+   setTotalSale(totalSale);
+   setCashSale(cashSale);
+   setBankSale(bankSale);
+    },[active,sales])
+
   return (
     <div className="flex flex-col ">
     {/* Navbar */}
@@ -195,16 +254,60 @@ const handleEntriesChange = (e) => {
           
           {/* Set Day Buttons */}
          <div className="flex justify-end w-full mt-2">
-         <button className={`px-2 py-2 border rounded-l-md ${active==="daily"?"bg-cyan-500 text-white":"bg-blue-400"}`} onClick={()=>setActive('daily')} >Today</button>
+         <button className={`px-2 py-2 border rounded-l-md ${active==="today"?"bg-cyan-500 text-white":"bg-blue-400"}`}  onClick={()=>setActive("today")}>Today</button>
   <button className={`px-2 py-2 border  ${active==="weekly"?"bg-cyan-500 text-white":"bg-blue-400"}`} onClick={()=>setActive("weekly")} onCLick={()=>setActive("weekly")}>Weekly</button> 
   <button className={`px-2 py-2 border  ${active==="monthly"?"bg-cyan-500 text-white":"bg-blue-400"}`} onClick={()=>setActive("monthly")}onCLick={()=>setActive("monthly")}>Monthly</button> 
   <button className={`px-2 py-2 border  ${active==="yearly"?"bg-cyan-500 text-white":"bg-blue-400"}`} onClick={()=>setActive("yearly")}onCLick={()=>setActive("yearly")}>Yearly</button> 
-  <button className={`px-3 py-2 border rounded-r-md ${active==="all"?"bg-cyan-500 text-white":"bg-blue-400"}`} onClick={()=>setActive("all")}onCLick={()=>setActive("yearly")}>All</button> 
+  <button className={`px-3 py-2 border rounded-r-md ${active==="all"?"bg-cyan-500 text-white":"bg-blue-400"}`} onClick={()=>setActive("all")}onCLick={()=>setActive("all")}>All</button> 
         </div>
+<div className="w-full px-4 py-2">
+  {/* Shortcut Buttons */}
+  <div className="grid grid-cols-2 gap-3 mb-4">
+    <button
+       onClick={() => navigate('/reports/club-bill')}
+      className="w-full h-12 text-white transition-transform duration-150 shadow rounded-xl bg-gradient-to-r from-indigo-500 to-purple-500 hover:scale-105"
+    >
+      Club Bill
+    </button>
+    <button
+     onClick={() => navigate('/sale-list')}
+      className="w-full h-12 text-white transition-transform duration-150 shadow rounded-xl bg-gradient-to-r from-pink-500 to-red-500 hover:scale-105"
+    >
+      Sales List
+    </button>
+  </div>
 
-        
+  {/* Metric Cards Grid */}
+  <div className="grid grid-cols-2 gap-3">
+    <MetricCard
+      title="Total Sales"
+      value={totalSale || '0'}
+      icon={FaCube}
+      className="flex flex-col justify-between h-24 p-3 text-white shadow rounded-xl bg-gradient-to-r from-purple-600 to-pink-500"
+    />
+    <MetricCard
+      title="Seller Points"
+      value={'0'}
+      icon={FaRegCalendarAlt}
+      className="flex flex-col justify-between h-24 p-3 text-white shadow rounded-xl bg-gradient-to-r from-orange-500 to-pink-600"
+    />
+    <MetricCard
+      title="Cash Sales"
+      value={cashSale?.toFixed(2) || '0'}
+      icon={FaRegCalendarAlt}
+      className="flex flex-col justify-between h-24 p-3 text-white shadow rounded-xl bg-gradient-to-r from-green-500 to-emerald-500"
+    />
+    <MetricCard
+      title="Bank Sales"
+      value={bankSale || '0'}
+      icon={FaCube}
+      className="flex flex-col justify-between h-24 p-3 text-white shadow rounded-xl bg-gradient-to-r from-blue-500 to-indigo-500"
+    />
+  </div>
+</div>
+
 {/* //Metric Show       */} 
-<div className="grid w-full grid-cols-1 gap-4 mt-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+{/* <div className="grid w-full grid-cols-1 gap-4 mt-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
   <MetricCard
     title="Purchase Due"
     // value={data.purchaseDue}
@@ -230,7 +333,7 @@ const handleEntriesChange = (e) => {
     icon={FaMinusSquare}
     className="flex items-center justify-between w-full p-4 text-white shadow-md rounded-xl bg-gradient-to-r from-blue-900 to-sky-500 h-28"
   />
-</div> 
+</div>  */}
 
 {/* Card */}
 <div className="grid grid-cols-1 gap-4 mt-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
@@ -240,7 +343,7 @@ const handleEntriesChange = (e) => {
   <Card title="Invoices" value={data?.invoiceCount || '0'} icon={FaShoppingCart} />
 </div>
 {/* For chart and trending items */}
-<div className="flex flex-col w-full gap-4 p-2 mt-4 md:flex-row">
+{/* <div className="flex flex-col w-full gap-4 p-2 mt-4 md:flex-row">
   <BarChartComponent active={active}/>
   <div className="w-full h-auto bg-white border-t-4 border-blue-700 rounded-md md:w-1/2 md:m-0">
     <h5 className="p-2 text-center border-b-2 border-gray-300">RECENTLY ADDED ITEMS</h5>
@@ -267,7 +370,7 @@ const handleEntriesChange = (e) => {
 </table>
 </div>
   </div>
-</div>
+</div> */}
 
 {/* Stock alert */}
 <div className="flex flex-col w-full py-4 mt-3 bg-white border-t-4 border-blue-600 rounded-md">
@@ -406,16 +509,16 @@ const handleEntriesChange = (e) => {
   
   </div>        */}
       <div className="flex flex-col w-full gap-4 mt-4 mb-2 overflow-x-auto md:flex-row">
-  <div className="w-full pb-2 bg-white border-t-4 border-blue-700 rounded-md">
+  {/* <div className="w-full pb-2 bg-white border-t-4 border-blue-700 rounded-md">
     <TrendingItemsDonut />
-  </div>
+  </div> */}
 
   <div className="flex flex-col ">
     <div className="w-full p-4 bg-white border-t-4 border-blue-700 rounded-t-lg">
       <h2 className="text-xl font-semibold">Recent Sales Invoices</h2>
     </div>
 
-    <div className="w-full overflow-x-auto border border-gray-200 rounded-b-md ">
+    {/* <div className="w-full overflow-x-auto border border-gray-200 rounded-b-md ">
       <table className="min-w-[800px] w-full bg-white">
         <thead>
           <tr className="text-left bg-gray-100">
@@ -452,7 +555,7 @@ const handleEntriesChange = (e) => {
           )}
         </tbody>
       </table>
-    </div>
+    </div> */}
   </div>
 </div>
 

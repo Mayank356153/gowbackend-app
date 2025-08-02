@@ -17,7 +17,8 @@ import { Preferences } from '@capacitor/preferences';
 import { Geolocation } from "@capacitor/geolocation";
 import { BluetoothLe } from '@capacitor-community/bluetooth-le';
 import BluetoothStatus from './plugins/BluetoothStatus';
-
+import RegistrationForm from "./pages/Register.jsx";
+import { AppProviders } from "./context/AppProviders.jsx";
 // Lazily loaded components/pages
 const AdminRegister = lazy(() => import("./pages/AdminRegister"));
 const AdminLogin = lazy(() => import("./pages/AdminLogin"));
@@ -299,11 +300,12 @@ useEffect(() => {
 
 }, []);
   return (
+    <AppProviders>
     <Router>
         <BackButtonHandler />
          <Suspense fallback={<div style={{ padding: 24 }}>Loading…</div>}>
       <Routes>
-
+          <Route path="/register" element={<RegistrationForm />} />
          <Route path="/account-list1" element={<AccountList1 />} />
 
           <Route path="/print" element={<Print />} />
@@ -478,6 +480,7 @@ useEffect(() => {
       </Routes>
       </Suspense>
     </Router>
+    </AppProviders>
   );
 }
 
