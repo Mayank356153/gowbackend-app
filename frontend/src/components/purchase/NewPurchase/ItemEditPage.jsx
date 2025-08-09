@@ -146,7 +146,7 @@ const hasPermissionFor = (module, action) => {
       <div>
         <label className="block mb-1 text-xs font-medium text-gray-600">Sales Price</label>
         <input
-          type="number" disabled={!hasPermissionFor('salesPrice', 'edit')}
+          type="number" 
           value={form.salesPrice}
           onChange={(e) => handleChange('salesPrice', e.target.value)}
           className="w-full px-2 py-1.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500/50 transition-colors duration-200"

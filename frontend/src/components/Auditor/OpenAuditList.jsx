@@ -34,7 +34,8 @@ const  OpenAuditList=()=> {
             Authorization: `Bearer ${token}`,
           }
         });
-        console.log(response.data.data);
+        console.log("Fetched audits:");
+        console.log(response);
         setAudits(response.data.data);
       } catch (err) {
         console.error("Fetch audit error:", err.message);
@@ -231,7 +232,7 @@ const  OpenAuditList=()=> {
         
        <div className="overflow-x-auto border border-gray-200 rounded-lg shadow-sm">
   {/* Desktop Table */}
-  <table className="min-w-full divide-y divide-gray-200 ">
+  <table className="hidden min-w-full divide-y divide-gray-200 md:table">
     <thead className="bg-gray-50">
       <tr>
         <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">Audit ID</th>
@@ -239,18 +240,17 @@ const  OpenAuditList=()=> {
         <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">Actions</th>
       </tr>
     </thead>
-    <tbody className="hidden bg-white divide-y divide-gray-200 md:table">
+    <tbody className="bg-white divide-y divide-gray-200">
       {audits.map((audit) => (
         <tr key={audit.auditId}>
           <td className="px-6 py-4 text-sm font-medium text-gray-900 whitespace-nowrap">{audit.auditId}</td>
-          <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">{audit.finalUnit?.length || 0} items</td>
+          <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+            {audit.finalUnit?.length || 0} items
+          </td>
           <td className="px-6 py-4 space-x-4 text-sm font-medium whitespace-nowrap">
             <button 
               className="text-indigo-600 hover:text-indigo-900"
-              onClick={() => {
-                setItems(audit)
-                setComparison(true)
-              }}
+              onClick={() => { setItems(audit); setComparison(true); }}
             >
               View
             </button>
@@ -273,23 +273,18 @@ const  OpenAuditList=()=> {
   </table>
 
   {/* Mobile Cards */}
-
+  <div className="space-y-4 md:hidden">
     {audits.map((audit) => (
       <div key={audit.auditId} className="p-4 bg-white border border-gray-200 rounded-lg shadow-sm">
         <div className="mb-2 text-sm font-medium text-gray-700">Audit ID:</div>
         <div className="mb-1 text-base font-semibold text-gray-900 break-all">{audit.auditId}</div>
-
         <div className="mb-3 text-sm text-gray-600">
           Total Items: {audit.finalUnit?.length || 0}
         </div>
-
         <div className="flex justify-start space-x-4">
           <button 
             className="text-sm text-indigo-600 hover:text-indigo-900"
-            onClick={() => {
-              setItems(audit)
-              setComparison(true)
-            }}
+            onClick={() => { setItems(audit); setComparison(true); }}
           >
             View
           </button>
@@ -308,8 +303,9 @@ const  OpenAuditList=()=> {
         </div>
       </div>
     ))}
-    
+  </div>
 </div>
+
 
  
 

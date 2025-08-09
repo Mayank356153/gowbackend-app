@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef, useCallback } from "react";
+import React, { useEffect, useState, useRef, useCallback,useContext, use } from "react";
 import {
   FaHandPaper,
   FaLayerGroup,
@@ -28,7 +28,8 @@ import Swal from 'sweetalert2';
 import playSound from "../../../utility/sound";
 import Print from "./Print";
 import {Geolocation} from "@capacitor/geolocation";
-
+import { POSContext } from "../../../context/POSContext";
+import { set } from "date-fns";
 
 function buildInvoiceHTML(order, payments = [], store, cust, rows, sellerName = "–", setPrint, setActiveTab) {
   const {
@@ -107,6 +108,7 @@ function buildInvoiceHTML(order, payments = [], store, cust, rows, sellerName = 
 export default function POSM() {
   const link="https://pos.inspiredgrow.in/vps"
   const [location, setLocation] = useState(null);
+  const {posData,loadPOSData}=useContext(POSContext);
 
   useEffect(() => {
     const getLocation = async () => {
@@ -158,6 +160,7 @@ export default function POSM() {
   const [paymentTypes, setPaymentTypes] = useState([]);
 
   const [allItems, setAllItems] = useState([]);
+  const [itemsG, setItemG] = useState([]);
   const [filteredItems, setFilteredItems] = useState([]);
   const [searchItemCode, setSearchItemCode] = useState("");
   const [scanning, setScanning] = useState(false);
@@ -199,11 +202,37 @@ export default function POSM() {
   const authHeaders = () => ({
     headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
   });
+    useEffect(() => {
+       loadPOSData();
+    },[])
+  useEffect(()=>{
+    if(!posData || !posData.items || !posData.customers || !posData.warehouses){
+      console.log("POS Data not loaded yet, waiting...");
+      return;
+    }
+    console.log("POS Data:", posData);
+    
+    setItemG(posData.items || []);
+    
+    const cust=(posData.customers || []);
+     if (Array.isArray(cust)) {
+      setCustomers(cust);
+      if (!editId && cust.length) {
+        // find or default to the first customer
+        const walkIn = cust.find(c => c.customerName.toLowerCase() === "walk-in customer");
+        setSelectedCustomer((walkIn?._id) || cust[0]._id);
+      }
+    } else {
+      setCustomers([]);
+    }
+    
+    setWarehouses(posData.warehouses || []);
+  },[posData])
 
+  
   const getPaymentTypeId = (name) =>
     paymentTypes.find((pt) => pt.paymentTypeName?.toLowerCase() === name.toLowerCase())?._id;
 
-  const esc = (s) => s.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, "\\$&");
 
   
   useEffect(() => {
@@ -255,11 +284,10 @@ useEffect(() => {
       fetchPosById(editId)
   .then(async (inv) => {
     if (!inv) return;
-    // 1️⃣ set the warehouse so that fetchItems kicks off for that warehouse
+    // 1️⃣ set the warehouse so that  kicks off for that warehouse
     setSelectedWarehouse(inv.warehouse._id);
 
     // 2️⃣ wait for the items to come back
-    await fetchItems(inv.warehouse._id);
 
     // 3️⃣ only then remember the order to edit
     setOrderToEdit(inv);
@@ -272,50 +300,48 @@ useEffect(() => {
       setSelectedWarehouse(localStorage.getItem("deafultWarehouse") || null);
     }
   }, [editId]);
-  useEffect(() => {
-  fetchItems();
-}, [selectedWarehouse])
+ 
   
 async function fetchLookups() {
     // ── 1) Warehouses ─────────────────────────────────────
-    try {
-      const { data } = await axios.get(
-        `${link}/api/warehouses`,
-        authHeaders()
-      );
-      const list = data.data || data.warehouses || [];
-      if (Array.isArray(list)) {
-  setWarehouses(list);
-} else {
-  setWarehouses([]);
-}
+//     try {
+//       const { data } = await axios.get(
+//         `${link}/api/warehouses`,
+//         authHeaders()
+//       );
+//       const list = data.data || data.warehouses || [];
+//       if (Array.isArray(list)) {
+//   setWarehouses(list);
+// } else {
+//   setWarehouses([]);
+// }
 
-    } catch (err) {
-      console.error("❌ failed to load warehouses", err);
-      setWarehouses([]);
-    }
+//     } catch (err) {
+//       console.error("❌ failed to load warehouses", err);
+//       setWarehouses([]);
+//     }
 
   // ── 2) Customers ──────────────────────────────────────
-  try {
-    const { data } = await axios.get(
-      `${link}/api/customer-data/all`,
-      authHeaders()
-    );
-    const cust = data.data || data || [];
-    if (Array.isArray(cust)) {
-      setCustomers(cust);
-      if (!editId && cust.length) {
-        // find or default to the first customer
-        const walkIn = cust.find(c => c.customerName.toLowerCase() === "walk-in customer");
-        setSelectedCustomer((walkIn?._id) || cust[0]._id);
-      }
-    } else {
-      setCustomers([]);
-    }
-  } catch (err) {
-    console.error("❌ failed to load customers", err);
-    setCustomers([]);
-  }
+  // try {
+  //   const { data } = await axios.get(
+  //     `${link}/api/customer-data/all`,
+  //     authHeaders()
+  //   );
+  //   const cust = data.data || data || [];
+  //   if (Array.isArray(cust)) {
+  //     setCustomers(cust);
+  //     if (!editId && cust.length) {
+  //       // find or default to the first customer
+  //       const walkIn = cust.find(c => c.customerName.toLowerCase() === "walk-in customer");
+  //       setSelectedCustomer((walkIn?._id) || cust[0]._id);
+  //     }
+  //   } else {
+  //     setCustomers([]);
+  //   }
+  // } catch (err) {
+  //   console.error("❌ failed to load customers", err);
+  //   setCustomers([]);
+  // }
 
   // ── 3) Accounts ───────────────────────────────────────
   try {
@@ -362,6 +388,16 @@ async function fetchLookups() {
     setTerminals([]);
   }
 }
+
+
+useEffect(()=>{
+  if(!selectedWarehouse){
+    setAllItems([]);
+    return;
+  } 
+  const it=itemsG.filter((i) => i.warehouse?._id === selectedWarehouse);
+  setAllItems(it);
+},[selectedWarehouse,itemsG]);
 
 
   async function loadNextInvoiceCode() {
@@ -432,45 +468,6 @@ async function fetchLookups() {
     }
   }
 
-  async function fetchItems() {
-  if (!selectedWarehouse) {
-    setAllItems([]);
-    return;
-  }
-
-  try {
-     const {data} = await axios.get(`${link}/api/items`, {
-          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-        params: { warehouse: selectedWarehouse,inStock:true }
-      });
-      console.log("a")
-     console.log(data);
-    const rawItems = data.data || [] ;
-
-      const flatItems = rawItems
-        .filter((it) => it._id && it.warehouse?._id)
-        .map((it) => {
-          const isVariant = Boolean(it.parentItemId);
-          return {
-            ...it,
-            parentId: isVariant ? it.parentItemId : it._id,
-            variantId: isVariant ? it._id : null,
-            itemName: isVariant ? `${it.itemName} / ${it.variantName || "Variant"}` : it.itemName,
-            barcode: it.barcode || "",
-            barcodes: it.barcodes || [],
-            itemCode: it.itemCode || "",
-          };
-        });
-
-      console.log(
-        "Flattened items:",
-        flatItems
-      );
-      setAllItems(flatItems);
-    } catch (err) {
-      console.error("Fetch items error:", err.message);
-    }
-  }
 
   
 
@@ -621,25 +618,7 @@ useEffect(() => {
 }, [searchItemCode, selectedWarehouse, allItems]);
 
 
-  useEffect(() => {
-    return () => {
-      const reader = codeReaderRef.current;
-      if (reader) {
-        try {
-          if (typeof reader.reset === "function") {
-            reader.reset();
-          } else if (typeof reader.stopStreams === "function") {
-            reader.stopStreams();
-          }
-        } catch (e) {
-          console.error("Error during scanner cleanup:", e);
-        }
-      }
-      if (videoRef.current?.srcObject) {
-        videoRef.current.srcObject.getTracks().forEach((track) => track.stop());
-      }
-    };
-  }, []);
+  
 
   useEffect(() => {
     const c = customers.find((c) => c._id === selectedCustomer);
@@ -676,24 +655,24 @@ useEffect(() => {
   setOrderToEdit(null);
 }, [orderToEdit, customers, warehouses, accounts, paymentTypes, allItems]);
 
-useEffect(() => {
-  if (editId) return;                  // skip if we’re editing an existing order
-  if (!warehouses.length) return;      // need the list loaded
-  // if (defaultWarehouse) {
-  //   // user has a default → honor it
-  //   setSelectedWarehouse(defaultWarehouse);
-  // } else {
-  //   // fallback to restricted / first active
-  //   const restricted = warehouses.find(
-  //     (w) => w.isRestricted && w.status === "Active"
-  //   );
-  //   setSelectedWarehouse(
-  //     restricted?._id ||
-  //       warehouses.find((w) => w.status === "Active")?._id ||
-  //       ""
-  //   );
-  // }
-}, [warehouses, defaultWarehouse, editId]);
+// useEffect(() => {
+//   if (editId) return;                  // skip if we’re editing an existing order
+//   if (!warehouses.length) return;      // need the list loaded
+//   // if (defaultWarehouse) {
+//   //   // user has a default → honor it
+//   //   setSelectedWarehouse(defaultWarehouse);
+//   // } else {
+//   //   // fallback to restricted / first active
+//   //   const restricted = warehouses.find(
+//   //     (w) => w.isRestricted && w.status === "Active"
+//   //   );
+//   //   setSelectedWarehouse(
+//   //     restricted?._id ||
+//   //       warehouses.find((w) => w.status === "Active")?._id ||
+//   //       ""
+//   //   );
+//   // }
+// }, [warehouses, defaultWarehouse, editId]);
 
  const videoRef       = useRef(null);
   const codeReaderRef  = useRef(null);
@@ -1459,11 +1438,11 @@ function updateItem(idx, field, val) {
     await deletePosTransaction(id);
   }
 
-  function handleLogout() {
-    localStorage.clear();
-    navigate("/");
-    window.location.reload();
-  }
+  // function handleLogout() {
+  //   localStorage.clear();
+  //   navigate("/");
+  //   window.location.reload();
+  // }
 
   function toggleFullScreen() {
     if (!document.fullscreenElement) {

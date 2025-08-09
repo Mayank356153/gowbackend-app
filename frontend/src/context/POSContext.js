@@ -12,24 +12,47 @@ export const POSProvider = ({ children }) => {
   const [posData, setPosData] = useState({
     items: [],
     customers: [],
+    warehouses:[],
     loading: false,
   });
+
+  const[available,setAvailable]=useState(false)
  const authHeaders = () => ({
     headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
   });
 
+const loadPOSData = async () => {
+  setAvailable(true)
+  const token = localStorage.getItem("token");
 
-  const loadPOSData =  async() => {
-      try {
-     const {data} = await axios.get(`${link}/api/items`, {
-          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-        params: {inStock:true}
-      });
-      console.log("a")
-     console.log(data);
-    const rawItems = data.data || [] ;
+  try {
+    // Properly fetch 3 endpoints in parallel
+    const [warehousesRes, customersRes] = await Promise.all([
+      axios.get(`${link}/api/warehouses?scope=mine`, {
+        headers: { Authorization: `Bearer ${token}` },
+      }),
+      axios.get(`${link}/api/customer-data/all`, {
+        headers: { Authorization: `Bearer ${token}` },
+      }),
+    ]);
 
-      const flatItems = rawItems
+    const warehouses = warehousesRes.data?.data || [];
+        const customers = customersRes.data.data || customersRes.data || [];
+
+    // Fetch items for each warehouse in parallel
+    const warehouseItemsResponses = await Promise.all(
+      warehouses.map((warehouse) =>
+        axios.get(`${link}/api/items`, {
+          headers: { Authorization: `Bearer ${token}` },
+          params: { warehouse: warehouse._id, inStock: true },
+        })
+      )
+    );
+
+    // Flatten and process all items
+    const allFlatItems = warehouseItemsResponses.flatMap((res) => {
+      const rawItems = res.data?.data || [];
+      return rawItems
         .filter((it) => it._id && it.warehouse?._id)
         .map((it) => {
           const isVariant = Boolean(it.parentItemId);
@@ -43,19 +66,23 @@ export const POSProvider = ({ children }) => {
             itemCode: it.itemCode || "",
           };
         });
+    });
 
-      console.log(
-        "Flattened items:",
-        flatItems
-      );
-      setPosData((prev) => ({ ...prev, items: flatItems }));
-    } catch (err) {
-      console.error("Fetch items error:", err.message);
-    }
-  };
+    // Finally set everything in one go
+    setPosData({
+      items: allFlatItems,
+      warehouses,
+      customers,
+      loading: false,
+    });
+
+  } catch (err) {
+    console.error("Fetch POS data error:", err.message);
+  }
+};
 
   return (
-    <POSContext.Provider value={{ posData, loadPOSData }}>
+    <POSContext.Provider value={{ posData, loadPOSData,available,setAvailable }}>
       {children}
     </POSContext.Provider>
   );

@@ -3,7 +3,7 @@ import dayjs from 'dayjs';
 import { FaChevronLeft, FaPlus, FaBox,FaEdit, FaBoxOpen, FaTrash, FaMinus } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 import { App } from '@capacitor/app';
-
+import {Keyboard} from '@capacitor/keyboard';
 // Main Component
 export default function S3({
     formData,
@@ -228,7 +228,7 @@ const ItemDetailModal = ({ selectedItem, allItems, onClose }) => {
 
 // --- COMPONENT REFACTORED FOR BETTER MOBILE UX ---
 const ItemsList = ({ items, updateItem, removeItem, setSelectedItem }) => (
-  <section className="w-full overflow-y-auto bg-white shadow rounded-xl max-h-64">
+  <section className="w-full overflow-y-auto bg-white shadow rounded-xl ">
     <div className="divide-y divide-gray-200">
       {items.length === 0 ? (
         <div className="p-10 text-center">
@@ -259,7 +259,12 @@ const ItemsList = ({ items, updateItem, removeItem, setSelectedItem }) => (
                 >
                   <FaMinus size={12} />
                 </button>
-                            <input
+                            <input           onFocus={(e) => {
+    e.target.focus(); // ensure input is focused
+    setTimeout(() => {
+      Keyboard.show(); // explicitly show the keyboard
+    }, 100); // short delay helps trigger keyboard on some Androids
+  }}
   type="text"
   value={item.quantity}
   onChange={(e) => {

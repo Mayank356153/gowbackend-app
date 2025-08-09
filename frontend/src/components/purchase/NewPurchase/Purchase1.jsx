@@ -169,17 +169,18 @@ export default function Purchase1({
         <p className="mt-1 text-xs text-gray-500">When the order was placed</p>
       </div>
       <div className="md:col-span-9">
-        <div className="relative max-w-md">
-          <input
-            type="date"
-            name="purchaseDate"
-            onChange={handleChange}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-            required
-            value={formData.purchaseDate ? dayjs(formData.purchaseDate).format("YYYY-MM-DD") : ""}
-          />
-          <FaCalendarAlt className="absolute right-3 top-2.5 text-gray-400" />
-        </div>
+       <div className="relative max-w-md">
+  <input
+    type="date"
+    name="purchaseDate"
+    onChange={handleChange}
+    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+    required
+    value={formData.purchaseDate ? dayjs(formData.purchaseDate).format("YYYY-MM-DD") : ""}
+  />
+  <FaCalendarAlt className="absolute right-3 top-2.5 text-gray-400" />
+</div>
+
       </div>
     </div>
   </div>

@@ -1,0 +1,102 @@
+<div className="flex flex-col">
+          
+      <Navbar isSidebarOpen={isSidebarOpen} setSidebarOpen={setSidebarOpen} />
+      <div className="box-border flex min-h-screen">
+        <div className="w-auto">
+          <Sidebar isSidebarOpen={isSidebarOpen} />
+        </div>
+         
+
+
+
+         
+      {/* Filters UI */}
+      <div style={{ position: "absolute", top: 10, left: 10, zIndex: 1000, background: "#fff", padding: "10px", borderRadius: "8px", boxShadow: "0 0 5px rgba(0,0,0,0.3)" }}>
+        <div>
+          <label><strong>Warehouse:</strong> </label>
+          <select value={selectedWarehouse} onChange={(e) => setSelectedWarehouse(e.target.value)}>
+            <option value="">All</option>
+            {warehouses.map((w) => (
+              <option key={w._id} value={w._id}>{w.warehouseName}</option>
+            ))}
+          </select>
+        </div>
+        <div style={{ marginTop: 5 }}>
+          <label><strong>From:</strong> </label>
+          <input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} />
+          <label style={{ marginLeft: 5 }}><strong>To:</strong> </label>
+          <input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} />
+        </div>
+        <div style={{ marginTop: 5 }}>
+          <label><strong>Distance:</strong> </label>
+          <select value={rangeKm} onChange={(e) => setRangeKm(Number(e.target.value))}>
+            <option value={1}>1 km</option>
+            <option value={2}>2 km</option>
+            <option value={5}>5 km</option>
+            <option value={10}>10 km</option>
+          </select>
+        </div>
+      </div>
+
+      {/* Map */}
+      <MapContainer center={currentLocation || [29.1489, 75.7217]} zoom={15} style={{ height: "100vh", width: "100%" }}>
+        <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+        {bounds.length > 0 && <FitBounds bounds={bounds} />}
+
+        {currentLocation && (
+          <Marker
+            position={currentLocation}
+            icon={L.icon({
+              iconUrl: "https://cdn-icons-png.flaticon.com/512/447/447031.png",
+              iconSize: [30, 30],
+              iconAnchor: [15, 30],
+            })}
+          >
+            <Popup>Your Location</Popup>
+          </Marker>
+        )}
+
+        {routeCoordinates.length > 1 && (
+          <Polyline positions={routeCoordinates} color="blue" weight={4} />
+        )}
+
+        {groupedMarkers.map((group, idx) => (
+          <Marker
+            key={idx}
+            position={[group.lat, group.lng]}
+            icon={L.icon({
+              iconUrl: "https://cdn-icons-png.flaticon.com/512/684/684908.png",
+              iconSize: [25, 41],
+              iconAnchor: [12, 41],
+            })}
+          >
+            <Popup>
+              <strong>{group.bills.length} Bills at this location</strong>
+              <hr />
+               {group.bills.map((bill, i) => {
+  const totalPaid = bill.payments?.reduce((sum, p) => sum + (p.amount || 0), 0) || 0;
+  const paymentType = bill.payments?.[0]?.paymentType?.paymentTypeName || "N/A";
+
+  return (
+    <div key={i} style={{ marginBottom: "10px", fontSize: "12px" }}>
+      <div><strong>Date:</strong> {new Date(bill.saleDate).toLocaleDateString()}</div>
+      <div><strong>Sale Code:</strong> {bill.saleCode}</div>
+      <div><strong>Customer:</strong> {typeof bill.customer === 'string' ? bill.customer : bill.customer?.customerName || "N/A"}</div>
+      <div><strong>Amount:</strong> ₹{bill.amount?.toFixed(2) || "0.00"}</div>
+      <div><strong>Paid:</strong> ₹{totalPaid.toFixed(2)}</div>
+      <div><strong>Payment:</strong> {paymentType}</div>
+      <div><strong>Source:</strong> {bill.source}</div>
+
+      {/* Actions */}
+      <hr />
+    </div>
+  );
+})}
+
+            </Popup>
+          </Marker>
+        ))}
+      </MapContainer>
+    
+
+      </div>

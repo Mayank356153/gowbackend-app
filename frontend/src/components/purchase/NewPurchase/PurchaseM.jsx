@@ -366,7 +366,7 @@ useEffect(() => {
     return;
   }
   try {
-    const response = await axios.get(`${link}/api/warehouses`, {
+    const response = await axios.get(`${link}/api/warehouses?scope=mine`, {
       headers: { Authorization: `Bearer ${token}` },
     });
     const allWh = response.data.data || [];
@@ -412,7 +412,7 @@ useEffect(() => {
 }, [options.warehouse, defaultWarehouse, id]);
 
 const updateItem = (e, itemId, action) => {
-  alert("This feature is not implemented yet.");
+  
   const updatedItems = formData.items.map((item) => {
     if (item.item !== itemId) return item;
 
@@ -427,7 +427,7 @@ const updateItem = (e, itemId, action) => {
       newQty = Math.max(1, val);
     }
     if (newQty > item.currentStock) {
-      alert("Quantity cannot exceed available stock");
+  
       newQty = item.currentStock; // Prevent exceeding stock
     }
     return {
@@ -661,6 +661,7 @@ const updateItem = (e, itemId, action) => {
   const token = localStorage.getItem("token");
 
   const postData = async () => {
+    
     setLoading(true);
     try {
       const response = await axios.put(
@@ -683,6 +684,7 @@ const updateItem = (e, itemId, action) => {
   };
 
   const sendData = async () => {
+    
     setLoading(true);
     if (!token) {
       console.log("No token found, redirecting...");
@@ -732,6 +734,7 @@ const updateItem = (e, itemId, action) => {
       alert("Please select a payment type.");
       return;
     }
+    
     if (id) postData();
     else sendData();
   };
@@ -778,9 +781,6 @@ const addItem = (it) => {
       const existing = updatedItems[existingIndex];
 
       const newQuantity = existing.quantity + 1;
-      if(newQuantity > (existing.currentStock || 0)) {
-        return prev; // Don't allow quantity to exceed opening stock
-      }
       const discountAmount = getDiscountAmount(existing);
       const totalAmount = newQuantity * (existing.mrp || 0) - discountAmount;
 
@@ -870,9 +870,7 @@ const addItemsInBatch = (matchedItems) => {
         const existing = updatedItems[existingIndex];
         const newQuantity = existing.quantity + 1;
 
-        if (newQuantity > (existing.currentStock || 0)) {
-          return; // skip if exceeding stock
-        }
+       
 
         const discountAmount = getDiscountAmount(existing);
         const totalAmount = newQuantity * (existing.mrp || 0) - discountAmount;

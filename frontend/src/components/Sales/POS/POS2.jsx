@@ -40,9 +40,7 @@ export default function POS2({
     if (result.isConfirmed) {
     setItems([])
       setActiveTab("pos1");
-    } else {
-      navigate(0);
-    }
+    } 
   };
   const [offerView, setOfferView] = useState(false);
   const [offerItem, setOfferItem] = useState(null);
@@ -93,7 +91,7 @@ confirmBack();
       } else if (type === "minus") {
         newQty = Math.max(1, item.quantity - 1);
       } else if (typeof type === "number") {
-        newQty =type
+        newQty =type; // remove leading zeros
       }
  if (newQty > item.stock) {
       newQty = item.stock; // cap it at stock
@@ -136,7 +134,7 @@ function applyOfferLogic(itemList) {
 
 const lastScanRef = useRef({ code: null, time: 0 });
 const debounceTimerRef = useRef(null);
-const SCAN_GAP = 500; // Time between identical scans
+const SCAN_GAP = 400; // Time between identical scans
 const DEBOUNCE_DELAY = 500; // Time to wait after user stops typing
 
 const canScan = (code) => {
@@ -209,12 +207,12 @@ useEffect(() => {
         </div>
         <input
           type="text" 
-  //          onFocus={(e) => {
-  //   e.target.focus(); // ensure input is focused
-  //   setTimeout(() => {
-  //     Keyboard.show(); // explicitly show the keyboard
-  //   }, 100); // short delay helps trigger keyboard on some Androids
-  // }}
+           onFocus={(e) => {
+    e.target.focus(); // ensure input is focused
+    setTimeout(() => {
+      Keyboard.show(); // explicitly show the keyboard
+    }, 100); // short delay helps trigger keyboard on some Androids
+  }}
           value={searchItemCode}
           
           
@@ -223,14 +221,14 @@ useEffect(() => {
         setSearchItemCode(val);
       }}
       onKeyDown={(e) => {
-        if (e.key === "Enter" && filteredItems[0]) {
-          const code = filteredItems[0].barcodes?.[0];
-          if (canScan(code)) {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          if (filteredItems[0]) {
             addItem(filteredItems[0]);
             setSearchItemCode("");
           }
         }
-      }}
+      }}    
           className="w-full py-3.5 pl-12 pr-11 text-sm bg-white rounded-xl shadow-xs border border-gray-200/80 focus:outline-none focus:ring-2 focus:ring-purple-300/50 focus:border-transparent placeholder:text-gray-400"
           placeholder="Search or scan items..."
         />

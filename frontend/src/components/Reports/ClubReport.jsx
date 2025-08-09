@@ -179,7 +179,7 @@ function generateFlatReport({ sales = [], saleReturns = [], stockTransfers = [] 
                 const headers = { Authorization: `Bearer ${token}` };
 
                 const [warehousesRes, categoriesRes,  salesRes,stockRes,salesReturnRes] = await Promise.all([
-                    axios.get(`${link}/api/warehouses`, { headers }),
+                    axios.get(`${link}/api/warehouses?scope=mine`, { headers }),
                     axios.get(`${link}/api/categories`, { headers }),
                     axios.get(`${link}/api/pos/invoices`, { headers }),
                     axios.get(`${link}/api/stock-transfers`, { headers }),
@@ -235,9 +235,13 @@ function generateFlatReport({ sales = [], saleReturns = [], stockTransfers = [] 
                 { sales: sales, saleReturns: returns, stockTransfers: stock },
                 itemDetailsMap,
                 options.warehouses
-            );
+            ).filter(item=>  (item.sale || 0) -
+      (item.saleReturn || 0) -
+      (item.stockTransferIn || 0) +
+      (item.stockTransferOut || 0) > 0);
 
-            
+             console.log("Flat Report:", flatReport);
+             
             setReport(flatReport);
             setFinalReport(flatReport);
            
@@ -552,44 +556,39 @@ const downloadAsPDF = () => {
                     </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
-                    {!loading && finalReport.length > 0 && finalReport.map((item, index) =>
-                      (
-                        <tr key={`${item.saleId}-${index}`} className="hover:bg-gray-50" onClick={()=>{
-                          
-                        setView(true);
-                        setSelectedItem(item);
-                        }}>
-                            <td className="px-4 py-3 text-sm font-medium text-gray-700">{index + 1}</td>
-                            <td className="px-4 py-3 text-sm font-medium text-gray-800 break-words">{item.itemName}</td>
-                            <td className="px-4 py-3 text-sm font-medium text-center text-gray-800">
-                                {(item.sale || 0) - (item.saleReturn || 0) + (item.stockTransferIn || 0) - (item.stockTransferOut || 0)}
-                            </td>
-                            <td className="px-4 py-3 text-lg font-bold text-blue-600">₹{item.salesPrice || 0}</td>
-                           {/* <td className="px-4 py-3 text-lg font-bold text-blue-600">
-  {(() => {
-    const stocks = openStockModal(false,item); // Must be synchronous
-    if (selectedWarehouseName === "All") {
-      console.log("Stocks:", stocks);
-      return stocks.reduce((acc, wh) => acc + (wh.stock || 0), 0);
-    } else {
-      return stocks.find(s => s.id === selectedWarehouse)?.stock || 0;
-    }
-  })()}
-</td> */}
-  {/* <td className="px-4 py-3 text-lg font-bold text-blue-600">
-  {(() => {
-    const stocks = openStockModal(true,item); // Must be synchronous
-    if (selectedWarehouseName === "All") {
-      console.log("Stocks:", stocks);
-      return stocks.reduce((acc, wh) => acc + (wh.stock || 0), 0);
-    } else {
-      return stocks.find(s => s.id === selectedWarehouse)?.stock || 0;
-    }
-  })()}
-</td> */}
+                    {!loading && finalReport.length > 0 &&
+  finalReport.map((item, index) => {
+    const pendingQty =
+      (item.sale || 0) -
+      (item.saleReturn || 0) -
+      (item.stockTransferIn || 0) +
+      (item.stockTransferOut || 0);
+  
+    if (pendingQty <= 0) return null; // ⛔️ skip rows with no pending qty
 
-                        </tr>
-                    ))}
+    return (
+      <tr
+        key={`${item.saleId}-${index}`}
+        className="hover:bg-gray-50"
+        onClick={() => {
+          setView(true);
+          setSelectedItem(item);
+        }}
+      >
+        <td className="px-4 py-3 text-sm font-medium text-gray-700">{index + 1}</td>
+        <td className="px-4 py-3 text-sm font-medium text-gray-800 break-words">
+          {item.itemName}
+        </td>
+        <td className="px-4 py-3 text-sm font-medium text-center text-gray-800">
+          {pendingQty}
+        </td>
+        <td className="px-4 py-3 text-lg font-bold text-blue-600">
+          ₹{item.salesPrice || 0}
+        </td>
+      </tr>
+    );
+  })}
+
                     {loading && (
                         <tr><td colSpan="4" className="p-4 text-center text-gray-500">Loading...</td></tr>
                     )}

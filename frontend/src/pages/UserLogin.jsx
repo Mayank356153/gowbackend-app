@@ -75,6 +75,7 @@ const UserLogin = () => {
     if (token) {
       localStorage.setItem("deafultWarehouse",deafultWarehouse);
       localStorage.setItem("token", token);
+      loadPOSData();
       localStorage.setItem("role", role);
       localStorage.setItem("permissions", permissions);
       localStorage.setItem("userId", userId);
@@ -82,7 +83,6 @@ const UserLogin = () => {
       localStorage.setItem("storeId", storeId);
       localStorage.setItem("stores", stores || []);
       navigate("/dashboard");
-      loadPOSData();
     }
   };
   checkToken();
@@ -109,39 +109,39 @@ const UserLogin = () => {
       );
       console.log(res.data)
       const { token, user: userInfo, permissions } = res.data;
-        loadPOSData();
       
-       if (rememberMe) {
-        alert("Saving user credentials for future logins");
-  const { value: previousUsername } = await Preferences.get({ key: "previoususername" });
-        console.log("Previous saved usernames:", previousUsername);
-  // Parse existing saved users or use an empty array
-  let arr = [];
-  try {
-    arr = previousUsername ? JSON.parse(previousUsername) : [];
-  } catch (e) {
-    console.warn("Error parsing saved usernames", e);
-  }
+//        if (rememberMe) {
+//         alert("Saving user credentials for future logins");
+//   const { value: previousUsername } = await Preferences.get({ key: "previoususername" });
+//         console.log("Previous saved usernames:", previousUsername);
+//   // Parse existing saved users or use an empty array
+//   let arr = [];
+//   try {
+//     arr = previousUsername ? JSON.parse(previousUsername) : [];
+//   } catch (e) {
+//     console.warn("Error parsing saved usernames", e);
+//   }
 
-  // Avoid duplicate entries
-  const alreadyExists = arr.some(u => u.username === user.username);
-   console.log("Already exists:", alreadyExists);
-  if (!alreadyExists) {
-    arr.push({
-      username: user.username,
-      password: user.password
-    });
-    console.log(arr)
-    await Preferences.set({
-      key: "previoususername",
-      value: JSON.stringify(arr),
-    });
-  }
-}
+//   // Avoid duplicate entries
+//   const alreadyExists = arr.some(u => u.username === user.username);
+//    console.log("Already exists:", alreadyExists);
+//   if (!alreadyExists) {
+//     arr.push({
+//       username: user.username,
+//       password: user.password
+//     });
+//     console.log(arr)
+//     await Preferences.set({
+//       key: "previoususername",
+//       value: JSON.stringify(arr),
+//     });
+//   }
+// }
 
       // 1) Save JWT
       localStorage.setItem("token", token);
      await storeToken("token", token)
+     loadPOSData();
   await storeToken("deafultWarehouse",res.data.user.defaultWarehouse || null);
     localStorage.setItem("deafultWarehouse",res.data.user.defaultWarehouse || null);
      // 2) Decode token to pull out id, role id, and stores[]
@@ -169,7 +169,6 @@ const UserLogin = () => {
       alert("User logged in successfully!");
       
       navigate("/dashboard");
-       loadPOSData();
     } catch (err) {
         setError(err.response?.data?.message || err.message || "Login failed");
       console.error("Login error:", err);

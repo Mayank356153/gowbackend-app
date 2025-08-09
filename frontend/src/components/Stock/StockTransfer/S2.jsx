@@ -41,9 +41,7 @@ export default function S2({
       if (result.isConfirmed) {
       setSelectedItems([])
         setActiveTab("s1");
-      } else {
-        navigate(0);
-      }
+      } 
     };
       
      const location=useLocation()
@@ -97,13 +95,13 @@ const handleQuanity = (id, type) => {
     if (type === "plus") {
       newQty = item.quantity + 1;
       if (item.currentStock && newQty > item.currentStock) {
-        alert("❗ Stock limit reached!");
+  
         return item;
       }
     } else if (type === "minus") {
       newQty = Math.max(1, item.quantity - 1);
     } else if (typeof type === "number") {
-      const inputQty =type; // prevent 0 or negative
+      const inputQty =type // prevent 0 or negative
       newQty = item.currentStock ? Math.min(inputQty, item.currentStock) : inputQty;
     }
 
@@ -119,7 +117,7 @@ const handleQuanity = (id, type) => {
 
 const lastScanRef = useRef({ code: null, time: 0 });
 
-  const SCAN_GAP = 500; // 1 second
+  const SCAN_GAP = 400; // 1 second
 const debounceTimerRef = useRef(null);
 const DEBOUNCE_DELAY = 500; // Time to wait after user stops typing
 
@@ -165,7 +163,10 @@ useEffect(() => {
         }
     };
 }, [searchQuery, allItems, addItem]); // Dependencies for the effect
-
+  useEffect(()=>{
+    console.log("das")
+    console.log(selectedItems)
+  },[selectedItems])
 
   
   if(itemScan) return <StockScanner handleAddItemsBatch={handleAddItemsBatch} startScanner={startScanner} matchedItems={matchedItems} setMatchedItems={setMatchedItems} stopScanner={stopScanner} allItems={allItems} handleQuanity={handleQuanity}  videoRef={videoRef}    
@@ -182,21 +183,22 @@ useEffect(() => {
       <input
         type="text"
         value={searchQuery}
-  //        onFocus={(e) => {
-  //   e.target.focus(); // ensure input is focused
-  //   setTimeout(() => {
-  //     Keyboard.show(); // explicitly show the keyboard
-  //   }, 100); // short delay helps trigger keyboard on some Androids
-  // }}
+         onFocus={(e) => {
+    e.target.focus(); // ensure input is focused
+    setTimeout(() => {
+      Keyboard.show(); // explicitly show the keyboard
+    }, 100); // short delay helps trigger keyboard on some Androids
+  }}
   
         onChange={(e) => {
         const val = e.target.value;
         setSearchQuery(val);
       }}
       onKeyDown={(e) => {
-        if (e.key === "Enter" && filteredItems[0]) {
-          const code = filteredItems[0].barcodes?.[0];
-          if (canScan(code)) {
+        // e.preventDefault();
+        if (e.key === "Enter" ) {
+          e.preventDefault();
+          if(filteredItems[0]){
             addItem(filteredItems[0]);
             setSearchQuery("");
           }
@@ -317,7 +319,12 @@ useEffect(() => {
                             >
                               <FaMinus className="w-3.5 h-3.5" />
                             </button>
-                              <input
+                              <input           onFocus={(e) => {
+                                  e.target.focus(); // ensure input is focused
+                                  setTimeout(() => {
+                                    Keyboard.show(); // explicitly show the keyboard
+                                  }, 100); // short delay helps trigger keyboard on some Androids
+                                }}
   type="text"
   value={item.quantity}
   onChange={(e) => {

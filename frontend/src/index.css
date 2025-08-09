@@ -3,6 +3,7 @@
 @tailwind utilities;
 
 
+@import "leaflet/dist/leaflet.css";
 
 @keyframes pulse {
   0%, 100% {

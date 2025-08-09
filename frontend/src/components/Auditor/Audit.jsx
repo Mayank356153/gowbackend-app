@@ -14,6 +14,7 @@ import AuditorNavbar from './AuditorNavBar.jsx'
 
 const  Audit=()=> {
       const link="https://pos.inspiredgrow.in/vps"
+      // const link="http://localhost:5000"
     const [isSidebarOpen, setSidebarOpen] = useState(true);
      useEffect(()=>{
         if(window.innerWidth < 768){
@@ -59,7 +60,7 @@ const  Audit=()=> {
 
      const fetchWarehouses = async () => {
         try {
-            const response = await axios.get(`${link}/api/warehouses`,{
+            const response = await axios.get(`${link}/api/warehouses?scope=mine`,{
                 headers: {
                     'Content-Type': 'application/json',
                     Authorization: `Bearer ${localStorage.getItem('token')}`
@@ -78,7 +79,6 @@ const  Audit=()=> {
 
      useEffect(() => {
          if(!formData.storeId) return;
-             alert("Store ID changed, fetching warehouses...");
 
              console.log(allstore, formData.storeId);
              const storeExists=allstore.find(store => store._id === formData.storeId);
@@ -134,7 +134,7 @@ const handleSubmit = async (e) => {
       }
     });
     console.log("Audit submitted successfully:", response.data);
-    alert("Audit submitted successfully");
+    alert("Audit Started successfully");
     setFormData({
       storeId: null,
       warehouseId: null,

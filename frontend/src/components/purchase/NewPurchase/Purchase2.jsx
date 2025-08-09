@@ -18,6 +18,7 @@ import { App } from "@capacitor/app";
 import { useLocation,useNavigate } from 'react-router-dom'
 import Swal from "sweetalert2"
 import { Keyboard } from '@capacitor/keyboard';
+import { set } from 'date-fns';
 export default function Purchase2({
     filteredItems,stopScanner,addItemsInBatch,
     allItems,matchedItems,setMatchedItems,setActiveTab,removeItem,updateItem,
@@ -39,9 +40,7 @@ export default function Purchase2({
         if (result.isConfirmed) {
         setFormData((prev)=>({...prev,items:[]}))
           setActiveTab("p1");
-        } else {
-          navigate(0);
-        }
+        } 
       };
        const location=useLocation()
           const navigate=useNavigate()
@@ -80,7 +79,6 @@ const handleViewInfo = (item) => {
      
   const handleQuanity = (id, type) => {
   console.log("handleQuantity", id, type);
-
   const updatedItems = formData.items.reduce((acc, item) => {
     if (item.item === id) {
       let newQty = item.quantity;
@@ -95,9 +93,6 @@ const handleViewInfo = (item) => {
       } else if (typeof type === "number") {
         newQty = type; // manual entry
       }
-
-      // Cap it at stock
-      newQty = Math.min(newQty, item.currentStock);
 
       acc.push({ ...item, quantity: Number(newQty) });
     } else {
@@ -186,25 +181,25 @@ useEffect(() => {
         <input
           type="text"
           value={result}
-  //          onFocus={(e) => {
-  //   e.target.focus(); // ensure input is focused
-  //   setTimeout(() => {
-  //     Keyboard.show(); // explicitly show the keyboard
-  //   }, 100); // short delay helps trigger keyboard on some Androids
-  // }}
+           onFocus={(e) => {
+    e.target.focus(); // ensure input is focused
+    setTimeout(() => {
+      Keyboard.show(); // explicitly show the keyboard
+    }, 100); // short delay helps trigger keyboard on some Androids
+  }}
            onChange={(e) => {
         const val = e.target.value;
         setResult(val);
       }}
-      onKeyDown={(e) => {
-        if (e.key === "Enter" && filteredItems[0]) {
-          const code = filteredItems[0].barcodes?.[0];
-          if (canScan(code)) {
-            addItem(filteredItems[0]);
-            setResult("");
-          }
-        }
-      }}
+        onKeyDown={(e) => {
+    if (e.key === "Enter") {
+      e.preventDefault(); // ✅ block Enter default (form submit / step reset)
+
+      if (filteredItems[0]) {
+        addItem(filteredItems[0]);
+        setResult(""); // clear after adding
+      }
+    }}}
           className="w-full py-2.5 pl-10 pr-4 text-sm text-gray-900 bg-white border-0 rounded-full focus:ring-2 focus:ring-purple-500 focus:bg-white focus:outline-none transition-all"
           placeholder="Search items..."
         />
@@ -314,7 +309,7 @@ useEffect(() => {
                 <div className="flex items-baseline justify-between">
                   <h3 className="text-sm font-semibold text-gray-900 line-clamp-1">{it.itemName}</h3>
                   <span className="ml-1 text-sm font-bold text-purple-600 whitespace-nowrap">
-                    ₹{(it.salesPrice * item.quantity).toFixed(2)}
+                    ₹{(it.purchasePrice * item.quantity).toFixed(2)}
                   </span>
                 </div>
                 <p className="mt-0.5 text-xs text-gray-500 line-clamp-1">
@@ -339,7 +334,12 @@ useEffect(() => {
                     >
                       <FaMinus className="w-3.5 h-3.5" />
                     </button>
-                     <input
+                     <input          onFocus={(e) => {
+    e.target.focus(); // ensure input is focused
+    setTimeout(() => {
+      Keyboard.show(); // explicitly show the keyboard
+    }, 100); // short delay helps trigger keyboard on some Androids
+  }}
   type="text"
   value={item.quantity}
   onChange={(e) => {
@@ -370,7 +370,7 @@ useEffect(() => {
 
             {/* Price Breakdown (Subtle) */}
             <div className="flex justify-end pt-2 mt-2 text-xs text-gray-500 border-t border-gray-100/70">
-              <span>₹{it.salesPrice} × {item.quantity}</span>
+              <span>₹{it.purchasePrice} × {item.quantity}</span>
             </div>
           </div>        );
       })}

@@ -17,7 +17,7 @@ import { useSearchParams } from 'react-router-dom'
 const  BucketCreate=()=> {
   const link="https://pos.inspiredgrow.in/vps"
     const [searchParams] = useSearchParams();
-    const id = searchParams.get("id");
+    const id = searchParams.get("id") || null;
     const [isSidebarOpen, setSidebarOpen] = useState(true);
     const[result,setResult]=useState("")
     const[scanning,setScanning]=useState(false)
@@ -40,7 +40,7 @@ const  BucketCreate=()=> {
 
      const fetchItems = async () => {
         try {
-            const response = await axios.get(`${link}/api/items/audit`,{
+            const response = await axios.get(`${link}/api/audit/items`,{
                 headers: {
                     Authorization: `Bearer ${localStorage.getItem('token')}`
                   }});
@@ -54,14 +54,14 @@ const  BucketCreate=()=> {
         }
      }
 
-      const fetchBucket=async()=>{
+      const fetchBucket=async(bid)=>{
            try {
             const response = await axios.get(`${link}/api/audit/bucket/auditor/${localStorage.getItem("id")}`,{
                 headers: {
                     Authorization: `Bearer ${localStorage.getItem('token')}`
                   }});
 
-                 const bucketFind=response.data.data.find(ma=> ma._id===id)
+                 const bucketFind=response.data.data.find(ma=> ma._id===bid)
                  console.log(bucketFind)
                  setFormData(bucketFind)
                  setSelectedItem(bucketFind.items)
@@ -69,12 +69,29 @@ const  BucketCreate=()=> {
             console.error("Error fetching stores:", error);
         }
         }
-     useEffect(()=>{
-      fetchItems();
-      if(id){ 
-        fetchBucket();
+
+      useEffect(() => {
+    let cleanupInstance = null;
+
+    const loadData = async () => {
+      // Fetch items
+      await fetchItems();
+
+      // If id is present, fetch bucket
+      if (id) {
+        cleanupInstance = await fetchBucket(id);
       }
-     },[])
+    };
+
+    loadData();
+
+    return () => {
+      // Cleanup safely if fetchBucket returned something with destroy()
+      if (cleanupInstance && typeof cleanupInstance.destroy === "function") {
+        cleanupInstance.destroy();
+      }
+    };
+  }, [id]);
 
      
 
@@ -163,16 +180,7 @@ const  BucketCreate=()=> {
              };
            }, [scanning]);
 
-
-
-           
-
-           
-             
-
-            
-           
-             useEffect(() => {console.log(selectedItem)
+             useEffect(() => {
               setFormData((prev)=>({
                 ...prev,
                 items:selectedItem
@@ -317,7 +325,7 @@ const handleSubmit = async (e) => {
      auditorId:"",
      items:[]
     });
-   
+    setSelectedItem([]);
    } catch (error) {
     console.log("Error creating Bucket:", error);
    }

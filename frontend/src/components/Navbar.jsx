@@ -16,11 +16,24 @@ const Navbar = ({ isSidebarOpen, setSidebarOpen }) => {
   /*  FETCH PROFILE – now looks first for `storeName` from backend   */
   /* --------------------------------------------------------------- */
   useEffect(() => {
-    if (!user) fetchUserProfile();
+    const us=JSON.parse(localStorage.getItem("user"));
+    if(!us) fetchUserProfile();
+    else{
+            const role  = (localStorage.getItem("role") || "guest").toLowerCase();
+      setUser(us);
+      if( us.storeName) {
+        setStoreName(us.storeName);
+      }
+       else if (role !== "admin" && Array.isArray(us.Store) && us.Store.length) {
+        /* fallback for older tokens / responses */
+        setStoreName(us.Store[0].StoreName || "");
+      }
+    }
   }, []);
 
   const fetchUserProfile = async () => {
     setLoading(true);
+
     try {
       const token = localStorage.getItem("token");
       const role  = (localStorage.getItem("role") || "guest").toLowerCase();
@@ -38,7 +51,7 @@ const Navbar = ({ isSidebarOpen, setSidebarOpen }) => {
       const { data } = await axios.get(url, {
         headers: { Authorization: `Bearer ${token}` },
       });
-       
+       console.log("Profile data:", data);
       setUser(data);
         localStorage.setItem("user", JSON.stringify(data));
       /* NEW — preferred: server already sends storeName */

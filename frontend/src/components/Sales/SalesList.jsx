@@ -523,194 +523,133 @@ const PurchaseOverview = () => {
 
 
 
-
-
-
-      // --- Bluetooth Functions ---
-
 const generatePlainTextReceipt = (data) => {
-   console.log(data)
-  const store={
-      logo:        "/logo/inspiredgrow.jpg",                       //  40-50 px square looks right
-  storeName:   "Grocery on Wheels",                                //  already in state
-  tagline:     "GROCERY ON WHEELS",
-  address:     "Basement 210-211 new Rishi Nagar near\nShree Shyam Baba Mandir Gali No. 9,Hisar-125001",
-  gst:         "06AAGCI0630K1ZR",
-  phone:       "9050092092",
-  email:       "INSPIREDGROW@GMAIL.COM",
-  }
-  
-  const lineWidth = 42; // Standard for 3-inch (80mm) Epson P80 printers
-  const line = '-'.repeat(lineWidth) + '\n';
+  const store = {
+    logo:      "/logo/inspiredgrow.jpg",
+    storeName: "Grocery on Wheels",
+    tagline:   "GROCERY ON WHEELS",
+    address:   "Basement 210-211 new Rishi Nagar near\nShree Shyam Baba Mandir Gali No. 9,Hisar-125001",
+    gst:       "06AAGCI0630K1ZR",
+    phone:     "9050092092",
+    email:     "INSPIREDGROW@GMAIL.COM",
+  };
 
-  // --- Helper Functions ---
-  const pad = (str, len, char = ' ') => (str + char.repeat(len)).substring(0, len);
-  const padRight = (str, len, char = ' ') => (String(str) + char.repeat(len)).substring(0, len);
-  const padLeft = (str, len, char = ' ') => (char.repeat(len) + String(str)).slice(-len);
-  
-  const wrapText = (text, width) => {
-    if (!text || width <= 0) return [];
-    const words = text.split(' ');
-    const lines = [];
-    let currentLine = '';
-    words.forEach(word => {
-      if ((currentLine + ' ' + word).trim().length <= width) {
-        currentLine += (currentLine ? ' ' : '') + word;
+  const lineWidth = 42;
+  const line      = "-".repeat(lineWidth) + "\n";
+
+  /* ---------- helpers ---------- */
+  const padRight = (str, len, ch = " ") => (String(str) + ch.repeat(len)).substring(0, len);
+  const padLeft  = (str, len, ch = " ") => (ch.repeat(len) + String(str)).slice(-len);
+
+  const wrapText = (txt, width) => {
+    if (!txt || width <= 0) return [""];
+    const words = txt.split(" ");
+    const out   = [];
+    let row = "";
+    words.forEach(w => {
+      if ((row + " " + w).trim().length <= width) {
+        row = (row ? row + " " : "") + w;
       } else {
-        if (currentLine) lines.push(currentLine);
-        currentLine = word;
+        if (row) out.push(row);
+        row = w;
       }
     });
-    if (currentLine) lines.push(currentLine);
-    return lines.length > 0 ? lines : [''];
+    if (row) out.push(row);
+    return out;
   };
 
-  const centerText = (text) => {
-    if (!text) return '\n';
-    const space = Math.max(0, Math.floor((lineWidth - text.length) / 2));
-    return ' '.repeat(space) + text;
+  const centerText = (txt) => {
+    const space = Math.max(0, Math.floor((lineWidth - txt.length) / 2));
+    return " ".repeat(space) + txt;
   };
 
-  const twoColumn = (left, right) => {
-    const space = lineWidth - left.length - right.length;
-    return left + ' '.repeat(Math.max(0, space)) + right;
-  };
-  
- 
-  
-  // Adjusted total to fit, let's recalculate: 3+18+4+7+7 = 39. Left for total = 3. Too small.
-  // Let's use the previous stable widths.
-  const finalColWidths = {
-    sno: 3,
-    item: 15,
-    qty: 4,
-    mrp: 7,
-    rate: 7,
-    total: 6,
-  };
+  const twoColumn = (left, right) =>
+    left + " ".repeat(Math.max(0, lineWidth - left.length - right.length)) + right;
 
-  
-  // =================================================================
-  // THIS IS THE NEW, SIMPLER, AND CORRECTED ITEM ROW FORMATTER
-  // =================================================================
-  const formatItemRow = (item, index) => {
-    const snoStr = `${index + 1}.`;
-    
-    // 1. Wrap the entire item name into lines first.
-    const nameLines = wrapText(item.item.itemName, finalColWidths.item);
-    
-    let rowText = '';
+  /* ---------- column widths ---------- */
+const col = { sno: 3, item: 13, qty: 4, mrp: 7, rate: 7, total: 8 }; // still 42
 
-    // 2. Loop through each line of the wrapped name.
-    nameLines.forEach((line, i) => {
-      if (i === 0) {
-        // For the FIRST line, print the name part AND all the numbers.
-        rowText += padRight(snoStr, finalColWidths.sno) +
-                   padRight(line, finalColWidths.item) +
-                   padLeft(item.quantity, finalColWidths.qty) +
-                   padLeft(item.item?.mrp?.toFixed(2), finalColWidths.mrp) +
-                   padLeft(item.price?.toFixed(2), finalColWidths.rate) +
-                   padLeft((item.quantity * item.price)?.toFixed(2), finalColWidths.total) + '\n';
-      } else {
-        // For ALL OTHER wrapped lines, print only the name part.
-        // The rest of the line will be blank, ensuring left alignment.
-        rowText += padRight('', finalColWidths.sno) +
-                   padRight(line, finalColWidths.item) + '\n';
-      }
-    });
-    
-    return rowText;
-  };
-
+  /* ---------- row formatter ---------- */
   
-  let text = '';
-
-  // --- Header ---
-  text += centerText(data.warehouse.warehouseName) + '\n';
-  // wrapText(store.address, lineWidth).forEach(wrappedLine => {
-  //     text += centerText(wrappedLine) + '\n';
-  // });
-  text += centerText(" Basement 210-211 new Rishi Nagar near \n Shree Shyam Baba Mandir Gali No. 9,Hisar-125001") + '\n';
-  text += line;
-  
-  // --- Order Info ---
-  const now = new Date();
-  const dateStr = now.toLocaleDateString('en-IN');
-  const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-  text += twoColumn(`Date: ${data.saleDate.substring(0,10)}`, `Time: ${data.saleDate.substring(11,16)}`) + '\n';
-   text+=`Customer: ${data.customer.customerName || 'walk-in customer'}`+'\n';
-  text += line;
-
-  // --- Items Table Header ---
-  text += padRight('#', finalColWidths.sno) + 
-          padRight('Item', finalColWidths.item) + 
-          padLeft('Qty', finalColWidths.qty) +
-          padLeft('MRP', finalColWidths.mrp) +
-          padLeft('Rate', finalColWidths.rate) +
-          padLeft('Total', finalColWidths.total) + '\n';
-  
-  // --- Items Table Body ---
-  data.items.forEach((item, index) => {
-    console.log(`Formatting item ${index + 1}:`, item);
-    text += formatItemRow(item, index);
+const formatItemRow = (item, idx) => {
+  const lines = wrapText(item.item.itemName, col.item).slice(0, 4); // up to 4 lines
+  let txt = '';
+  lines.forEach((ln, i) => {
+    if (i === 0) {
+      txt += padRight(idx + 1, col.sno) +
+             padRight(ln,        col.item) +
+             padLeft (item.quantity,               col.qty)   +
+             padLeft (Number(item.item.mrp).toFixed(2),  col.mrp)  +
+             padLeft (Number(item.price).toFixed(2),     col.rate) +
+             padLeft ((item.quantity * item.price).toFixed(2), col.total) + '\n';
+    } else {
+      txt += padRight('', col.sno) +
+             padRight(ln, col.item) +
+             padLeft('', col.qty)  +
+             padLeft('', col.mrp)  +
+             padLeft('', col.rate) +
+             padLeft('', col.total) + '\n';
+    }
   });
-  text += line;
-
-  // --- Full Summary Section ---
- 
-
-   const totalQuantity = data.items.reduce((sum, item) => sum + item.quantity, 0);
-                
-
-        const rawTotal = data.items.reduce((sum, item) => sum + (item.quantity * item.item.salesPrice), 0);
-                
-            // a
-        const disc = data.totalDiscount || 0;
-        const taxAmt = data.taxAmount || 0;
-                
-
-        const netBeforeTax = rawTotal - disc;
-        
-const totalM=data.items.reduce((sum, item) => sum + (item.quantity * item.item.mrp), 0);
-const totalSales=data.items.reduce((sum, item) => sum + (item.quantity * item.item.salesPrice), 0);
-
-
-const paid = data.payments.reduce((sum, p) => sum + p.amount, 0);
-      // a
-const prevDue = data.previousBalance  || 0;
-
-const totalDue = prevDue + netBeforeTax + taxAmt - paid;
-
-    text += `${pad('Total Quantity:', 34)} ${padLeft(totalQuantity||0, 6)}\n`;
-    text += `${pad('Other Charges:', 34)} ${padLeft(data.otherCharges||0, 6)}\n`;
-    text += `${pad('Before Tax:', 34)} ${padLeft(`${(totalM)?.toFixed(2)||0}`, 6)}\n`;
-    text += `${pad('Total Discount:', 34)} ${padLeft(`-${(totalM-totalSales)?.toFixed(2)||0}`, 6)}\n`;
-
-
-    text += `${pad('Net Before Tax:', 34)} ${padLeft(totalSales?.toFixed(2)||0, 6)}\n`;
-
-    text += `${pad('Tax Amount:', 34)} ${padLeft(taxAmt?.toFixed(2)||0, 6)}\n`;
-    text += `${pad('SubTotal:', 34)} ${padLeft(((taxAmt || 0)+ totalSales)?.toFixed(2)||0, 6)}\n`;
-    text += `${pad('Other Charges:', 34)} ${padLeft(data.otherCharges?.toFixed(2)||0, 6)}\n`;
-    text += `${pad('Total:', 34)} ${padLeft(((taxAmt || 0)+ totalSales + (data.otherCharges || 0))?.toFixed(2)||0, 6)}\n`;
-    text += `${pad('Paid Payment:', 34)} ${padLeft(paid?.toFixed(2)||0, 6)}\n`;
-    text += `${pad('Previous Due:', 34)} ${padLeft(prevDue?.toFixed(2)||0, 6)}\n`;
-    text += `${pad('Total Due:', 34)} ${padLeft((((taxAmt || 0)+ totalSales + (data.otherCharges || 0))-paid)?.toFixed(2)||0, 6)}\n`;
-    text += line;
-
-    // Payment type
-    data.payments.forEach((p, i) => {
-        text += `Payment Type: ${p.paymentType?.paymentTypeName} ₹${p.amount?.toFixed(2)||0}\n`;
-    });
-
-    text+=line;
-  
-  // --- Footer ---
-  text += centerText('------Thank You & Visit Again!------') + '\n\n\n';
-  console.log(text)
-  return text;
+  return txt;
 };
 
+
+  /* ---------- build receipt ---------- */
+  let text = "";
+
+  text += centerText(data.warehouse.warehouseName) + "\n";
+  store.address.split("\n").forEach(l => text += centerText(l) + "\n");
+  text += line;
+
+  text += twoColumn(`Date: ${data.saleDate.substring(0, 10)}`,
+                    `Time: ${data.saleDate.substring(11, 16)}`) + "\n";
+  text += `Customer: ${data.customer?.customerName || "walk-in customer"}\n`;
+  text += line;
+
+  text += padRight("#", col.sno) +
+          padRight("Item", col.item) +
+          padLeft ("Qty",  col.qty)  +
+          padLeft ("MRP",  col.mrp)  +
+          padLeft ("Rate", col.rate) +
+          padLeft ("Total",col.total) + "\n";
+
+  data.items.forEach((it, i) => text += formatItemRow(it, i));
+  text += line;
+
+  const totalQty   = data.items.reduce((s, it) => s + it.quantity, 0);
+  const totalMRP   = data.items.reduce((s, it) => s + it.quantity * it.item.mrp,        0);
+  const totalSale  = data.items.reduce((s, it) => s + it.quantity * it.item.salesPrice, 0);
+  const taxAmt     = data.taxAmount   || 0;
+  const otherChg   = data.otherCharges || 0;
+  const paid       = data.payments.reduce((s, p) => s + p.amount, 0);
+  const prevDue    = data.previousBalance || 0;
+  const grandTotal = totalSale + taxAmt + otherChg;
+  const totalDue   = prevDue + grandTotal - paid;
+
+  const sumLine = (lbl, val) => `${padRight(lbl, 34)}${padLeft(val.toFixed(2), 8)}\n`;
+
+  text += `${padRight("Total Quantity:", 34)}${padLeft(totalQty, 8)}\n`;
+  text += sumLine("Before Tax:",      totalMRP);
+  text += sumLine("Total Discount:",  totalMRP - totalSale);
+  text += sumLine("Net Before Tax:",  totalSale);
+  text += sumLine("Tax Amount:",      taxAmt);
+  text += sumLine("Other Charges:",   otherChg);
+  text += sumLine("Total:",           grandTotal);
+  text += sumLine("Paid Payment:",    paid);
+  text += sumLine("Previous Due:",    prevDue);
+  text += sumLine("Total Due:",       totalDue);
+  text += line;
+
+  data.payments.forEach(p =>
+    text += `Payment Type: ${p.paymentType.paymentTypeName} ₹${p.amount.toFixed(2)}\n`
+  );
+  text += line;
+
+  text += centerText("------Thank You & Visit Again!------") + "\n\n\n";
+  console.log(text);
+  return text;
+};
 
 
     // --- Action Handlers ---

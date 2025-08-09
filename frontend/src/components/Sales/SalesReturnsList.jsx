@@ -247,12 +247,12 @@ const SalesReturnList = () => {
 
   
 const generatePlainTextReceipt = (data) => {
-   console.log(data)
+   
   const store={
       logo:        "/logo/inspiredgrow.jpg",                       //  40-50 px square looks right
   storeName:   "Grocery on Wheels",                                //  already in state
   tagline:     "GROCERY ON WHEELS",
-  address:     "Basement 210-211 new Rishi Nagar near\nShree Shyam Baba Mandir Gali No. 9, Hisar – 125001",
+  address:     "Basement 210-211 new Rishi Nagar near\nShree Shyam Baba Mandir Gali No. 9, Hisar-125001",
   gst:         "06AAGCI0630K1ZR",
   phone:       "9050092092",
   email:       "INSPIREDGROW@GMAIL.COM",
@@ -266,38 +266,41 @@ const generatePlainTextReceipt = (data) => {
   const padRight = (str, len, char = ' ') => (String(str) + char.repeat(len)).substring(0, len);
   const padLeft = (str, len, char = ' ') => (char.repeat(len) + String(str)).slice(-len);
   
-  const wrapText = (text, width) => {
-    if (!text || width <= 0) return [];
-    const words = text.split(' ');
-    const lines = [];
-    let currentLine = '';
-    words.forEach(word => {
-      if ((currentLine + ' ' + word).trim().length <= width) {
-        currentLine += (currentLine ? ' ' : '') + word;
+  const wrapText = (txt, width) => {
+    if (!txt || width <= 0) return [""];
+    const words = txt.split(" ");
+    const out   = [];
+    let row = "";
+    words.forEach(w => {
+      if ((row + " " + w).trim().length <= width) {
+        row = (row ? row + " " : "") + w;
       } else {
-        if (currentLine) lines.push(currentLine);
-        currentLine = word;
+        if (row) out.push(row);
+        row = w;
       }
     });
-    if (currentLine) lines.push(currentLine);
-    return lines.length > 0 ? lines : [''];
+    if (row) out.push(row);
+    return out;
   };
 
-  const centerText = (text) => {
-    if (!text) return '\n';
-    const space = Math.max(0, Math.floor((lineWidth - text.length) / 2));
-    return ' '.repeat(space) + text;
-  };
 
-  const twoColumn = (left, right) => {
-    const space = lineWidth - left.length - right.length;
-    return left + ' '.repeat(Math.max(0, space)) + right;
-  };
   
+  
+  const centerText = (txt) => {
+    const space = Math.max(0, Math.floor((lineWidth - txt.length) / 2));
+    return " ".repeat(space) + txt;
+  };
+
+ 
+  const twoColumn = (left, right) =>
+    left + " ".repeat(Math.max(0, lineWidth - left.length - right.length)) + right;
+
  
   
   // Adjusted total to fit, let's recalculate: 3+18+4+7+7 = 39. Left for total = 3. Too small.
   // Let's use the previous stable widths.
+  const col = { sno: 3, item: 13, qty: 4, mrp: 7, rate: 7, total: 8 }; // still 42
+
   const finalColWidths = {
     sno: 3,
     item: 15,
@@ -311,34 +314,29 @@ const generatePlainTextReceipt = (data) => {
   // =================================================================
   // THIS IS THE NEW, SIMPLER, AND CORRECTED ITEM ROW FORMATTER
   // =================================================================
-  const formatItemRow = (item, index) => {
-    const snoStr = `${index + 1}.`;
-    
-    // 1. Wrap the entire item name into lines first.
-    const nameLines = wrapText(item.item?.itemName, finalColWidths.item);
-    
-    let rowText = '';
+const formatItemRow = (item, idx) => {
+  const lines = wrapText(item.item.itemName, col.item).slice(0, 4); // up to 4 lines
+  let txt = '';
+  lines.forEach((ln, i) => {
+    if (i === 0) {
+      txt += padRight(idx + 1, col.sno) +
+             padRight(ln,        col.item) +
+             padLeft (item.quantity,               col.qty)   +
+             padLeft (Number(item.item.mrp).toFixed(2),  col.mrp)  +
+             padLeft (Number(item.price).toFixed(2),     col.rate) +
+             padLeft ((item.quantity * item.price).toFixed(2), col.total) + '\n';
+    } else {
+      txt += padRight('', col.sno) +
+             padRight(ln, col.item) +
+             padLeft('', col.qty)  +
+             padLeft('', col.mrp)  +
+             padLeft('', col.rate) +
+             padLeft('', col.total) + '\n';
+    }
+  });
+  return txt;
+};
 
-    // 2. Loop through each line of the wrapped name.
-    nameLines.forEach((line, i) => {
-      if (i === 0) {
-        // For the FIRST line, print the name part AND all the numbers.
-        rowText += padRight(snoStr, finalColWidths.sno) +
-                   padRight(line, finalColWidths.item) +
-                   padLeft(item.quantity, finalColWidths.qty) +
-                   padLeft(item.item?.mrp?.toFixed(2) ||0, finalColWidths.mrp) +
-                   padLeft(item.item?.salesPrice?.toFixed(2)||0, finalColWidths.rate) +
-                   padLeft((item.quantity * item.item.salesPrice).toFixed(2), finalColWidths.total) + '\n';
-      } else {
-        // For ALL OTHER wrapped lines, print only the name part.
-        // The rest of the line will be blank, ensuring left alignment.
-        rowText += padRight('', finalColWidths.sno) +
-                   padRight(line, finalColWidths.item) + '\n';
-      }
-    });
-    
-    return rowText;
-  };
 
   
   let text = '';
@@ -360,16 +358,15 @@ const generatePlainTextReceipt = (data) => {
   text += line;
 
   // --- Items Table Header ---
-  text += padRight('#', finalColWidths.sno) + 
-          padRight('Item', finalColWidths.item) + 
-          padLeft('Qty', finalColWidths.qty) +
-          padLeft('MRP', finalColWidths.mrp) +
-          padLeft('Rate', finalColWidths.rate) +
-          padLeft('Total', finalColWidths.total) + '\n';
-  
+ text += padRight("#", col.sno) +
+          padRight("Item", col.item) +
+          padLeft ("Qty",  col.qty)  +
+          padLeft ("MRP",  col.mrp)  +
+          padLeft ("Rate", col.rate) +
+          padLeft ("Total",col.total) + "\n";
+
   // --- Items Table Body ---
   data.items.forEach((item, index) => {
-    console.log(`Formatting item ${index + 1}:`, item);
     text += formatItemRow(item, index);
   });
   text += line;

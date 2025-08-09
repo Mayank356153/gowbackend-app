@@ -67,7 +67,10 @@ const fetchPurchaseList = async ()=>{
     });
     console.log("Purchase List")
     console.log(response.data)
-   if(response.data.data) setPurchaseList(response.data.data)
+if (response.data.data) {
+  const sortedData = response.data.data.sort((a, b) => new Date(b.purchaseDate) - new Date(a.purchaseDate));
+  setPurchaseList(sortedData);
+}
   } catch (error) {
     alert(error.message)
   }

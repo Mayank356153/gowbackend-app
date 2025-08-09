@@ -84,7 +84,7 @@ const[matchedItems,setMatchedItems]=useState([])
     try {
       setLoading(true);
       const token = localStorage.getItem("token");
-      const { data } = await axios.get(`${link}/api/warehouses`, {
+      const { data } = await axios.get(`${link}/api/warehouses?scope=mine`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       console.log("da")
@@ -100,7 +100,7 @@ const[matchedItems,setMatchedItems]=useState([])
         const defaultFrom = restricted
           ? restricted._id
           : list.find((w) => w.status === "Active")?._id || "";
-        setFormData((prev) => ({ ...prev, fromWarehouse: defaultFrom }));
+        setFormData((prev) => ({ ...prev, fromWarehouse: localStorage.getItem("deafultWarehouse") || defaultFrom }));
       }
     } catch (err) {
       console.error("warehouses:", err.message);
@@ -225,11 +225,13 @@ const[matchedItems,setMatchedItems]=useState([])
 
       // Only clear selectedItems if we are NOT editing:
       if (!id) {
+
         setSelectedItems([]);
       }
     } else {
       setFilteredItemsByWarehouse([]);
       if (!id) {
+        
         setSelectedItems([]);
       }
     }
@@ -350,7 +352,7 @@ const startScanner = async () => {
       );
 
       return displayMatch || codeMatch || barcodeMatch;
-    })
+    }).slice(0,15)
   : [];
 
   // ─── ADD ITEM TO SELECTED LIST ────────────────────────────────────────
@@ -386,7 +388,7 @@ const startScanner = async () => {
     const updated = [...selectedItems];
     const existing = updated[existingIdx];
     const newQty = existing.quantity + quantityToAdd;
-    if(newQty >= updated[existingIdx].currentStock){
+    if(newQty > updated[existingIdx].currentStock){
       console.log("newQty",newQty)
       console.log(newQty => updated[existingIdx].currentStock)
       console.log(updated[existingIdx].currentStock)
@@ -512,7 +514,7 @@ const handleAddItemsBatch = (itemsToAdd) => {
 
   // ─── UPDATE QUANTITY IN SELECTED ──────────────────────────────────────
   const handleItemChange = (idx, field, val) => {
-    alert("l")
+    
     const numericVal = Number(val);
   const row = selectedItems[idx];
 
@@ -534,7 +536,7 @@ const handleAddItemsBatch = (itemsToAdd) => {
         ? {
             ...r,
              
-                 [field]:val
+                 [field]:val.replace(/^0+(?!$)/, '')
               
           }
         : r
@@ -611,7 +613,7 @@ const handleAddItemsBatch = (itemsToAdd) => {
 
           {/* Form */}
           <form
-            onSubmit={handleSubmit}
+             onSubmit={handleSubmit}
         
           >
             {/* ─── Row 1: Date / From / To ───────────────────────────────── */}

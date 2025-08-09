@@ -5,7 +5,7 @@ import { FaChevronLeft, FaPlus, FaTrash, FaMinus, FaTimes, FaBox, FaEdit, FaBoxO
 import { useLocation, useNavigate } from 'react-router-dom';
 import { App } from '@capacitor/app';
 import ItemEditPage from './ItemEditPage'; // Assuming this component exists
-
+import { Keyboard } from '@capacitor/keyboard';
 export default function Purchase3({
     setActiveTab, allItems, options, formData, handleItemFieldChange, setFormData, handleRemoveItem,
     handleChange, setOtherCharges, discount, setDiscount, setDiscountType, discountType, subtotal,
@@ -41,12 +41,13 @@ const handleQuantity = (e, id, type) => {
   } 
   
   else if (type === "change") {
-    const inputVal = parseInt(e.target.value);
+    
+    const inputVal = parseInt(e.target.value.replace(/^0+(?!$)/, ''));
     updatedItems = formData.items.map(item =>
       item.item === id
         ? {
             ...item,
-            quantity:Math.min(Math.max(1, isNaN(inputVal) ? 1 : inputVal), item.currentStock)
+            quantity:Math.max(0, isNaN(inputVal) ? 0 : inputVal),
           }
         : item
     );
@@ -56,11 +57,8 @@ const handleQuantity = (e, id, type) => {
     updatedItems = formData.items.map(item => {
       if (item.item === id) {
         if (type === "plus") {
-          if (item.quantity < item.currentStock) {
+          
             return { ...item, quantity: item.quantity + 1 };
-          } else {
-            return item;
-          }
         } else if (type === "minus") {
           const newQty = Math.max(1, item.quantity - 1);
           return { ...item, quantity: newQty };
@@ -118,12 +116,12 @@ const handleQuantity = (e, id, type) => {
                         </div>
                         <div>
                             <label className="text-sm text-gray-600">Other Charges</label>
-                            <input type="number" min="0" name="otherCharges" value={formData.otherCharges} onChange={(e)=>{handleChange(e);setOtherCharges(e.target.value)}} className="w-full p-2 mt-1 text-sm border-gray-300 rounded-md" placeholder="₹0.00" />
+                            <input type="number" step="any" min="0" name="otherCharges" value={formData.otherCharges} onChange={(e)=>{handleChange(e);setOtherCharges(e.target.value)}} className="w-full p-2 mt-1 text-sm border-gray-300 rounded-md" placeholder="₹0.00" />
                         </div>
                         <div>
                             <label className="text-sm text-gray-600">Discount</label>
                             <div className="flex mt-1 space-x-2">
-                                <input type="number" min="0" name="discountOnAll" value={discount} onChange={(e) => setDiscount(e.target.value)} className="flex-1 p-2 text-sm border-gray-300 rounded-md" placeholder="Value" />
+                                <input type="number" min="0" step="any" name="discountOnAll" value={discount} onChange={(e) => setDiscount(e.target.value)} className="flex-1 p-2 text-sm border-gray-300 rounded-md" placeholder="Value" />
                                 <select value={discountType} onChange={(e) => setDiscountType(e.target.value)} className="p-2 text-sm border-gray-300 rounded-md bg-gray-50">
                                     <option value="percent">%</option>
                                     <option value="amount">₹</option>
@@ -151,7 +149,7 @@ const handleQuantity = (e, id, type) => {
                     <div className="space-y-2">
                         <div>
                             <label className="text-sm text-gray-600">Amount <span className="text-red-500">*</span></label>
-                            <input type="number" min="0" value={formData.payments[0]?.amount} name="amount" onChange={handlePayment} className="w-full p-2 mt-1 text-sm border-gray-300 rounded-md" placeholder="Enter amount" />
+                            <input type="number "  step="any" min="0" value={formData.payments[0]?.amount} name="amount" onChange={handlePayment} className="w-full p-2 mt-1 text-sm border-gray-300 rounded-md" placeholder="Enter amount" />
                         </div>
                          <div >
                   <label className="text-sm text-gray-600" >Payment Note</label>
@@ -261,7 +259,12 @@ const ItemsList = ({ items, updateItem, removeItem, setSelectedItem, setEdit, se
                                     <button type="button" onClick={(e) => updateItem(e, item.item, 'minus')} className="p-2 text-gray-600">
                                         <FaMinus size={12} />
                                     </button>
-                                    <input type="number" value={item.quantity} onChange={(e) => updateItem(e, item.item, 'change')} className="w-10 text-base font-bold text-center bg-transparent border-none focus:ring-0" />
+                                    <input type="number" value={item.quantity}           onFocus={(e) => {
+    e.target.focus(); // ensure input is focused
+    setTimeout(() => {
+      Keyboard.show(); // explicitly show the keyboard
+    }, 100); // short delay helps trigger keyboard on some Androids
+  }} onChange={(e) => updateItem(e, item.item, 'change')} className="w-10 text-base font-bold text-center bg-transparent border-none focus:ring-0" />
                                     <button type="button" onClick={(e) => updateItem(e, item.item, 'plus')} className="p-2 text-gray-600">
                                         <FaPlus size={12} />
                                     </button>

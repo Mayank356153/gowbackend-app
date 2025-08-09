@@ -101,10 +101,6 @@ const PurchaseScanner = ({ allItems, addItem, setItemScan, addItemsInBatch }) =>
   if (existingIndex !== -1) {
     const existingItem = prevItems[existingIndex];
 
-    if (existingItem.quantity >= existingItem.stock) {
-      alert("❗ No more stock available.");
-      return prevItems;
-    }
 
     const updatedQty = existingItem.quantity + 1;
 
@@ -317,7 +313,6 @@ const PurchaseScanner = ({ allItems, addItem, setItemScan, addItemsInBatch }) =>
               <button
                 onClick={() => handleQuantity(it._id, "plus")}
                 className="p-1 text-gray-600 transition-colors duration-200 rounded-full hover:text-purple-600 active:bg-gray-200 disabled:opacity-50"
-                disabled={it.currentStock <= item.quantity}
               >
                 <FaPlus className="w-3 h-3" />
               </button>

@@ -1,4 +1,4 @@
-import React, { useState,useEffect } from "react";
+import React, { useState,useEffect ,useContext} from "react";
 import { Suspense, lazy } from "react";
 
 
@@ -8,6 +8,7 @@ import { Suspense, lazy } from "react";
 import BackButtonHandler from "./BackButtonHandler";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 
+import SaleLocation from "./components/SaleLocation/SaleLocation.jsx";
 
 // Capacitor plugins
 import { Camera } from '@capacitor/camera';
@@ -17,8 +18,8 @@ import { Preferences } from '@capacitor/preferences';
 import { Geolocation } from "@capacitor/geolocation";
 import { BluetoothLe } from '@capacitor-community/bluetooth-le';
 import BluetoothStatus from './plugins/BluetoothStatus';
-import RegistrationForm from "./pages/Register.jsx";
-import { AppProviders } from "./context/AppProviders.jsx";
+
+import { POSContext } from "./context/POSContext.js";
 // Lazily loaded components/pages
 const AdminRegister = lazy(() => import("./pages/AdminRegister"));
 const AdminLogin = lazy(() => import("./pages/AdminLogin"));
@@ -171,8 +172,9 @@ const PrinterSettings = lazy(() => import("./pages/PrinterSettings"));
 const Print = lazy(() => import("./components/Sales/POS/Print"));
 const ClubBillReport = lazy(() => import("./components/Reports/ClubReport"));
 const AccountList1 = lazy(() => import("./components/Accounts/AccountListM/AccountList1"));
-
 function App() {
+    const{ available,loadPOSData } = useContext(POSContext);
+
   const [isOn, setIsOn] = useState(false);
 useEffect(() => {
   // Initial Bluetooth status check
@@ -205,6 +207,11 @@ useEffect(() => {
 
   return () => clearInterval(interval);
 }, []); // Empty dependency array is fine here since this runs on mount/unmount
+ useEffect(() => {
+   if(!available){
+     loadPOSData();
+   }
+ }, [])
 
 useEffect(() => {
   const connectToDevice = (device) => {
@@ -300,12 +307,12 @@ useEffect(() => {
 
 }, []);
   return (
-    <AppProviders>
+    // <AppProviders>
     <Router>
         <BackButtonHandler />
          <Suspense fallback={<div style={{ padding: 24 }}>Loading…</div>}>
       <Routes>
-          <Route path="/register" element={<RegistrationForm />} />
+              <Route path="/sale-location" element={<SaleLocation />} />
          <Route path="/account-list1" element={<AccountList1 />} />
 
           <Route path="/print" element={<Print />} />
@@ -480,7 +487,7 @@ useEffect(() => {
       </Routes>
       </Suspense>
     </Router>
-    </AppProviders>
+    // </AppProviders>
   );
 }
 
