@@ -91,7 +91,7 @@ const printRoutes=require("./routes/printRoutes.js")
 const orderPaymentRoutes = require('./routes/orderPaymentRoutes');
 const checkout=require("./routes/checkoutRoutes.js")
 
-
+ const location = require("./routes/location.js");
 
 
 
@@ -135,9 +135,10 @@ console.log("🔑 JWT_SECRET:", process.env.JWT_SECRET);
 
 
 
-
+app.use("/api/way",location);
 app.use("/print",printRoutes)
 app.use("/auth", authRoutes);
+
 app.use("/admin", userRoutes);
 app.use("/admiaddinguser", UsersRoutes);
 app.use("/admincreatingrole", roleRoutes);

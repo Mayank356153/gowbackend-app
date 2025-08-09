@@ -13,8 +13,7 @@ const router = express.Router();
 // POST /adduserbyadmin
 router.post(
   '/adduserbyadmin',
-  authMiddleware,
-  hasPermission('users', 'Add'),
+  
   async (req, res) => {
     try {
       const {
@@ -30,7 +29,8 @@ router.post(
         Defaultwarehouse: rawDefaultWh,
         status
       } = req.body;
-
+      console.log("aaa")
+      console.log(req.body)
       // 1) Basic validation
       if (!Email || !Password || !FirstName || !newUserRole) {
         return res.status(400).json({ message: 'Missing required fields' });
@@ -47,22 +47,22 @@ router.post(
       const hashedPassword = await bcrypt.hash(Password, 10);
 
       // 3) Determine store scope
-      let assignedStores;
-      if (req.user.role.toLowerCase() === 'admin') {
-        assignedStores = Array.isArray(incomingStores) ? incomingStores : [incomingStores];
-      } else {
-        assignedStores = req.user.stores || [];
-      }
+      // let assignedStores;
+      // if (req.user.role.toLowerCase() === 'admin') {
+      //   assignedStores = Array.isArray(incomingStores) ? incomingStores : [incomingStores];
+      // } else {
+      //   assignedStores = req.user.stores || [];
+      // }
 
       // 4) Filter warehouses
       const validWarehouses = await Warehouse.find({
         _id: { $in: rawWhIds },
-        store: { $in: assignedStores }
+        // store: { $in: assignedStores }
       }).distinct('_id');
-
+        console.log(rawDefaultWh)
       // 5) Ensure default warehouse is valid
       const defaultWh = validWarehouses.includes(rawDefaultWh) ? rawDefaultWh : null;
-
+  console.log(defaultWh)
       // 6) Create the new user
       const newUser = new User({
         userName,
@@ -72,8 +72,8 @@ router.post(
         Email,
         Role: newUserRole,
         Password: hashedPassword,
-        createdBy: req.user.id,
-        Store: assignedStores,
+        // createdBy: req.user.id,
+        // Store: assignedStores,
         WarehouseGroup: validWarehouses,
         Defaultwarehouse: defaultWh,
         status: status || 'active'
@@ -83,7 +83,7 @@ router.post(
       return res.status(200).json({ message: 'User added successfully' });
     } catch (err) {
       console.error('Error adding user:', err);
-      return res.status(500).json({ message: 'Server error', error: err.message });
+      return res.status(500).json({ message: 'Server error', error: err });
     }
   }
 );
@@ -133,6 +133,60 @@ router.post('/userlogin', async (req, res) => {
     return res.status(500).json({ message: 'Server error', error: error.message });
   }
 });
+
+//POST /userloginByUserName
+router.post('/userloginByUserName', async (req, res) => {
+  try {
+    const { username, password } = req.body;
+    if (!username || !password) {
+      return res.status(400).json({ message: 'Username and Password are required' });
+    }
+    console.log('Login attempt for:', username);
+
+    const user = await User.findOne({ userName: username });
+    console.log('Found user:', user);
+    
+    if (!user) return res.status(400).json({ message: 'User not found' });
+
+    // Check if user is inactive
+    if (user.status === 'inactive') {
+      return res.status(403).json({ message: 'Account is inactive' });
+    }
+
+    if (!user.Password || !(await bcrypt.compare(password, user.Password))) {
+      return res.status(400).json({ message: 'Invalid credentials' });
+    }
+
+    const token = jwt.sign(
+      { id: user._id, role: user.Role, stores: user.Store || [] },
+      process.env.JWT_SECRET,
+      { expiresIn: '7d' }
+    );
+
+    const roleData = await Role.findById(user.Role);
+
+    return res.status(200).json({
+      message: 'Login Successful',
+      token,
+      user: {
+        id: user._id,
+        FirstName: user.FirstName,
+        LastName: user.LastName,
+        Email: user.Email,
+        Role: user.Role
+      },
+      permissions: roleData?.permissions || []
+    });
+  } catch (error) {
+    console.error('Login Error:', error);
+    return res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
+
+
+
+
 
 // GET /userlist
 router.get('/userlist', authMiddleware, async (req, res) => {
