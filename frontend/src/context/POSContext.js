@@ -21,7 +21,7 @@ export const POSProvider = ({ children }) => {
     headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
   });
 
-const loadPOSData = async () => {
+const loadPOSData = async (editId=null) => {
   setAvailable(true)
   const token = localStorage.getItem("token");
 
@@ -39,38 +39,12 @@ const loadPOSData = async () => {
     const warehouses = warehousesRes.data?.data || [];
         const customers = customersRes.data.data || customersRes.data || [];
 
-    // Fetch items for each warehouse in parallel
-    const warehouseItemsResponses = await Promise.all(
-      warehouses.map((warehouse) =>
-        axios.get(`${link}/api/items`, {
-          headers: { Authorization: `Bearer ${token}` },
-          params: { warehouse: warehouse._id, inStock: true },
-        })
-      )
-    );
+   
 
-    // Flatten and process all items
-    const allFlatItems = warehouseItemsResponses.flatMap((res) => {
-      const rawItems = res.data?.data || [];
-      return rawItems
-        .filter((it) => it._id && it.warehouse?._id)
-        .map((it) => {
-          const isVariant = Boolean(it.parentItemId);
-          return {
-            ...it,
-            parentId: isVariant ? it.parentItemId : it._id,
-            variantId: isVariant ? it._id : null,
-            itemName: isVariant ? `${it.itemName} / ${it.variantName || "Variant"}` : it.itemName,
-            barcode: it.barcode || "",
-            barcodes: it.barcodes || [],
-            itemCode: it.itemCode || "",
-          };
-        });
-    });
+   
 
     // Finally set everything in one go
     setPosData({
-      items: allFlatItems,
       warehouses,
       customers,
       loading: false,

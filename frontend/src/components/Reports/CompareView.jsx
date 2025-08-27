@@ -1,64 +1,59 @@
 import React, { useEffect } from 'react';
 import { FaTimes } from 'react-icons/fa';
 import axios from 'axios';
-const ClubStockView = ({ item,setView,warehouses ,selectedWarehouse}) => {
-    const [store, setStore] = React.useState(0);
-    const [van, setVan] = React.useState(0);
+const CompareView = ({ item,setView,warehouses ,warehouse1,warehouse2}) => {
+    const [w1, set1] = React.useState(0);
+    const [w2, set2] = React.useState(0);
     // Render nothing if the modal isn't open
     
 
   const auth = () => ({
     headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
   });
+  const link="https://pos.inspiredgrow.in/vps"
+   
   
-   const openStockModala = async (item) => {
+  
+   const fetchItems=async(warehouseId)=>{
     try {
-      const active = warehouses.filter((w) => w.value !== "all");
-      const reqs = active.map((w) =>
-        axios.get("https://pos.inspiredgrow.in/vps/api/items", {
-          ...auth(),
-          params: { warehouse: w.value, search: item.itemCode, page: 1, limit: 1 },
-        })
-      );
-      const res = await Promise.allSettled(reqs);
-      console.log(res)
-      const stocksByWh = res.map((r, i) => {
-        const wh = active[i];
-        if (r.status !== "fulfilled") return { id: wh.value, name: wh.label, stock: "N/A",restricted: wh.restricted };
-        const row = r.value.data.data?.[0];
-        return { id: wh.value, name: wh.label, stock: row ? row.currentStock ?? 0 : 0,restricted: wh.restricted };
+      
+      const response = await axios.get(`${link}/api/items`, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+        params: {
+            search: item.itemCode ,
+          warehouse:warehouseId,
+          inStock: true, // Fetch only items that are in stock
+        }
       });
-           stocksByWh.forEach(w=>{
- if(w.restricted){
-            setStore(prev=>prev+w.stock);   
-        }
-      }
-       
-      )
-        console.log(selectedWarehouse)
-      if(selectedWarehouse === "all") {
-        stocksByWh.forEach(w=>{
- if(!w.restricted){
-            setVan(prev=>prev+w.stock);   
-        }
-      }
-       
-      )
-      }else{
-        const selectedWh = stocksByWh.find(w => w.id === selectedWarehouse);
-        if(selectedWh && !selectedWh.restricted) {
-          setVan(selectedWh.stock);
-        }
-      }
-                console.log({ ...item, stocksByWh });
-    } catch {
-      alert("Failed to load stock breakdown.");
+      console.log("Items fetched for warehouse:", warehouseId, response.data.data);
+      
+         return  response.data.data;
+  //  setAllItems((prev)=>([...response.data.data,...prev]))
+    } catch (err) {
+      console.log(err.message);
+    } 
+   }
+   useEffect(() => {
+  const loadStocks = async () => {
+    try {
+      const items1 = await fetchItems(warehouse1);
+      const items2 = await fetchItems(warehouse2);
+
+      // pick first item's stock or 0
+      set1(items1?.[0]?.currentStock || 0);
+      set2(items2?.[0]?.currentStock || 0);
+    } catch (err) {
+      console.error(err);
     }
   };
-  
-  useEffect(() => {   
-    openStockModala(item);   
-}, [item]);
+
+  if (warehouse1 && warehouse2) {
+    loadStocks();
+  }
+}, [warehouse1, warehouse2]);
+
     return (
         // Overlay
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-opacity-60 backdrop-blur-sm">
@@ -97,13 +92,13 @@ const ClubStockView = ({ item,setView,warehouses ,selectedWarehouse}) => {
                     <div className="flex justify-around">
                         {/* Required Quantity */}
                         <div>
-                            <p className="text-sm text-gray-600">Store Stock</p>
-                            <p className="text-4xl font-bold">{store}</p>
+                            <p className="text-sm text-gray-600">Warehouse1</p>
+                            <p className="text-4xl font-bold">{w1}</p>
                         </div>
                         {/* Free Quantity */}
                         <div>
-                            <p className="text-sm text-gray-600">Van Stock</p>
-                            <p className="text-4xl font-bold ">{van}</p>
+                            <p className="text-sm text-gray-600">Warehouse2</p>
+                            <p className="text-4xl font-bold ">{w2}</p>
                         </div>
                     </div>
                 </div>
@@ -113,4 +108,4 @@ const ClubStockView = ({ item,setView,warehouses ,selectedWarehouse}) => {
     );
 };
 
-export default ClubStockView;
+export default CompareView;

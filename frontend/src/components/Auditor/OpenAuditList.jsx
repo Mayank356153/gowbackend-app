@@ -123,7 +123,7 @@ const  OpenAuditList=()=> {
       });
  console.log(response)
      alert("Deleted Successfully")
-    
+     fetchData();
     } catch (error) {
       console.error( error.message);
     }
@@ -139,172 +139,172 @@ const  OpenAuditList=()=> {
      
      
   return (
-    <div className="flex flex-col h-screen">
-      <Navbar isSidebarOpen={isSidebarOpen} setSidebarOpen={setSidebarOpen} />
-      <div className="flex ">
+//     <div className="flex flex-col h-screen">
+//       <Navbar isSidebarOpen={isSidebarOpen} setSidebarOpen={setSidebarOpen} />
+//       <div className="flex ">
 
-        <Sidebar isSidebarOpen={isSidebarOpen} />
+//         <Sidebar isSidebarOpen={isSidebarOpen} />
           
-           {/* Content */}
-         <div className={`w-full flex flex-col p-2 md:p-2  `}>
-          <header className="flex flex-col items-center justify-between p-4 rounded-md shadow sm:flex-row">
-            <div className="flex items-center gap-1 text-center sm:flex-row sm:text-left">
-              <h1 className="text-lg font-semibold truncate sm:text-xl">Open Audit List</h1>
-              {/* <span className="text-xs text-gray-600 sm:text-sm">Add/Update Banner</span> */}
-            </div>
+//            {/* Content */}
+//          <div className={`w-full flex flex-col p-2 md:p-2  `}>
+//           <header className="flex flex-col items-center justify-between p-4 rounded-md shadow sm:flex-row">
+//             <div className="flex items-center gap-1 text-center sm:flex-row sm:text-left">
+//               <h1 className="text-lg font-semibold truncate sm:text-xl">Open Audit List</h1>
+//               {/* <span className="text-xs text-gray-600 sm:text-sm">Add/Update Banner</span> */}
+//             </div>
 
-            <nav className="flex flex-wrap items-center justify-center mt-2 text-xs text-gray-500 sm:justify-start sm:text-sm sm:mt-0">
-   <NavLink to="/dashboard" className="flex items-center text-gray-700 no-underline hover:text-cyan-600">
-                            <FaTachometerAlt className="mr-2 text-gray-500 hover:text-cyan-600" /> Home
-                          </NavLink>     
-                          <NavLink to="/banners/view" className="flex items-center text-gray-700 no-underline hover:text-cyan-600">
-                           &gt; Start Audit
-                          </NavLink>    
-                          <NavLink to="/banners/add" className="text-gray-700 no-underline hover:text-cyan-600">
-                           &gt; Open Audit List
-                          </NavLink>
+//             <nav className="flex flex-wrap items-center justify-center mt-2 text-xs text-gray-500 sm:justify-start sm:text-sm sm:mt-0">
+//    <NavLink to="/dashboard" className="flex items-center text-gray-700 no-underline hover:text-cyan-600">
+//                             <FaTachometerAlt className="mr-2 text-gray-500 hover:text-cyan-600" /> Home
+//                           </NavLink>     
+//                           <NavLink to="/banners/view" className="flex items-center text-gray-700 no-underline hover:text-cyan-600">
+//                            &gt; Start Audit
+//                           </NavLink>    
+//                           <NavLink to="/banners/add" className="text-gray-700 no-underline hover:text-cyan-600">
+//                            &gt; Open Audit List
+//                           </NavLink>
               
-            </nav>
-          </header>
-           {
-            comparison && <ItemsCompare  audit={items} onClose={()=>{setComparison(false);fetchData()}} sidebarOpen={isSidebarOpen}/>
-            // <AuditComparison auditItems={items} onClose={()=>setComparison(false)}/>
-          } 
+//             </nav>
+//           </header>
+//            {
+//             comparison && <ItemsCompare  audit={items} onClose={()=>{setComparison(false);fetchData()}} sidebarOpen={isSidebarOpen}/>
+//             // <AuditComparison auditItems={items} onClose={()=>setComparison(false)}/>
+//           } 
 
-          <div className="p-4 mt-1 bg-white border-t-4 rounded-lg shadow-md border-cyan-500">
+//           <div className="p-4 mt-1 bg-white border-t-4 rounded-lg shadow-md border-cyan-500">
             
-          {/* <div className="overflow-x-auto border border-gray-200 rounded-lg shadow-sm">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className=" bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">
-                  Audit ID
-                </th>
-                <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">
-                  Total Items
-                </th>
-                <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-           <tbody className="bg-white divide-y divide-gray-200">
-  {audits.map((audit) => (
-    <tr key={audit.auditId}>
-      <td className="px-6 py-4 text-sm font-medium text-gray-900 whitespace-nowrap">
-        {audit.auditId}
-      </td>
-      <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-        {audit.finalUnit?.length || 0} items
-      </td>
-      <td className="px-6 py-4 text-sm font-medium whitespace-nowrap">
-        <button 
-          className="mr-4 text-indigo-600 hover:text-indigo-900"
-          onClick={() => {
-            setItems(audit)
-            setComparison(true)
-          }}
-        >
-          View Comparison
-        </button>
-         <button 
-    className="mr-4 text-green-600 hover:text-green-900"
-    onClick={() => handleAuditEnd(audit.auditId)}  // <-- Add handler
-  >
-    End Audit
-  </button>
+//           {/* <div className="overflow-x-auto border border-gray-200 rounded-lg shadow-sm">
+//           <table className="min-w-full divide-y divide-gray-200">
+//             <thead className=" bg-gray-50">
+//               <tr>
+//                 <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">
+//                   Audit ID
+//                 </th>
+//                 <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">
+//                   Total Items
+//                 </th>
+//                 <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">
+//                   Actions
+//                 </th>
+//               </tr>
+//             </thead>
+//            <tbody className="bg-white divide-y divide-gray-200">
+//   {audits.map((audit) => (
+//     <tr key={audit.auditId}>
+//       <td className="px-6 py-4 text-sm font-medium text-gray-900 whitespace-nowrap">
+//         {audit.auditId}
+//       </td>
+//       <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+//         {audit.finalUnit?.length || 0} items
+//       </td>
+//       <td className="px-6 py-4 text-sm font-medium whitespace-nowrap">
+//         <button 
+//           className="mr-4 text-indigo-600 hover:text-indigo-900"
+//           onClick={() => {
+//             setItems(audit)
+//             setComparison(true)
+//           }}
+//         >
+//           View Comparison
+//         </button>
+//          <button 
+//     className="mr-4 text-green-600 hover:text-green-900"
+//     onClick={() => handleAuditEnd(audit.auditId)}  // <-- Add handler
+//   >
+//     End Audit
+//   </button>
 
-        <button 
-          className="text-red-600 hover:text-red-900"
-        //   onClick={() => handleDeleteAudit(audit.id)}
-        >
-          Delete
-        </button>
-      </td>
-    </tr>
-  ))}
-</tbody>
-          </table>
+//         <button 
+//           className="text-red-600 hover:text-red-900"
+//         //   onClick={() => handleDeleteAudit(audit.id)}
+//         >
+//           Delete
+//         </button>
+//       </td>
+//     </tr>
+//   ))}
+// </tbody>
+//           </table>
           
         
          
-        </div> */}
+//         </div> */}
         
-       <div className="overflow-x-auto border border-gray-200 rounded-lg shadow-sm">
-  {/* Desktop Table */}
-  <table className="hidden min-w-full divide-y divide-gray-200 md:table">
-    <thead className="bg-gray-50">
-      <tr>
-        <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">Audit ID</th>
-        <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">Total Items</th>
-        <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">Actions</th>
-      </tr>
-    </thead>
-    <tbody className="bg-white divide-y divide-gray-200">
-      {audits.map((audit) => (
-        <tr key={audit.auditId}>
-          <td className="px-6 py-4 text-sm font-medium text-gray-900 whitespace-nowrap">{audit.auditId}</td>
-          <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-            {audit.finalUnit?.length || 0} items
-          </td>
-          <td className="px-6 py-4 space-x-4 text-sm font-medium whitespace-nowrap">
-            <button 
-              className="text-indigo-600 hover:text-indigo-900"
-              onClick={() => { setItems(audit); setComparison(true); }}
-            >
-              View
-            </button>
-            <button 
-              className="text-green-600 hover:text-green-900"
-              onClick={() => handleAuditEnd(audit.auditId)}
-            >
-              End
-            </button>
-            <button 
-              className="text-red-600 hover:text-red-900"
-              onClick={() => handleDeleteAudit(audit.auditId)}
-            >
-              Delete
-            </button>
-          </td>
-        </tr>
-      ))}
-    </tbody>
-  </table>
+//        <div className="overflow-x-auto border border-gray-200 rounded-lg shadow-sm">
+//   {/* Desktop Table */}
+//   <table className="hidden min-w-full divide-y divide-gray-200 md:table">
+//     <thead className="bg-gray-50">
+//       <tr>
+//         <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">Audit ID</th>
+//         <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">Total Items</th>
+//         <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">Actions</th>
+//       </tr>
+//     </thead>
+//     <tbody className="bg-white divide-y divide-gray-200">
+//       {audits.map((audit) => (
+//         <tr key={audit.auditId}>
+//           <td className="px-6 py-4 text-sm font-medium text-gray-900 whitespace-nowrap">{audit.auditId}</td>
+//           <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+//             {audit.finalUnit?.length || 0} items
+//           </td>
+//           <td className="px-6 py-4 space-x-4 text-sm font-medium whitespace-nowrap">
+//             <button 
+//               className="text-indigo-600 hover:text-indigo-900"
+//               onClick={() => { setItems(audit); setComparison(true); }}
+//             >
+//               View
+//             </button>
+//             <button 
+//               className="text-green-600 hover:text-green-900"
+//               onClick={() => handleAuditEnd(audit.auditId)}
+//             >
+//               End
+//             </button>
+//             <button 
+//               className="text-red-600 hover:text-red-900"
+//               onClick={() => handleDeleteAudit(audit.auditId)}
+//             >
+//               Delete
+//             </button>
+//           </td>
+//         </tr>
+//       ))}
+//     </tbody>
+//   </table>
 
-  {/* Mobile Cards */}
-  <div className="space-y-4 md:hidden">
-    {audits.map((audit) => (
-      <div key={audit.auditId} className="p-4 bg-white border border-gray-200 rounded-lg shadow-sm">
-        <div className="mb-2 text-sm font-medium text-gray-700">Audit ID:</div>
-        <div className="mb-1 text-base font-semibold text-gray-900 break-all">{audit.auditId}</div>
-        <div className="mb-3 text-sm text-gray-600">
-          Total Items: {audit.finalUnit?.length || 0}
-        </div>
-        <div className="flex justify-start space-x-4">
-          <button 
-            className="text-sm text-indigo-600 hover:text-indigo-900"
-            onClick={() => { setItems(audit); setComparison(true); }}
-          >
-            View
-          </button>
-          <button 
-            className="text-sm text-green-600 hover:text-green-900"
-            onClick={() => handleAuditEnd(audit.auditId)}
-          >
-            End
-          </button>
-          <button 
-            className="text-sm text-red-600 hover:text-red-900"
-            onClick={() => handleDeleteAudit(audit.auditId)}
-          >
-            Delete
-          </button>
-        </div>
-      </div>
-    ))}
-  </div>
-</div>
+//   {/* Mobile Cards */}
+//   <div className="space-y-4 md:hidden">
+//     {audits.map((audit) => (
+//       <div key={audit.auditId} className="p-4 bg-white border border-gray-200 rounded-lg shadow-sm">
+//         <div className="mb-2 text-sm font-medium text-gray-700">Audit ID:</div>
+//         <div className="mb-1 text-base font-semibold text-gray-900 break-all">{audit.auditId}</div>
+//         <div className="mb-3 text-sm text-gray-600">
+//           Total Items: {audit.finalUnit?.length || 0}
+//         </div>
+//         <div className="flex justify-start space-x-4">
+//           <button 
+//             className="text-sm text-indigo-600 hover:text-indigo-900"
+//             onClick={() => { setItems(audit); setComparison(true); }}
+//           >
+//             View
+//           </button>
+//           <button 
+//             className="text-sm text-green-600 hover:text-green-900"
+//             onClick={() => handleAuditEnd(audit.auditId)}
+//           >
+//             End
+//           </button>
+//           <button 
+//             className="text-sm text-red-600 hover:text-red-900"
+//             onClick={() => handleDeleteAudit(audit.auditId)}
+//           >
+//             Delete
+//           </button>
+//         </div>
+//       </div>
+//     ))}
+//   </div>
+// </div>
 
 
  
@@ -313,12 +313,175 @@ const  OpenAuditList=()=> {
          
                 
                  
-            </div>
+//             </div>
             
+//           </div>
+//         </div>
+//       </div>
+<div className="flex flex-col h-screen">
+  {/* Navbar */}
+  <Navbar isSidebarOpen={isSidebarOpen} setSidebarOpen={setSidebarOpen} />
+
+  <div className="flex flex-1 bg-gray-50">
+    {/* Sidebar */}
+    <Sidebar isSidebarOpen={isSidebarOpen} />
+
+    {/* Main Content */}
+    <div className="flex flex-col flex-1 p-4 md:p-6">
+      {/* Page Header */}
+      <header className="flex flex-col p-4 mb-4 bg-white border rounded-lg shadow-sm sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-1">
+          <h1 className="text-lg font-semibold text-gray-900 sm:text-xl">
+            Open Audit List
+          </h1>
+          <nav className="flex flex-wrap items-center text-xs text-gray-500 sm:text-sm">
+            <NavLink
+              to="/dashboard"
+              className="flex items-center hover:text-cyan-600"
+            >
+              <FaTachometerAlt className="mr-1" /> Home
+            </NavLink>
+            <span className="mx-2">&gt;</span>
+            <NavLink
+              to="/banners/view"
+              className="hover:text-cyan-600"
+            >
+              Start Audit
+            </NavLink>
+            <span className="mx-2">&gt;</span>
+            <span className="font-medium text-gray-700">
+              Open Audit List
+            </span>
+          </nav>
+        </div>
+      </header>
+
+      {/* Items Comparison Modal */}
+      {comparison && (
+        <ItemsCompare
+          audit={items}
+          onClose={() => {
+            setComparison(false);
+            fetchData();
+          }}
+          sidebarOpen={isSidebarOpen}
+        />
+      )}
+
+      {/* Table / Card Section */}
+      <div className="bg-white border-t-4 rounded-lg shadow-sm border-cyan-500">
+        <div className="p-4">
+          {/* Desktop Table */}
+          <div className="hidden overflow-x-auto md:block">
+            <table className="min-w-full border border-gray-200 rounded-lg">
+              <thead className="bg-gray-100">
+                <tr>
+                  <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-600 uppercase">
+                    Audit ID
+                  </th>
+                  <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-600 uppercase">
+                    Total Items
+                  </th>
+                  <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-600 uppercase">
+                    Actions
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200">
+                {audits.map((audit) => (
+                  <tr
+                    key={audit.auditId}
+                    className="transition hover:bg-gray-50"
+                  >
+                    <td className="px-6 py-4 font-mono text-sm text-gray-800">
+                      {audit.auditId}
+                    </td>
+                    <td className="px-6 py-4 text-sm text-gray-600">
+                      {audit.finalUnit?.length || 0} items
+                    </td>
+                    <td className="px-6 py-4 text-sm">
+                      <div className="flex space-x-4">
+                        <button
+                          className="text-indigo-600 hover:underline"
+                          onClick={() => {
+                            setItems(audit);
+                            setComparison(true);
+                          }}
+                        >
+                          View
+                        </button>
+                        <button
+                          className="text-green-600 hover:underline"
+                          onClick={() => handleAuditEnd(audit.auditId)}
+                        >
+                          End
+                        </button>
+                        <button
+                          className="text-red-600 hover:underline"
+                          onClick={() => handleDeleteAudit(audit.auditId)}
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Mobile Cards */}
+          <div className="space-y-4 md:hidden ">
+            {audits.map((audit) => (
+              <div
+                key={audit.auditId}
+                className="p-4 bg-white border border-gray-200 rounded-lg shadow-sm"
+              >
+                <div className="mb-2 text-xs font-medium text-gray-500">
+                  Audit ID
+                </div>
+                <div className="mb-3 font-mono text-sm font-semibold text-gray-800 break-all">
+                  {audit.auditId}
+                </div>
+                <div className="mb-4 text-sm text-gray-600">
+                  Total Items:{" "}
+                  <span className="font-medium">
+                    {audit.finalUnit?.length || 0}
+                  </span>
+                </div>
+                <div className="flex space-x-3">
+                  <button
+                    className="px-3 py-1 text-sm text-white transition bg-indigo-500 rounded-md hover:bg-indigo-600"
+                    onClick={() => {
+                      setItems(audit);
+                      setComparison(true);
+                    }}
+                  >
+                    View
+                  </button>
+                  <button
+                    className="px-3 py-1 text-sm text-white transition bg-green-500 rounded-md hover:bg-green-600"
+                    onClick={() => handleAuditEnd(audit.auditId)}
+                  >
+                    End
+                  </button>
+                  <button
+                    className="px-3 py-1 text-sm text-white transition bg-red-500 rounded-md hover:bg-red-600"
+                    onClick={() => handleDeleteAudit(audit.auditId)}
+                  >
+                    Delete
+                  </button>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </div>
-  )
+    </div>
+  </div>
+</div>
+  
+)
 }
 
 export default OpenAuditList

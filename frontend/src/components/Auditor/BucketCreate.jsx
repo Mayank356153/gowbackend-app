@@ -23,7 +23,8 @@ const  BucketCreate=()=> {
     const[scanning,setScanning]=useState(false)
     const[items,setItems]=useState([])
     const[selecteditemname,setSelecteditemName]=useState("")
-
+    const[totalItems,setTotalItems]=useState(0) 
+    const[totalQuantity,setTotalQuantity]=useState(0)
     const[selectedItem,setSelectedItem]=useState([])
      useEffect(()=>{
         if(window.innerWidth < 768){
@@ -188,7 +189,11 @@ const  BucketCreate=()=> {
              },[selectedItem])
     
 
-     
+             useEffect(() => {
+               setTotalItems(selectedItem.length);
+               setTotalQuantity(selectedItem.reduce((sum, item) => sum + item.quantity, 0));
+             }, [selectedItem]);
+
    const filteredItems = result
          ? items.filter((item) => {
              const q = result.toLowerCase();
@@ -199,23 +204,13 @@ const  BucketCreate=()=> {
              );
            })
          : [];
-         useEffect(()=>{
-           const filteredItems = result
-           ? items.filter((item) => {
-               const q = result.toLowerCase();
-               return (
-                 item.itemName?.toLowerCase().includes(q) ||
-                 item.itemCode?.toLowerCase().includes(q) ||
-                 (item.barcode && item.barcode.toLowerCase().includes(q))
-               );
-             })
-           : [];
-         },[result])
-    
- const hasRunRef = useRef(false);
+  let allow;
+  useEffect(()=>{
+    allow=result==""?false:true;
+  },[result])
 
-useEffect(() => {
-  if (!result || hasRunRef.current) return;
+  useEffect(() => {
+  if (!result || result.trim() === "" || !allow) return;
 
   const itemExist = items.find(
     item =>
@@ -230,8 +225,12 @@ useEffect(() => {
     const existingIndex = prev.findIndex(i => i.item_id === itemExist._id);
 
     if (existingIndex !== -1) {
+      // safely update immutably
       const updated = [...prev];
-      updated[existingIndex].quantity += 1;
+      updated[existingIndex] = {
+        ...updated[existingIndex],
+        quantity: updated[existingIndex].quantity + 1,
+      };
       return updated;
     } else {
       return [
@@ -247,24 +246,10 @@ useEffect(() => {
 
   setSelecteditemName("");
   setResult("");
-
-  console.log(itemExist);
-
-  hasRunRef.current = true;
-
-  // Reset the flag for next time
-  return () => {
-    hasRunRef.current = false;
-  };
 }, [result]);
 
 
-
-   
-         
-         
  const handleChange=(e,index)=>{
-  
   const {value}=e.target
   setSelectedItem((prevItems) => {
     const updatedItems = [...prevItems];
@@ -276,19 +261,9 @@ useEffect(() => {
   });
  }
 
-
-
-
 const handleRemoveUser = (ind) => {
   setSelectedItem(selectedItem.filter((item,index)=> index != ind))
 };
-
-
-
-
-
-
-
 
 const handleSubmit = async (e) => {
   e.preventDefault();
@@ -303,11 +278,12 @@ const handleSubmit = async (e) => {
       }
     });
     console.log("Bucket Created successfully:", response.data);
-    id?alert("Bucket Updated successfully"):alert("Bucket Created successfully");;
     setFormData({
-     auditorId:"",
-     items:[]
+      auditorId:"",
+      items:[]
     });
+    setSelectedItem([]);
+    id?alert("Bucket Updated successfully"):alert("Bucket Created successfully");;
     return;
     }
 
@@ -320,12 +296,12 @@ const handleSubmit = async (e) => {
       }
     });
     console.log("Bucket updated successfully:", response.data);
-    id?alert("Bucket Updated successfully"):alert("Bucket Created successfully");;
     setFormData({
-     auditorId:"",
-     items:[]
+      auditorId:"",
+      items:[]
     });
     setSelectedItem([]);
+    id?alert("Bucket Updated successfully"):alert("Bucket Created successfully");;
    } catch (error) {
     console.log("Error creating Bucket:", error);
    }
@@ -353,13 +329,13 @@ const handleSubmit = async (e) => {
             </div>
 
             <nav className="flex flex-wrap items-center justify-center mt-2 text-xs text-gray-500 sm:justify-start sm:text-sm sm:mt-0">
-   <NavLink to="/dashboard" className="flex items-center text-gray-700 no-underline hover:text-cyan-600">
+   <NavLink to="/auditor-dashboard" className="flex items-center text-gray-700 no-underline hover:text-cyan-600">
                             <FaTachometerAlt className="mr-2 text-gray-500 hover:text-cyan-600" /> Home
                           </NavLink>     
-                          <NavLink to="/bucket-create" className="flex items-center text-gray-700 no-underline hover:text-cyan-600">
+                          <NavLink to="/bucket-list" className="flex items-center text-gray-700 no-underline hover:text-cyan-600">
                            &gt; Bucket List
                           </NavLink>    
-                          <NavLink to="/bucket-list" className="text-gray-700 no-underline hover:text-cyan-600">
+                          <NavLink to="/bucket-create" className="text-gray-700 no-underline hover:text-cyan-600">
                            &gt; Add Bucket
                           </NavLink>
               
@@ -436,51 +412,27 @@ const handleSubmit = async (e) => {
 
                   
                  </div>
-  
-    
-
-                     {/* <div className='w-full mt-4 overflow-x-auto min-h-16'>
-  <table className='min-w-full border-2 divide-y divide-gray-200 min-h-48'>
-    <thead className='bg-gray-200'>
-      <tr>
-        <th className='px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase'>Username</th>
-        <th className='px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase'>Password</th>
-        <th className='px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase'>Employee Code</th>
-        <th className='px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase'>Actions</th>
-      </tr>
-    </thead>
-    <tbody className='bg-white divide-y divide-gray-200'>
-      {formData.users.map((user, index) => (
-        <tr key={index}>
-          <td className='px-6 py-4 text-sm text-gray-500 whitespace-nowrap'>{user.username}</td>
-          <td className='px-6 py-4 text-sm text-gray-500 whitespace-nowrap'>{user.password}</td>
-          <td className='px-6 py-4 text-sm text-gray-500 whitespace-nowrap'>{user.employeeCode}</td>
-          <td className='px-6 py-4 text-sm text-gray-500 whitespace-nowrap'>
-            <button 
-              onClick={() => handleRemoveUser(index)}
-              className='text-red-600 hover:text-red-900'
-            >
-              Remove
-            </button>
-          </td>
-        </tr>
-      ))}
-    </tbody>
-  </table>
-</div> */}
-
+          
 
  <div className='flex flex-col items-center justify-around w-full gap-2 mx-auto mt-4 sm:flex-row'>
                                                       <Button className="w-full text-white bg-green-500 rounded cursor-pointer hover:bg-green-600" type='submit' text={id?"Update":"Create"} onClick={handleSubmit} /> {/* Save button */}
                                                       <Button className="w-full text-white bg-orange-500 rounded cursor-pointer hover:bg-orange-600" text="Reset" />  {/* Close button  */}
                        </div> 
 
-                       
+                       <div className="flex justify-between w-full p-4 mt-2 bg-gray-100 rounded-lg shadow-md">
+  <span className="text-lg font-semibold text-gray-700">
+    Total Items: {totalItems}
+  </span>
+  <span className="text-lg font-semibold text-gray-700">
+    Total Quantity: {totalQuantity}
+  </span>
+</div>
+
                      <div className='w-full mt-4 overflow-x-auto min-h-16'>
   <table className='min-w-full border-2 divide-y divide-gray-200 min-h-48'>
     <thead className='bg-gray-200'>
       <tr>
-        <th className='px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase'>Item Id</th>
+    
         <th className='px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase'>ItemName</th>
         <th className='px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase'>Quantity</th>
         <th className='px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase'>Actions</th>
@@ -489,7 +441,7 @@ const handleSubmit = async (e) => {
     <tbody className='bg-white divide-y divide-gray-200'>
       {selectedItem.map((user, index) => (
         <tr key={index}>
-          <td className='px-6 py-4 text-sm text-gray-500 whitespace-nowrap'>{user.item_id?._id || user.item_id}</td>
+
           <td className='px-6 py-4 text-sm text-gray-500 whitespace-nowrap'>{user.itemName || user.item_id?.itemName || "NA"}</td>
           <td className='px-6 py-4 text-sm text-gray-500 whitespace-nowrap'>
             

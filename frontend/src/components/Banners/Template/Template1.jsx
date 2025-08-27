@@ -13,7 +13,7 @@ const BannerTemplateOne = React.forwardRef(({ item }, ref) => (
   
       <div className="flex justify-center mt-2 mb-3">
         <img
-          src="http://localhost:5000/uploads/1746207961000.png"
+          src={`https://pos.inspiredgrow.in/vps/uploads/qr/items/${item.masterImage}`}
           alt={item.itemName}
           className="object-contain h-auto w-28"
           crossOrigin="anonymous"

@@ -55,7 +55,7 @@ const ReceivePayment = () => {
     setLoading(true);
     try {
       // Fetch invoice details
-      const invoicesResponse = await axios.get(`${link}/api/pos/invoices`, {
+      const invoicesResponse = await axios.get(`${link}/api/pos/club`, {
         headers: { Authorization: `Bearer ${token}` }
       });
 

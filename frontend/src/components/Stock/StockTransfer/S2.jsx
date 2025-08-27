@@ -13,9 +13,10 @@ import { App } from "@capacitor/app";
 import { useLocation,useNavigate } from 'react-router-dom'
 import Swal from "sweetalert2"
 import { Keyboard } from '@capacitor/keyboard';
+import { all } from 'axios';
 export default function S2({
      searchQuery,handleAddItemsBatch,
-  setSearchQuery,
+  setSearchQuery,secondItems,secondWarehouseName,
   allItems,
   handleAddItem,
   formData,
@@ -26,6 +27,7 @@ export default function S2({
   handleItemInfo,scanning,startScanner,stopScanner,
   matchedItems,videoRef,setMatchedItems,codeReaderRef,addItem,setScanning,st
 }) {
+  console.log(selectedItems)
   const confirmBack = async () => {
       const result = await Swal.fire({
         title: "Go Back?",
@@ -72,12 +74,7 @@ export default function S2({
     const [selectedItem, setSelectedItem] = useState(null);
     const [showInfoModal, setShowInfoModal] = useState(false);
     
-    const handleViewInfo = (item) => {
-        console.log(item)
-        
-      setSelectedItem(allItems.find(it=> it._id===item.itemId));
-      setShowInfoModal(true);
-    };
+  
         const[itemScan,setItemScan]=useState(false)
 const handleQuanity = (id, type) => {
   // Handle item removal
@@ -175,6 +172,9 @@ useEffect(() => {
   
 <div className="relative min-h-screen p-2 pb-24 bg-white">
   {/* Top Bar */}
+<h4 className="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-semibold text-purple-700 bg-purple-50 border border-purple-200 rounded-full shadow-sm">
+  Transferring Warehouse: <span className="text-gray-800">{secondWarehouseName || "N/A"}</span>
+</h4>
   <div className="flex items-center pt-4 space-x-3">
     <FaArrowLeft className="text-xl text-gray-600" onClick={() => setActiveTab("s1")} />
     
@@ -265,7 +265,13 @@ useEffect(() => {
   {/* Selected Items */}
   <div className="mt-4 space-y-4">
     {selectedItems?.map((item, index) => {
-      const it = allItems.find(i => i._id === item.item);
+      console.log(allItems)
+      console.log("Selected Item ID:", item.item._id);
+      const itemId = item.item && typeof item.item === "object" ? item.item._id : item.item;
+const it = allItems.find(i => i._id === itemId);
+
+      console.log("Selected Item:", it);
+      console.log("Item Quantity:", item);
       return (
          <div
                     key={it._id}
@@ -274,7 +280,7 @@ useEffect(() => {
                     {/* Floating Action Menu (Contextual) */}
                     <div className="absolute flex gap-1 top-3 ">
                       <button 
-                        onClick={() => handleQuanity(it._id, "remove")}
+                        onClick={() => handleQuanity(it?._id, "remove")}
                         className="p-1.5  text-gray-400 hover:text-red-500 rounded-full transition-colors"
                       >
                         <FaTrashAlt className="w-3.5 h-3.5" />
@@ -285,20 +291,20 @@ useEffect(() => {
                       {/* Item Visual with Gradient */}
                       <div className="relative flex-shrink-0">
                         <div className="flex items-center justify-center w-12 h-12 text-lg font-bold text-white shadow-xs bg-gradient-to-br from-purple-500 to-indigo-500 rounded-xl">
-                          {it.itemName?.charAt(0)?.toUpperCase() || "?"}
+                          {it?.itemName?.charAt(0)?.toUpperCase() || "?"}
                         </div>
                       </div>
         
                       {/* Item Details */}
                       <div className="flex-1 min-w-0">
                         <div className="flex items-baseline justify-between">
-                          <h3 className="text-sm font-semibold text-gray-900 line-clamp-1">{it.itemName}</h3>
+                          <h3 className="text-sm font-semibold text-gray-900 line-clamp-1">{it?.itemName}</h3>
                           <span className="ml-1 text-sm font-bold text-purple-600 whitespace-nowrap">
-                            ₹{(it.salesPrice * item.quantity).toFixed(2)}
+                            ₹{(it?.salesPrice||0 * item?.quantity).toFixed(2)}
                           </span>
                         </div>
                         <p className="mt-0.5 text-xs text-gray-500 line-clamp-1">
-                          {it.description || "No description available"}
+                          {it?.description || "No description available"}
                         </p>
         
                         {/* Interactive Quantity Controls */}
@@ -308,14 +314,14 @@ useEffect(() => {
                             it.currentStock > 0 ? "bg-yellow-50 text-yellow-700" :
                             "bg-red-50 text-red-700"
                           }`}>
-                            {it.currentStock || 0} available
+                            {it?.currentStock || 0} available
                           </span>
         
                           <div className="flex items-center gap-2 bg-gray-100/70 rounded-full p-0.5">
                             <button type="button"
                               onClick={() => handleQuanity(it._id, "minus")}
                               className="p-1.5 text-gray-600 hover:text-purple-600 rounded-full active:bg-gray-200 transition-colors"
-                              disabled={item.quantity <= 0}
+                              disabled={item?.quantity <= 0}
                             >
                               <FaMinus className="w-3.5 h-3.5" />
                             </button>
@@ -336,14 +342,14 @@ useEffect(() => {
                             <button type="button"
                               onClick={() => handleQuanity(it._id, "plus")}
                               className="p-1.5 text-gray-600 hover:text-purple-600 rounded-full active:bg-gray-200 transition-colors"
-                              disabled={it.currentStock <= item.quantity}
+                              disabled={it?.currentStock <= item?.quantity}
                             >
                               <FaPlus className="w-3.5 h-3.5" />
                             </button>
                           </div>
                           <div className="flex justify-end mt-3">
   <button type="button"
-    onClick={() => handleQuanity(it._id, "remove")}
+    onClick={() => handleQuanity(it?._id, "remove")}
     className="inline-flex items-center gap-1 px-3 py-1 text-sm font-medium text-red-600 rounded-full bg-red-50 hover:bg-red-100"
   >
     <FaTrashAlt className="w-4 h-4" />
@@ -355,23 +361,38 @@ useEffect(() => {
                     </div>
         
                     {/* Price Breakdown (Subtle) */}
-                    <div className="flex justify-end pt-2 mt-2 text-xs text-gray-500 border-t border-gray-100/70">
-                      <span>₹{it.salesPrice} × {item.quantity}</span>
-                    </div>
+                   <div className="flex items-center justify-between pt-2 mt-2 text-xs text-gray-600 border-t border-gray-200">
+  {/* Quantity in transferring warehouse */}
+  <span className="font-medium">
+    Transferring Warehouse: {secondItems[it?._id] || 0} pcs
+  </span>
+
+  {/* Price × Quantity */}
+  <span className="text-gray-500">
+    ₹{it?.salesPrice} × {item?.quantity}
+  </span>
+</div>
+
                   </div> 
       );
     })}
   </div>
 
   {/* Fixed Save Button */}
-  <div className="fixed inset-x-0 px-4 bottom-4">
-    <button type="button"
-      onClick={() => setActiveTab("s3")}
-      className="w-full py-3 text-sm font-semibold text-white transition bg-purple-600 rounded-full shadow-lg hover:bg-purple-700"
-    >
-      Save Items
-    </button>
-  </div>
+ <div className="fixed inset-x-0 px-4 bottom-4">
+  <button
+    type="button"
+    onClick={() => setActiveTab("s3")}
+    className="flex items-center justify-center w-full gap-2 py-3 text-base font-semibold text-white transition bg-purple-600 rounded-full shadow-lg active:scale-95 hover:bg-purple-700"
+  >
+    <span>Save Items</span>
+    <span className="bg-white text-purple-600 font-bold text-sm px-2 py-0.5 rounded-full">
+      {selectedItems.reduce((sum, item) => sum + (item.quantity || 0), 0)}
+    </span>
+  </button>
+</div>
+
+
 </div>
 
   )

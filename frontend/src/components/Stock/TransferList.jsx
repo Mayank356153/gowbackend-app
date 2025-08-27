@@ -9,7 +9,8 @@ import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 import LoadingScreen from '../../Loading.jsx';
 import { useNavigate } from 'react-router-dom';
-
+import TransferDetail from './View.jsx';
+import { set } from 'date-fns';
 const StockTransferList = () => {
     const link="https://pos.inspiredgrow.in/vps"
   const Navigate = useNavigate();
@@ -21,7 +22,8 @@ const StockTransferList = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(false);
   const [dropdownIndex, setDropdownIndex] = useState(null);
-
+   const [transferDetail, setTransferDetail] = useState(null);
+   const [show,setShow]=useState(false);
   useEffect(() => {
     if (window.innerWidth < 768) {
       setSidebarOpen(false);
@@ -39,7 +41,8 @@ const StockTransferList = () => {
         },
       });
       console.log(response.data);
-      setTransfer(response.data.data);
+      const sortData=response.data.data.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+      setTransfer(sortData);
     } catch (err) {
       console.log(err.message);
     } finally {
@@ -156,6 +159,9 @@ const StockTransferList = () => {
         <div className="w-auto">
           <Sidebar isSidebarOpen={isSidebarOpen} />
         </div>
+        {
+          show && <TransferDetail onClose={() => setShow(false)} data={transferDetail} />
+        }
         {/* Content */}
         <div className={`overflow-x-auto flex flex-col p-2 md:p-2 min-h-screen w-full`}>
           <header className="flex items-center justify-between p-4 mb-2 bg-gray-100 rounded-md shadow sm:flex-row">
@@ -242,9 +248,19 @@ const StockTransferList = () => {
                             >
                               <button
                                 className="flex items-center w-full px-3 py-2 text-gray-700 hover:bg-gray-100"
-                                onClick={() => Navigate(`/stock-transfer?id=${transfer._id}`)}
+                                onClick={() => Navigate(`/stock-main?id=${transfer._id}`)}
                               >
                                 <FaEdit className="mr-2" /> Edit
+                              </button>
+                               <button
+                                className="flex items-center w-full px-3 py-2 text-gray-700 hover:bg-gray-100"
+                                onClick={() =>{
+                                  setDropdownIndex(null);
+                                  setTransferDetail(transfer);
+                                  setShow(true);
+                                }}
+                              >
+                                <FaEdit className="mr-2" /> View
                               </button>
                               <button
                                 className="flex items-center w-full px-3 py-2 text-red-600 hover:bg-gray-100"

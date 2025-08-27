@@ -1,4 +1,4 @@
-import React, { useState, useEffect,useCallback } from "react";
+import React, { useState, useEffect,useCallback,useContext } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import axios from "axios";
 import Navbar from "../../Navbar.jsx";
@@ -14,6 +14,7 @@ import { useRef } from "react";
 import { Camera } from "@capacitor/camera";
 import playSound from "../../../utility/sound.js";
 import { set } from "date-fns";
+import { POSContext } from "../../../context/POSContext.js";
 /* Change this if your base URL differs */
 const API = "";
 
@@ -46,8 +47,12 @@ const [scanning, setScanning] = useState(false);
 const[matchedItems,setMatchedItems]=useState([])
     const [activeTab,setActiveTab]=useState("s1")
   const navigate = useNavigate();
+  const[isSubmitting,setIsSubmitting]=useState(false)
   const [searchParams] = useSearchParams();
-  const id = searchParams.get("id"); // editing?
+  const[id,setId]=useState(null)
+  useEffect(()=>{
+     setId(searchParams.get("id")); // editing?
+  },[])
 
   const [isSidebarOpen, setSidebarOpen] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -56,14 +61,14 @@ const[matchedItems,setMatchedItems]=useState([])
   useEffect(() => {
     if (window.innerWidth < 768) setSidebarOpen(false);
   }, []);
-
+  const[secondWarehouseName,setSecondWarehouseName]=useState("")
   const [warehouses, setWarehouses] = useState([]);
   const [allItems, setAllItems] = useState([]);
   const [filteredItemsByWarehouse, setFilteredItemsByWarehouse] = useState([]);
 
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedItems, setSelectedItems] = useState([]);
-
+  const[secondItems,setSecondItems]=useState({});
   const [formData, setFormData] = useState({
     transferDate: new Date().toLocaleDateString("en-CA"), // YYYY-MM-DD for IST
     fromWarehouse: "", // ⬅️ will default to restricted if not editing
@@ -71,7 +76,7 @@ const[matchedItems,setMatchedItems]=useState([])
     details: "",
     note: "",
   });
-
+   const {posData}=useContext(POSContext)
   useEffect(()=>{ 
      setFormData((prev) => ({
       ...prev,
@@ -82,16 +87,16 @@ const[matchedItems,setMatchedItems]=useState([])
   // ─── FETCH WAREHOUSES ───────────────────────────────────────────────────
   const fetchWarehouses = async () => {
     try {
-      setLoading(true);
-      const token = localStorage.getItem("token");
-      const { data } = await axios.get(`${link}/api/warehouses?scope=mine`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      console.log("da")
-      console.log(data)
-      const list = data.data || [];
+      // setLoading(true);
+      // const token = localStorage.getItem("token");
+      // const { data } = await axios.get(`${link}/api/warehouses?scope=mine`, {
+      //   headers: { Authorization: `Bearer ${token}` },
+      // });
+      // console.log("da")
+      // console.log(data)
+      const list = posData.warehouses || [];  
 
-      setWarehouses(list);
+      setWarehouses(posData.warehouses || []);
 
       // ⬅️ If we are NOT editing (id is falsey) and there are warehouses,
       // pick the restricted warehouse as default fromWarehouse:
@@ -100,7 +105,7 @@ const[matchedItems,setMatchedItems]=useState([])
         const defaultFrom = restricted
           ? restricted._id
           : list.find((w) => w.status === "Active")?._id || "";
-        setFormData((prev) => ({ ...prev, fromWarehouse: localStorage.getItem("deafultWarehouse") || defaultFrom }));
+        // setFormData((prev) => ({ ...prev, fromWarehouse: localStorage.getItem("deafultWarehouse") || defaultFrom }));
       }
     } catch (err) {
       console.error("warehouses:", err.message);
@@ -149,6 +154,29 @@ const[matchedItems,setMatchedItems]=useState([])
     }
   };
 
+    const fetchSecondWarehouseItems = async (warehouseId) => {
+      try {
+        
+        const { data } = await axios.get(`${link}/api/items`, {
+          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+          params: { warehouse: warehouseId, inStock: true },
+        });
+        const items = data.data || [];
+        const mapItems={}
+        items.forEach((item) => {
+          mapItems[item._id] = item.currentStock || 0; // Store current stock by item ID
+        });
+        console.log("Second warehouse items:", mapItems);
+        setSecondItems(mapItems);
+      } catch (err) {
+        console.error("Second warehouse items:", err.message);
+      } 
+    };
+     useEffect(()=>{
+    if (formData.toWarehouse) {
+      fetchSecondWarehouseItems(formData.toWarehouse);
+    }
+  }, [formData.toWarehouse]);
   // ─── LOAD EXISTING TRANSFER FOR EDIT ─────────────────────────────────────
   const loadStockTransfer = async (transferId) => {
     try {
@@ -157,6 +185,7 @@ const[matchedItems,setMatchedItems]=useState([])
       const { data } = await axios.get(`${link}/api/stock-transfers/${transferId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
+      console.log("Loaded transfer data:", data);
       const tr = data.data;
       setFormData({
         transferDate: tr.transferDate?.split("T")[0] || "",
@@ -170,21 +199,41 @@ const[matchedItems,setMatchedItems]=useState([])
       if (tr.fromWarehouse?._id) {
         await fetchItems(tr.fromWarehouse._id);
       }
-
+      
       // Map the existing items in this transfer into selectedItems
-      const mapped = (tr.items || []).map((it) => {
-        const itemDoc = allItems.find(
-          (i) => i._id === (it.item?._id || it.item)
-        ) || {};
-        return {
-          itemId: it.item?._id || it.item,
-          itemName: itemDoc.displayName || it.itemName || "Unknown Item",
-          quantity: it.quantity || 1,
-          isVariant: itemDoc.isVariant || false,
-          variantName: itemDoc.variantName || "",
-        };
-      });
-      setSelectedItems(mapped);
+      const transformedItems = tr.items.map(it => {
+  // Defensive find: handle missing item matches
+  const idi=it.item._id;
+  console.log("Item ID:", idi);
+  const item = allItems.find(ai => ai._id === idi || ai.itemCode === it.item.itemCode);
+  console.log(allItems)
+         console.log("Transformed item:", it, item);
+  if (!item) {
+    // Return some fallback or skip item if not found
+    return null;
+  }
+
+  return {
+    currentStock: item.currentStock || 0,
+    quantity: it.quantity || 0,
+    discount:  0,
+    item: item._id,
+    itemCode: item.itemCode || "",
+    itemName: item.itemName || "NA",
+    mrp: item.mrp || 0,
+    openingStock: item.openingStock || 0,
+    salesPrice: item.salesPrice || 0,
+    stock: item.openingStock || 0,
+    tax: item.tax?._id || null,
+    taxRate: item.tax?.taxPercentage || 0,
+    unit: item.unit?._id || null,
+    subtotal: (it.quantity || 0) * (item.salesPrice || 0) - ( 0),
+  };
+}).filter(Boolean); // removes any nulls if items not found
+
+     console.log("Transformed items:", transformedItems);
+     setSelectedItems(transformedItems);
+         
     } catch (err) {
       console.error("load transfer:", err.message);
       alert("Error loading stock transfer");
@@ -209,11 +258,12 @@ const[matchedItems,setMatchedItems]=useState([])
   }, [formData.fromWarehouse]);
 
   // ─── EFFECT: If we are editing, load the existing transfer ──────────────
-  useEffect(() => {
-    if (id) {
-      loadStockTransfer(id);
-    }
-  }, [id, allItems]);
+ useEffect(() => {
+  if (id && allItems.length > 0 && selectedItems.length === 0) {
+    loadStockTransfer(id);
+  }
+}, [id, allItems, selectedItems]);
+
 
   // ─── FILTER allItems TO filteredItemsByWarehouse ───────────────────────
   useEffect(() => {
@@ -399,7 +449,7 @@ const startScanner = async () => {
     updated[existingIdx] = {
       ...existing,
       quantity: newQty,
-      subtotal: newQty * existing.salesPrice - (existing.discount || 0),
+      subtotal: newQty * existing.salesPrice - ( 0),
     };
 
     setSelectedItems(updated);
@@ -416,13 +466,13 @@ const startScanner = async () => {
       currentStock: it.currentStock != null ? it.currentStock : (it.openingStock || 0),
       salesPrice: it.salesPrice || 0,
       quantity: quantityToAdd,
-      discount: it.discount || 0,
+      discount:  0,
       tax: it.tax?._id || null,
       taxRate: it.tax?.taxPercentage || 0,
       unit: it.unit || null,
       mrp: it.mrp || 0,
       expiryDate: it.expiryDate || null,
-      subtotal: quantityToAdd * (it.salesPrice || 0) - (it.discount || 0),
+      subtotal: quantityToAdd * (it.salesPrice || 0) -  0,
     };
 
     if (newItem.salesPrice <= 0) {
@@ -468,7 +518,7 @@ const handleAddItemsBatch = (itemsToAdd) => {
         updated[idx] = {
           ...existing,
           quantity: newQty,
-          subtotal: newQty * existing.salesPrice - (existing.discount || 0),
+          subtotal: newQty * existing.salesPrice - ( 0),
         };
         playSound("/sounds/item-exists.mp3");
       } else {
@@ -482,13 +532,13 @@ const handleAddItemsBatch = (itemsToAdd) => {
           currentStock: it.currentStock != null ? it.currentStock : (it.openingStock || 0),
           salesPrice: it.salesPrice || 0,
           quantity: quantityToAdd,
-          discount: it.discount || 0,
+          discount:  0,
           tax: it.tax?._id || null,
           taxRate: it.tax?.taxPercentage || 0,
           unit: it.unit || null,
           mrp: it.mrp || 0,
           expiryDate: it.expiryDate || null,
-          subtotal: quantityToAdd * (it.salesPrice || 0) - (it.discount || 0),
+          subtotal: quantityToAdd * (it.salesPrice || 0) - ( 0),
         };
 
         if (newItem.salesPrice > 0) {
@@ -563,6 +613,7 @@ const handleAddItemsBatch = (itemsToAdd) => {
 
     setLoading(true);
     try {
+      setIsSubmitting(true);
       const payload = {
         ...formData,
         items: selectedItems.map((it) => ({
@@ -594,6 +645,7 @@ const handleAddItemsBatch = (itemsToAdd) => {
       alert(err.response?.data?.message || "Submit failed.");
     } finally {
       setLoading(false);
+      setIsSubmitting(false);
     }
   };
 
@@ -617,9 +669,9 @@ const handleAddItemsBatch = (itemsToAdd) => {
         
           >
             {/* ─── Row 1: Date / From / To ───────────────────────────────── */}
-           {activeTab==="s1" && <S1 formData={formData} setActiveTab={setActiveTab} setFormData={setFormData} warehouses={warehouses}/>}
-           {activeTab==="s2" && <S2  searchQuery={searchQuery} handleAddItemsBatch={handleAddItemsBatch}
-  setSearchQuery={setSearchQuery}
+           {activeTab==="s1" && <S1 setSecondWarehouseName={setSecondWarehouseName} formData={formData} setActiveTab={setActiveTab} setFormData={setFormData} warehouses={warehouses}/>}
+           {activeTab==="s2" && <S2 secondWarehouseName={secondWarehouseName} searchQuery={searchQuery} handleAddItemsBatch={handleAddItemsBatch}
+  setSearchQuery={setSearchQuery} secondItems={secondItems}
   allItems={allItems} scanning={scanning} stopScanner={stopScanner} startScanner={startScanner}
   handleAddItem={handleAddItem}  matchedItems={matchedItems}
   formData={formData} videoRef={videoRef} codeReaderRef={codeReaderRef} setMatchedItems={setMatchedItems} setScanning={setScanning}
@@ -628,7 +680,7 @@ const handleAddItemsBatch = (itemsToAdd) => {
   handleItemChange={handleItemChange} addItem={handleAddItem}
   handleRemoveItem={handleRemoveItem}/>}
 
-  {activeTab==="s3" && <S3  formData={formData}
+  {activeTab==="s3" && <S3  formData={formData} isSubmitting={isSubmitting} setIsSubmitting={setIsSubmitting}
   setActiveTab={setActiveTab}
   setFormData={setFormData}
   selectedItems={selectedItems}

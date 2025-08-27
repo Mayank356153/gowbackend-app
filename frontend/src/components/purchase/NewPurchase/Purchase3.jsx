@@ -6,7 +6,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { App } from '@capacitor/app';
 import ItemEditPage from './ItemEditPage'; // Assuming this component exists
 import { Keyboard } from '@capacitor/keyboard';
-export default function Purchase3({
+export default function Purchase3({loading,
     setActiveTab, allItems, options, formData, handleItemFieldChange, setFormData, handleRemoveItem,
     handleChange, setOtherCharges, discount, setDiscount, setDiscountType, discountType, subtotal,
     grandtotal, handlePayment, handlePaymentSelect, id, items,isCash,isBank,cashAccounts
@@ -219,7 +219,7 @@ const handleQuantity = (e, id, type) => {
                     <button type="button" onClick={() => navigate("/purchase-list")} className="flex-1 px-4 py-3 text-sm font-medium text-gray-700 bg-gray-100 rounded-xl hover:bg-gray-200">
                         Cancel
                     </button>
-                    <button type="submit" className="flex-1 px-4 py-3 text-sm font-medium text-white bg-green-600 rounded-xl hover:bg-green-700">
+                    <button type="submit" className="flex-1 px-4 py-3 text-sm font-medium text-white bg-green-600 rounded-xl hover:bg-green-700" disabled={loading}>
                         {id ? "Update Purchase" : "Submit Purchase"}
                     </button>
                 </div>

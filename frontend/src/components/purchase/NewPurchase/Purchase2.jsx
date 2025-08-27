@@ -181,12 +181,12 @@ useEffect(() => {
         <input
           type="text"
           value={result}
-           onFocus={(e) => {
-    e.target.focus(); // ensure input is focused
-    setTimeout(() => {
-      Keyboard.show(); // explicitly show the keyboard
-    }, 100); // short delay helps trigger keyboard on some Androids
-  }}
+  //          onFocus={(e) => {
+  //   e.target.focus(); // ensure input is focused
+  //   setTimeout(() => {
+  //     Keyboard.show(); // explicitly show the keyboard
+  //   }, 100); // short delay helps trigger keyboard on some Androids
+  // }}
            onChange={(e) => {
         const val = e.target.value;
         setResult(val);

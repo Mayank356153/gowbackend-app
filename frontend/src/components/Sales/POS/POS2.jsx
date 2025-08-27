@@ -8,7 +8,7 @@ import {
 } from "react-icons/fa";
 import Swal from "sweetalert2"
 import POSScanner from "./POSScanner";
-import { useState,useRef,useEffect } from "react";
+import { useState,useRef,useEffect, use } from "react";
 import { App } from "@capacitor/app";
 import { useLocation,useNavigate } from 'react-router-dom'
 import MinimalOfferView from "./OfferView";
@@ -25,6 +25,7 @@ export default function POS2({
   setActiveTab,
   addItemsInBatch,
 }) {
+  
   const confirmBack = async () => {
     const result = await Swal.fire({
       title: "Go Back?",
@@ -42,6 +43,7 @@ export default function POS2({
       setActiveTab("pos1");
     } 
   };
+  
   const [offerView, setOfferView] = useState(false);
   const [offerItem, setOfferItem] = useState(null);
    const location=useLocation()
@@ -99,13 +101,13 @@ confirmBack();
       return {
         ...item,
         quantity: newQty,
-        subtotal: newQty * item.salesPrice - (item.discount || 0),
+        subtotal: newQty * item.salesPrice - (0),
       };
     }
 
     return {
       ...item,
-      subtotal: item.quantity * item.salesPrice - (item.discount || 0),
+      subtotal: item.quantity * item.salesPrice - ( 0),
     };
   });
 
@@ -132,55 +134,60 @@ function applyOfferLogic(itemList) {
   });
 }
 
+
+
+
 const lastScanRef = useRef({ code: null, time: 0 });
-const debounceTimerRef = useRef(null);
-const SCAN_GAP = 400; // Time between identical scans
-const DEBOUNCE_DELAY = 500; // Time to wait after user stops typing
+// const debounceTimerRef = useRef(null);
+// const SCAN_GAP = 3000; // Time between identical scans
+// const DEBOUNCE_DELAY = 3000; // Time to wait after user stops typing
 
-const canScan = (code) => {
-    const now = Date.now();
-    if (
-        lastScanRef.current.code === code &&
-        now - lastScanRef.current.time < SCAN_GAP
-    ) {
-        return false; // recently scanned the same code
-    }
-    lastScanRef.current = { code, time: now };
-    return true;
-};
+// const canScan = (code) => {
+//     const now = Date.now();
+//     if (
+//         lastScanRef.current.code === code &&
+//         now - lastScanRef.current.time < SCAN_GAP
+//     ) {
+//         return false; // recently scanned the same code
+//     }
+//     lastScanRef.current = { code, time: now };
+//     return true;
+// };
 
-// This effect handles the auto-add logic after the user stops typing
-useEffect(() => {
-    // 1. Clear the previous timer on every keystroke
-    if (debounceTimerRef.current) {
-        clearTimeout(debounceTimerRef.current);
-    }
+// useEffect(() => {
+//     if (!searchItemCode) return;
 
-    // 2. If the input is not empty, set a new timer
-    if (searchItemCode) {
-        debounceTimerRef.current = setTimeout(() => {
-            // 3. This code runs after the user has stopped typing for DEBOUNCE_DELAY ms
-            const exactMatches = allItems.filter((i) =>
-                i.barcodes?.some((barcode) => String(barcode) === String(searchItemCode))
-            );
+//     // Clear previous debounce timer
+//     if (debounceTimerRef.current) {
+//         clearTimeout(debounceTimerRef.current);
+//     }
 
-            // 4. If we found exactly one item that is an exact match for the typed code...
-            if (exactMatches.length === 1 && canScan(searchItemCode)) {
-                // ...add it and clear the input.
-                addItem(exactMatches[0]);
-                setSearchItemCode("");
-            }
-        }, DEBOUNCE_DELAY);
-    }
+//     // Start new debounce timer
+//     debounceTimerRef.current = setTimeout(() => {
+//         const exactMatches = allItems.filter((i) =>
+//             i.barcodes?.some((barcode) => String(barcode) === String(searchItemCode))
+//         );
 
-    // Cleanup function to clear the timer if the component unmounts
-    return () => {
-        if (debounceTimerRef.current) {
-            clearTimeout(debounceTimerRef.current);
-        }
-    };
-}, [searchItemCode, allItems, addItem]); // Dependencies for the effect
+//         if (exactMatches.length === 1 && canScan(searchItemCode)) {
+//             addItem(exactMatches[0]);
+//             setSearchItemCode("");
+//         }
+//     }, DEBOUNCE_DELAY);
 
+//     // Cleanup on unmount or re-run
+//     return () => {
+//         if (debounceTimerRef.current) {
+//             clearTimeout(debounceTimerRef.current);
+//         }
+//     };
+// }, [searchItemCode]); // ONLY depends on typing changes
+
+
+   const [total,setTotal]=useState(0)
+  useEffect(() => {
+    const totalAmount = items.reduce((sum, item) => sum + (item.subtotal || 0), 0);
+    setTotal(totalAmount);
+  }, [items]);
 
   if(itemScan) return <POSScanner addItemsInBatch={addItemsInBatch}  allItems={allItems} items={items} handleQuanity={handleQuanity}  addItem={addItem} setItemScan={setItemScan}/>
   return (
@@ -220,14 +227,26 @@ useEffect(() => {
         const val = e.target.value;
         setSearchItemCode(val);
       }}
+
+
+      
       onKeyDown={(e) => {
         if (e.key === "Enter") {
-          e.preventDefault();
-          if (filteredItems[0]) {
-            addItem(filteredItems[0]);
-            setSearchItemCode("");
-          }
-        }
+      e.preventDefault();
+      const trimmed = searchItemCode.trim();
+      console.log("Bargun input (Enter):", trimmed); // Debug log
+
+      
+      const hit = allItems.find(i => i.barcodes?.includes(trimmed));
+      if (hit) {
+        console.log("Matched item:", hit.itemName, hit._id); // Debug log
+        addItem(hit);
+        lastScanRef.current = { code: trimmed, time: Date.now() };
+        setSearchItemCode("");
+      } else {
+        console.log("No item found for barcode:", trimmed); // Debug log
+      }
+    }
       }}    
           className="w-full py-3.5 pl-12 pr-11 text-sm bg-white rounded-xl shadow-xs border border-gray-200/80 focus:outline-none focus:ring-2 focus:ring-purple-300/50 focus:border-transparent placeholder:text-gray-400"
           placeholder="Search or scan items..."
@@ -355,6 +374,9 @@ useEffect(() => {
   }}
   type="text"
   value={item.quantity}
+
+
+  
   onChange={(e) => {
     const val = (Number(e.target.value));
     handleQuanity(it._id, val);
@@ -443,12 +465,18 @@ useEffect(() => {
           : "bg-gradient-to-r from-purple-600 to-indigo-600 hover:shadow-md active:scale-[0.98]"
       }`}
     >
+      
       <div className="flex items-center justify-between">
-        <span>Proceed to Payment</span>
-        <span className="bg-white/20 px-2.5 py-1 rounded-lg text-xs">
-          {items.reduce((sum, item) => sum + (item.quantity || 0), 0)} items
-        </span>
-      </div>
+  <span>Proceed to Payment</span>
+  <div className="flex gap-2">
+    <span className="bg-white/20 px-2.5 py-1 rounded-lg text-xs">
+       {items.reduce((sum, item) => sum + (item.quantity || 0), 0)}  items
+    </span>
+    <span className="bg-white/20 px-2.5 py-1 rounded-lg text-xs">
+      ₹{total.toFixed(2)}
+    </span>
+  </div>
+</div>
     </button>
   </div>
 </div>

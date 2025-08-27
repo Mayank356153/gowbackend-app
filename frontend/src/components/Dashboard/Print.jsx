@@ -8,15 +8,101 @@ import html2pdf from 'html2pdf.js';
 import { Filesystem, Directory } from '@capacitor/filesystem';
 import { Share } from '@capacitor/share';
 import { FaTimes,FaEdit } from 'react-icons/fa';
-import LoadingScreen from '../../../pages/LoadingScreen';
+import LoadingScreen from '../../pages/LoadingScreen';
 import {Browser} from '@capacitor/browser';
-import BluetoothDevicesPage from '../../../pages/BluetoothDevicesPage';
+import BluetoothDevicesPage from '../../pages/BluetoothDevicesPage';
 import { App } from '@capacitor/app';
-const ReceiptPage = ({
-    setActiveTab,
-    print
-}) => {
 
+
+function buildInvoiceHTML(order, payments = [], store, cust, rows, sellerName = "–", setPrint, setActiveTab) {
+  const {
+    logo, storeName, tagline, address, gst, phone, email
+  } = store;
+
+  console.log({ order, payments, store, cust, rows, sellerName });
+  const today = new Date(order.createdAt || Date.now());
+  const totalQuantity = rows.reduce((sum, r) => sum + r.quantity, 0);
+
+  // 2️⃣ “Before Tax” is pure quantity × rate, no discounts
+  const rawTotal = rows.reduce((sum, r) => sum + (r.quantity * r.salesPrice), 0);
+
+  // 3️⃣ Your existing order.totalDiscount and taxAmount
+  const disc = order.totalDiscount || 0;
+  const taxAmt = order.taxAmount || 0;
+
+  // 4️⃣ Net total after discount, before adding tax
+  const netBeforeTax = rawTotal - disc;
+
+  // 5️⃣ Paid & previous due
+  const paid = payments.reduce((s, p) => s + p.amount, 0);
+  const prevDue = order.previousBalance || 0;
+
+  // 6️⃣ Final due
+  const totalDue = prevDue + netBeforeTax + taxAmt - paid;
+
+  // build your rows as before…
+  const body = rows.map((r, i) => `
+    <tr>
+      <td>${i + 1}</td>
+      <td>${r.itemName}</td>
+      <td class="r">${r.quantity}</td>
+      <td class="r">${r.mrp.toFixed(2)}</td>
+      <td class="r">${r.salesPrice.toFixed(2)}</td>
+      <td class="r">${(r.quantity * r.salesPrice).toFixed(2)}</td>
+    </tr>`
+  ).join("");
+
+  const payRows = payments.map((p, i) => `
+    <tr><td>${i + 1}</td><td>${p.paymentNote || "-"}</td><td class="r">${(p.amount)}</td></tr>`
+  ).join("");
+  
+  // REMOVED THE ALERT
+  // alert("asd") 
+  
+  // setPrint({
+  //   order,
+  //   payments,
+  //   store: {
+  //      storeName, tagline, address, gst, phone, email
+  //   },
+  //   customer: cust,
+  //   items: rows,
+  //   seller: sellerName,
+  //   dues: { previousDue: totalDue }
+  // });
+     return({
+    order:{  rows:rows,...order },
+    payments:payments,
+    store: {
+      storeName, tagline, address, gst, phone, email
+    },
+    customer: {customerName: cust.customerName || "–"},
+    seller: {sellerName: sellerName},
+    dues: { previousDue: totalDue }
+  }); 
+  // This will now correctly switch to the print view after the state has been set.
+  // setActiveTab("print");
+}
+
+const ReceiptPage = ({
+    print,setPrint
+}) => {
+  console.log(print)
+  const d={
+    order:{...print,rows:print.items},
+    payments:print.payments,
+    store:{
+        logo:        "/logo/inspiredgrow.jpg",                       //  40-50 px square looks right
+  storeName:   print.warehouse.warehouseName,                                //  already in state
+  tagline:     "GROCERY ON WHEELS",
+  address:     "Basement 210-211 new Rishi Nagar near Shree Shyam Baba Mandir Gali No. 9, Hisar – 125001",
+  gst:         "06AAGCI0630K1ZR",
+  phone:       "9050092092",
+  email:       "INSPIREDGROW@GMAIL.COM",
+    },
+    customer:print.customer,
+    rows:print.items
+  }
   const Navigate = useNavigate();
    useEffect(() => {
       const backHandler = App.addListener('backButton', () => {
@@ -41,7 +127,7 @@ const ReceiptPage = ({
     
     const[loading,setLoading]=useState(false);
     const [device,setDevice]=useState(false)
-    const mockData = print;
+    const mockData = d;
     const [isSidebarOpen, setSidebarOpen] = useState(true);
     const [isLoading, setIsLoading] = useState(true);
     const [receiptHtml, setReceiptHtml] = useState('');
@@ -124,17 +210,17 @@ const generatePlainTextReceipt = () => {
   // =================================================================
    
 const formatItemRow = (item, idx) => {
-  console.log("Item in formatItemRow",item)
-  const lines = wrapText(item.itemName, col.item).slice(0, 4); // up to 4 lines
+  console.log("Item in formatItemRow",item.item.itemName)
+  const lines = wrapText(item.item.itemName, col.item).slice(0, 4); // up to 4 lines
   let txt = '';
   lines.forEach((ln, i) => {
     if (i === 0) {
       txt += padRight(idx + 1, col.sno) +
              padRight(ln,        col.item) +
              padLeft (item.quantity,               col.qty)   +
-             padLeft (Number(item.mrp).toFixed(2),  col.mrp)  +
-             padLeft (Number(item.salesPrice).toFixed(2),     col.rate) +
-             padLeft ((item.quantity * item.salesPrice).toFixed(2), col.total) + '\n';
+             padLeft (Number(item.item.mrp).toFixed(2),  col.mrp)  +
+             padLeft (Number(item.price).toFixed(2),     col.rate) +
+             padLeft ((item.quantity * item.price).toFixed(2), col.total) + '\n';
     } else {
       txt += padRight('', col.sno) +
              padRight(ln, col.item) +
@@ -152,7 +238,7 @@ const formatItemRow = (item, idx) => {
   let text = '';
 
   // --- Header ---
-  text += centerText(store.storeName) + '\n';
+  text += centerText(store.storeName || "Groceryon wheels") + '\n';
   
   wrapText(store.address, lineWidth).forEach(wrappedLine => {
       text += centerText(wrappedLine) + '\n';
@@ -181,17 +267,17 @@ const formatItemRow = (item, idx) => {
           padLeft ("Total",col.total) + "\n";
   
   // --- Items Table Body ---
-  order.rows.forEach((item, index) => {
+  order.items.forEach((item, index) => {
     console.log("Item",item)
     text += formatItemRow(item, index);
   });
   text += line;
 
   // --- Full Summary Section ---
-  const totalQuantity = order.rows.reduce((sum, item) => sum + item.quantity, 0);
+  const totalQuantity = order.items.reduce((sum, item) => sum + item.quantity, 0);
                 
 
-        const rawTotal = order.rows.reduce((sum, item) => sum + (item.quantity * item.salesPrice), 0);
+        const rawTotal = order.rows.reduce((sum, item) => sum + (item.quantity * item.price), 0);
                 
 
         const disc = order.totalDiscount || 0;
@@ -200,17 +286,18 @@ const formatItemRow = (item, idx) => {
 
         const netBeforeTax = rawTotal - disc;
         
-const totalM=order.rows.reduce((sum, item) => sum + (item.quantity * item.mrp), 0);
-const totalSales=order.rows.reduce((sum, item) => sum + (item.quantity * item.salesPrice), 0);
+const totalM=order.rows.reduce((sum, item) => sum + (item.quantity * item.item.mrp), 0);
+const totalSales=order.rows.reduce((sum, item) => sum + (item.quantity * item.price), 0);
 
-
+const additionalCharges=order.additionalPayment.reduce((sum, p) => sum + p.amount, 0);
+    
 const paid = payments.reduce((sum, p) => sum + p.amount, 0);
       
 const prevDue = order.previousBalance  || 0;
 
 const totalDue = prevDue + netBeforeTax + taxAmt - paid;
-   const additionalCharges=order.additionalPayment.reduce((sum, p) => sum + p.amount, 0);
-    
+
+
   const addSummaryLine = (label, value) => {
       return padRight(label, lineWidth - 16) + padLeft(value, 16) + '\n';
   };
@@ -220,14 +307,14 @@ const totalDue = prevDue + netBeforeTax + taxAmt - paid;
   text += addSummaryLine('Total Discount:', `-${(totalM-totalSales)?.toFixed(2)}`);
   text += addSummaryLine('Net Before Tax:', totalSales?.toFixed(2));
   text += addSummaryLine('Tax Amount:', taxAmt?.toFixed(2));
-  text += addSummaryLine('Additional Charges:',additionalCharges?.toFixed(2) || 0);
-  text += addSummaryLine('TOTAL:', ((taxAmt || 0)+ totalSales+ additionalCharges)?.toFixed(2) || 0);
+  text += addSummaryLine('Additional Charges:', additionalCharges?.toFixed(2));
+  text += addSummaryLine('TOTAL:', ((taxAmt || 0)+ totalSales + additionalCharges)?.toFixed(2) || 0);
   text += addSummaryLine('Paid Payment:', paid?.toFixed(2));
   text += addSummaryLine('Previous Due:', prevDue?.toFixed(2));
   text += addSummaryLine('TOTAL DUE:', totalDue?.toFixed(2));
   text += line;
    payments.forEach((p, i) => {
-        text += `Payment Type: ${p.paymentNote} ₹${p.amount?.toFixed(2)||0}\n`;
+        text += `Payment Type: ${p.paymentType.paymentTypeName} ₹${p.amount?.toFixed(2)||0}\n`;
     });
   // --- Footer ---
   text += centerText('Thank You & Visit Again!') + '\n\n\n';
@@ -382,13 +469,13 @@ const handleDownload = async () => {
     
     // --- This function generates the on-screen view ---
     const generateReceiptHtml = () => {
-        const { order, customer, seller, store, payments, dues } = mockData;
+        const { order, customer, seller, store, payments, dues } = d;
          console.log("1")
          
         const totalQuantity = order.rows.reduce((sum, item) => sum + item.quantity, 0);
                  console.log("2")
 
-        const rawTotal = order.rows.reduce((sum, item) => sum + (item.quantity * item.salesPrice), 0);
+        const rawTotal = order.rows.reduce((sum, item) => sum + (item.quantity * item.price), 0);
                  console.log("3")
 
         const disc = order.totalDiscount || 0;
@@ -408,25 +495,26 @@ const totalDue = prevDue + netBeforeTax + taxAmt - paid;
 const finalTotal = netBeforeTax + taxAmt;
         console.log(7)
      
-const totalM=order.rows.reduce((sum, item) => sum + (item.quantity * item.mrp), 0);
-const totalSales=order.rows.reduce((sum, item) => sum + (item.quantity * item.salesPrice), 0);
-   const additionalCharges=order.additionalPayment.reduce((sum, p) => sum + p.amount, 0);
-        
+const totalM=order.rows.reduce((sum, item) => sum + (item.quantity * item.item.mrp), 0);
+const totalSales=order.rows.reduce((sum, item) => sum + (item.quantity * item.price), 0);
+   
+       const additionalCharges=order.additionalPayment.reduce((sum, p) => sum + p.amount, 0);
+     
 console.log(8)
         const body = order.rows.map((r, i) => `
             <tr>
                 <td>${i + 1}</td>
-                <td>${r.itemName}</td>
+                <td>${r.item.itemName}</td>
                 <td class="r">${r.quantity}</td>
-                <td class="r">${r.mrp.toFixed(2)}</td>
-                <td class="r">${r.salesPrice.toFixed(2)}</td>
-                <td class="r">${(r.quantity * r.salesPrice).toFixed(2)}</td>
+                <td class="r">${r.item.mrp.toFixed(2)}</td>
+                <td class="r">${r.price.toFixed(2)}</td>
+                <td class="r">${(r.quantity * r.price).toFixed(2)}</td>
             </tr>`
         ).join("");
   console.log(12)
   
         const payRows = payments.map((p, i) => `
-            <tr><td>${i + 1}</td><td>${p.paymentNote || "-"}</td><td class="r">${p.amount.toFixed(2)}</td></tr>`
+            <tr><td>${i + 1}</td><td>${p.paymentType.paymentTypeName || "-"}</td><td class="r">${p.amount.toFixed(2)}</td></tr>`
         ).join("");
         console.log(13)
         
@@ -459,7 +547,7 @@ console.log(8)
                     <table class="no-border">
                         <tr><td><strong>Invoice</strong></td><td class="r">#${order.saleCode}</td></tr>
                         <tr><td><strong>Name</strong></td><td class="r">${customer.customerName || "–"}</td></tr>
-                        <tr><td><strong>Seller</strong></td><td class="r">${seller.sellerName}</td></tr>
+                        <tr><td><strong>Seller</strong></td><td class="r">${"-"}</td></tr>
                         <tr><td><strong>Date</strong></td><td class="r">${new Date().toLocaleDateString()}</td></tr>
                         <tr><td><strong>Time</strong></td><td class="r">${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</td></tr>
                     </table>
@@ -474,7 +562,7 @@ console.log(8)
                         <tr><td>Net Before Tax</td><td class="r">${totalSales?.toFixed(2) || 0}</td></tr>
                         <tr><td>Tax Amount</td><td class="r">${taxAmt?.toFixed(2) || 0}</td></tr>
                         <tr><td>Additional Charges</td><td class="r">${additionalCharges?.toFixed(2) || 0}</td></tr>
-                        <tr><td><strong>Total</strong></td><td class="r"><strong>${((taxAmt || 0)+totalSales+additionalCharges)?.toFixed(2) || 0}</strong></td></tr>
+                        <tr><td><strong>Total</strong></td><td class="r"><strong>${((taxAmt || 0)+totalSales + additionalCharges)?.toFixed(2) || 0}</strong></td></tr>
                         <tr><td>Paid Payment</td><td class="r">${paid?.toFixed(2) || 0}</td></tr>
                         <tr><td>Previous Due</td><td class="r">${prevDue?.toFixed(2) || 0}</td></tr>
                         <tr><td><strong>Total Due Amount</strong></td><td class="r"><strong>${totalDue?.toFixed(2) || 0}</strong></td></tr>
@@ -495,7 +583,6 @@ console.log(8)
     
 
 if(loading) return <LoadingScreen />;
-
     return (
                 
               <div className="flex flex-col w-full p-2 mx-auto mb-20 transition-all duration-300">
@@ -506,7 +593,9 @@ if(loading) return <LoadingScreen />;
         {/* Top Action Buttons */}
         <div className="flex justify-between mb-4 bg-white border rounded-lg shadow-md">
             <button 
-                onClick={()=>Navigate("/dashboard")} 
+                onClick={()=>{
+                    Navigate("/dashboard");setPrint(null)
+                }} 
                 className="flex items-center px-4 py-2 text-gray-700 rounded hover:bg-gray-200"
             >
                 <FaTimes size={16} className="mr-2" />

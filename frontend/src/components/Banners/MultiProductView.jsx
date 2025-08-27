@@ -187,7 +187,7 @@ import html2canvas from "html2canvas";
 
 const MultiProductView = ({ items, setMultiView }) => {
   const ref = useRef();
-
+   console.log("Items in MultiProductView:", items);
   const downloadBanner = () => {
     html2canvas(ref.current, {
       useCORS: true,
@@ -228,7 +228,7 @@ const MultiProductView = ({ items, setMultiView }) => {
                 {/* Product Image */}
                 <div className="relative inline-block">
                   <img
-                    src="http://localhost:5000/uploads/1746207961000.png"
+          src={`https://pos.inspiredgrow.in/vps/uploads/qr/items/${item.itemImages[0]}`}
                     alt={item.itemName}
                     className="object-contain mx-auto h-28"
                     crossOrigin="anonymous"

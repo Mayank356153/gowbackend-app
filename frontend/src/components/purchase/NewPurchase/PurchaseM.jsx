@@ -1,8 +1,8 @@
-import React, { useEffect, useState, useRef ,useCallback} from 'react';
+import React, { useEffect, useState, useRef ,useCallback,useContext, use} from 'react';
 import Navbar from "../../Navbar.jsx";
 import Sidebar from "../../Sidebar.jsx";
 import { useNavigate,  useSearchParams } from 'react-router-dom';
-import axios from 'axios';
+import axios, { all } from 'axios';
 
 import LoadingScreen from '../../../Loading.jsx';
 import dayjs from 'dayjs';
@@ -12,6 +12,7 @@ import Purchase2 from './Purchase2.jsx';
 import Purchase3 from './Purchase3.jsx';
 import { Camera } from '@capacitor/camera';
 import playSound from "../../../utility/sound";
+import { POSContext } from '../../../context/POSContext.js';
 // Generate reference number
 const generateReferenceNo = (lastReferenceNo) => {
   const currentYear = new Date().getFullYear();
@@ -92,6 +93,7 @@ const esc = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
 const PurchaseM= () => {
   const link="https://pos.inspiredgrow.in/vps"
+  const[isSubmitting,setIsSubmitting]=useState(false);
     const[activeTab,setActiveTab]=useState("p1")
   const [searchParams] = useSearchParams();
   const id = searchParams.get("id");
@@ -110,6 +112,7 @@ const PurchaseM= () => {
   const prevWarehouse = useRef(null);
   const [defaultWarehouse, setDefaultWarehouse] = useState(null);
   const[sWarehouse,setSWarehouse]=useState(null)
+  const {posData}=useContext(POSContext);
   const [options, setOptions] = useState({
     warehouse: [],
     items: [],
@@ -248,22 +251,24 @@ useEffect(() => {
   // Set sidebar state based on screen size
  
 
-  
-    async function fetchItems() {
+
+    async function fetchItems(sWarehouse) {
     if (!sWarehouse) {
       setAllItems([]);
       return;
     }
   
     try {
-       const {data} = await axios.get(`${link}/api/items`, {
-            headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-          params: { warehouse: sWarehouse }
-        });
+      
+       const {data} = await 
+      axios.get(`${link}/api/items`, {
+          headers: { Authorization: `Bearer ${token}` },
+        params: { warehouse: sWarehouse,inStock:"false"},
+        })
         
      
       const rawItems = data.data || [] ;
-  
+        console.log("rawItems", rawItems);
         const flatItems = rawItems
           .filter((it) => it._id && it.warehouse?._id)
           .map((it) => {
@@ -278,14 +283,25 @@ useEffect(() => {
               itemCode: it.itemCode || "",
             };
           });
-  
+         console.log("fetchItems called with warehouse:", sWarehouse);
+
+         console.log("flatItems", flatItems);
+          setAllItems(flatItems);
         
-        setAllItems(flatItems);
       } catch (err) {
         console.error("Fetch items error:", err.message);
       }
     }
 
+      useEffect(() => {
+   
+     if (!sWarehouse) return;
+    const interval = setInterval(() => fetchItems(sWarehouse), 1000);
+
+    return () => clearInterval(interval); // cleanup jab component unmount ho
+  }, [sWarehouse]);
+
+  
   useEffect(() => {
     if (sWarehouse) {
       fetchItems(sWarehouse);
@@ -366,10 +382,10 @@ useEffect(() => {
     return;
   }
   try {
-    const response = await axios.get(`${link}/api/warehouses?scope=mine`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    const allWh = response.data.data || [];
+    // const response = await axios.get(`${link}/api/warehouses?scope=mine`, {
+    //   headers: { Authorization: `Bearer ${token}` },
+    // });
+    const allWh = posData.warehouses || [];
     const activeWh = allWh
       .filter(w => w.status === "Active")
       .map(w => ({
@@ -433,7 +449,7 @@ const updateItem = (e, itemId, action) => {
     return {
       ...item,
       quantity: newQty,
-      subtotal: newQty * item.salesPrice - (item.discount || 0),
+      subtotal: newQty * item.salesPrice - (0),
     };
   });
 
@@ -599,7 +615,7 @@ const updateItem = (e, itemId, action) => {
   
     const sub = (formData?.items || []).reduce((acc, item) => {
    
-      const itemTotal = (item.quantity || 0) * (item.purchasePrice || 0) - (item.discount || 0);
+      const itemTotal = (item.quantity || 0) * (item.purchasePrice || 0) - (0);
       return acc + itemTotal;
     }, 0);
 
@@ -782,7 +798,7 @@ const addItem = (it) => {
 
       const newQuantity = existing.quantity + 1;
       const discountAmount = getDiscountAmount(existing);
-      const totalAmount = newQuantity * (existing.mrp || 0) - discountAmount;
+      const totalAmount = newQuantity * (existing.mrp || 0) ;
 
       updatedItems[existingIndex] = {
         ...existing,
@@ -796,7 +812,7 @@ const addItem = (it) => {
      playSound("/sounds/item-added.mp3");
     // Item does not exist: add new
     const discountAmount = getDiscountAmount(it);
-    const totalAmount = (it.mrp || 0) - discountAmount;
+    const totalAmount = (it.mrp || 0) ;
 
     const newItem = {
       purchasePrice:it.purchasePrice ||0,
@@ -808,7 +824,7 @@ const addItem = (it) => {
       currentStock: it.currentStock != null ? it.currentStock : (it.openingStock || 0),
       salesPrice: it.salesPrice || 0,
       quantity: it.quantity || 1,
-      discount: it.discount || 0,
+      discount:  0,
       tax: it.tax?._id || null,
       taxRate: it.tax?.taxPercentage || 0,
       unit: it.unit || null,
@@ -873,7 +889,7 @@ const addItemsInBatch = (matchedItems) => {
        
 
         const discountAmount = getDiscountAmount(existing);
-        const totalAmount = newQuantity * (existing.mrp || 0) - discountAmount;
+        const totalAmount = newQuantity * (existing.mrp || 0) ;
 
         updatedItems[existingIndex] = {
           ...existing,
@@ -884,7 +900,7 @@ const addItemsInBatch = (matchedItems) => {
         playSound("/sounds/item-exists.mp3");
       } else {
         const discountAmount = getDiscountAmount(it);
-        const totalAmount = (it.mrp || 0) - discountAmount;
+        const totalAmount = (it.mrp || 0) ;
 
         const newItem = {
           purchasePrice: it.purchasePrice || 0,
@@ -899,7 +915,7 @@ const addItemsInBatch = (matchedItems) => {
               : it.openingStock || 0,
           salesPrice: it.salesPrice || 0,
           quantity: it.quantity || 1,
-          discount: it.discount || 0,
+          discount:  0,
           tax: it.tax?._id || null,
           taxRate: it.tax?.taxPercentage || 0,
           unit: it.unit || null,
@@ -997,7 +1013,7 @@ const addItemsInBatch = (matchedItems) => {
             />
           }
             {
-            activeTab==="p3" && <Purchase3  options={options} setActiveTab={setActiveTab}
+            activeTab==="p3" && <Purchase3 loading={loading} options={options} setActiveTab={setActiveTab}
   formData={formData} updateItem={updateItem}
   handleItemFieldChange={handleItemFieldChange}
   setFormData={setFormData}

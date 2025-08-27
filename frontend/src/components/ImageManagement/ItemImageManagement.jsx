@@ -243,7 +243,30 @@ useEffect(() => {
   useEffect(()=>console.log("aa",tableitems),[tableitems])
 
 
-
+ const handleSetMasterImage =async (id,image) => {
+     const tokenHeader =  () => ({
+    headers: {
+      Authorization: `Bearer ${localStorage.getItem("token")}`,
+      "Content-Type": "application/json",
+    },
+  });
+    try{
+        const res = await axios.put(
+        "http://localhost:5000/api/items/assign/master_image",{
+                  id:id,
+                  image:image
+        },
+        tokenHeader()
+      );
+      console.log(res)
+      alert("Master image selected")
+    }
+    catch(error){
+      console.log("ERro in assigning master image",error)
+    }
+    
+    
+  };
 
   return (
     <div className="flex flex-col h-screen">

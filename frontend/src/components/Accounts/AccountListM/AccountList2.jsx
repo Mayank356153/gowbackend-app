@@ -1,10 +1,42 @@
-import React from 'react';
+import React,{useState,useEffect} from 'react';
 import { FaArrowLeft } from 'react-icons/fa'; // Make sure to import the icon
 import { useNavigate } from 'react-router-dom';
 const AccountList2 = ({ accountList, setActive, setSelectedAccount }) => {
   console.log("AccountList2 Rendered with accountList:", accountList);
   const navigate = useNavigate();
-
+  
+    const [localPermissions, setLocalPermissions] = useState([]);
+  
+     
+    const userRole = (localStorage.getItem("role") || "guest").toLowerCase();
+    const isAdmin = userRole === "admin";
+  
+  
+  
+  
+     useEffect(() => {
+      const storedPermissions = localStorage.getItem("permissions");
+      if (storedPermissions) {
+        try {
+          setLocalPermissions(JSON.parse(storedPermissions));
+        } catch (error) {
+          console.error("Error parsing permissions:", error);
+          setLocalPermissions([]);
+        }
+      } else {
+        setLocalPermissions([]);
+      }
+    }, []);
+  
+   const hasPermissionFor = (module, action) => {
+      if (isAdmin) return true;
+      return localPermissions.some(
+        (perm) =>
+          perm.module.toLowerCase() === module.toLowerCase() &&
+          perm.actions.map((a) => a.toLowerCase()).includes(action.toLowerCase())
+      );
+    };
+  
   return (
     <div className="w-full min-h-screen p-4 bg-gray-100">
       <div className="w-full mx-auto ">

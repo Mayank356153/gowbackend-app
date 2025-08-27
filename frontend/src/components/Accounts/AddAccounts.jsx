@@ -160,7 +160,7 @@ const AddAccount = () => {
         });
         alert("Account created!");
       }
-      navigate("/account-list");
+      navigate("/account-list1");
     } catch (err) {
       console.error(err);
       alert(err.response?.data?.message || err.message || "Failed to save account");

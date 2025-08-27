@@ -318,7 +318,7 @@ const PurchaseOverview = () => {
     setLoading(true);
     try {
       const { data } = await axios.get(
-        `${link}/api/pos/invoices`,
+        `${link}/api/pos/club`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       console.log("Fetched invoices:", data);
@@ -368,22 +368,31 @@ const PurchaseOverview = () => {
     setCashSalesTotal(cash);
     setBankSalesTotal(bank);
   }, [salesList]);
+  
+ const filteredData = salesList.filter(item => {
+  const searchTermLower = searchTerm.toLowerCase();
+  const creatorName = item.creatorName?.toLowerCase() || '';
 
-  const filteredData = salesList.filter(item => {
-    const searchTermLower = searchTerm.toLowerCase();
-    const customerMatch =
-      (typeof item.customer === 'string'
-        ? item.customer.toLowerCase()
-        : item.customer?.customerName?.toLowerCase())?.includes(searchTermLower) ||
-      item.customer?.mobile?.toLowerCase().includes(searchTermLower) ||
-      item.saleCode?.toLowerCase().includes(searchTermLower);
-    const createdAtTime = new Date(item.saleDate).getTime();
-    const startDateTime = startDate ? new Date(startDate).getTime() : 0;
-    const endDateTime = endDate ? new Date(endDate).getTime() : Infinity;
-    const dateMatch = createdAtTime >= startDateTime && createdAtTime <= endDateTime;
-    const warehouseCondition = warehouse === "all" || warehouse === "" || item.warehouse?._id === warehouse;
-    return (customerMatch && dateMatch) && warehouseCondition;
-  });
+  const customerMatch =
+    creatorName.includes(searchTermLower) ||
+    (typeof item.customer === 'string'
+      ? item.customer.toLowerCase()
+      : item.customer?.customerName?.toLowerCase()
+    )?.includes(searchTermLower) ||
+    item.customer?.mobile?.toLowerCase().includes(searchTermLower) ||
+    item.saleCode?.toLowerCase().includes(searchTermLower);
+
+  const createdAtTime = new Date(item.saleDate).getTime();
+
+  let startDateTime = startDate ? new Date(startDate).setHours(0,0,0,0) : 0;
+  let endDateTime   = endDate ? new Date(endDate).setHours(23,59,59,999) : Infinity;
+
+  const dateMatch = createdAtTime >= startDateTime && createdAtTime <= endDateTime;
+  const warehouseCondition =
+    warehouse === "all" || warehouse === "" || item.warehouse?._id === warehouse;
+
+  return (customerMatch && dateMatch) && warehouseCondition;
+});
 
   const totalInvoices = filteredData.length;
   const totalInvoiceAmt = filteredData.reduce((sum, inv) => sum + inv.amount, 0);
@@ -616,6 +625,7 @@ const formatItemRow = (item, idx) => {
 
   data.items.forEach((it, i) => text += formatItemRow(it, i));
   text += line;
+  const additionalCharges=data.additionalPayment.reduce((sum, p) => sum + p.amount, 0);
 
   const totalQty   = data.items.reduce((s, it) => s + it.quantity, 0);
   const totalMRP   = data.items.reduce((s, it) => s + it.quantity * it.item.mrp,        0);
@@ -624,9 +634,9 @@ const formatItemRow = (item, idx) => {
   const otherChg   = data.otherCharges || 0;
   const paid       = data.payments.reduce((s, p) => s + p.amount, 0);
   const prevDue    = data.previousBalance || 0;
-  const grandTotal = totalSale + taxAmt + otherChg;
+  const grandTotal = totalSale + taxAmt + otherChg + additionalCharges;
   const totalDue   = prevDue + grandTotal - paid;
-
+    
   const sumLine = (lbl, val) => `${padRight(lbl, 34)}${padLeft(val.toFixed(2), 8)}\n`;
 
   text += `${padRight("Total Quantity:", 34)}${padLeft(totalQty, 8)}\n`;
@@ -635,6 +645,7 @@ const formatItemRow = (item, idx) => {
   text += sumLine("Net Before Tax:",  totalSale);
   text += sumLine("Tax Amount:",      taxAmt);
   text += sumLine("Other Charges:",   otherChg);
+  text += sumLine("Additional Charges:",   additionalCharges);
   text += sumLine("Total:",           grandTotal);
   text += sumLine("Paid Payment:",    paid);
   text += sumLine("Previous Due:",    prevDue);

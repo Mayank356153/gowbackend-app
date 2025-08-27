@@ -1,8 +1,9 @@
 import React,{useState,useEffect,useRef} from 'react'
 import { App } from "@capacitor/app";
 import { useLocation,useNavigate } from 'react-router-dom'
+import { set } from 'date-fns';
 export default function S1({
-    formData,setFormData,warehouses,setActiveTab
+    formData,setFormData,warehouses,setActiveTab,setSecondWarehouseName
 }) {
    const location=useLocation()
       const navigate=useNavigate()
@@ -71,7 +72,11 @@ export default function S1({
         <label className="block mb-1 text-sm font-medium text-gray-700">To Warehouse</label>
         <select
           value={formData.toWarehouse}
-          onChange={(e) => setFormData({ ...formData, toWarehouse: e.target.value })}
+        
+          onChange={(e)=>{
+                setFormData({ ...formData, toWarehouse: e.target.value })
+                setSecondWarehouseName(warehouses.find(w => w._id === e.target.value)?.warehouseName || "")
+          }}
           className="w-full px-4 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-blue-500"
           required
         >
@@ -107,7 +112,7 @@ export default function S1({
 
     {/* Next Button */}
     <div className="flex justify-end">
-      <button
+      <button  type='button'
         onClick={() => setActiveTab("s2")}
         className="inline-flex items-center px-5 py-2.5 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 focus:ring-2 focus:ring-blue-500"
       >

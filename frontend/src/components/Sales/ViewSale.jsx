@@ -665,7 +665,7 @@ const ViewSale = () => {
             </div>
             <div className="flex mt-4 space-x-2">
               <button
-                onClick={() => navigate('/sale-list')}
+                onClick={() => navigate('/dashboard')}
                 className="px-4 py-2 text-white rounded-md bg-cyan-500 hover:bg-cyan-600"
               >
                 Back to List

@@ -15,20 +15,32 @@ import AuditorNavbar from './AuditorNavBar.jsx'
 import { FiEdit, FiTrash2 } from 'react-icons/fi';
 
 const  UserBucketList=()=> {
-  const link="https://pos.inspiredgrow.in/vps"
     const [isSidebarOpen, setSidebarOpen] = useState(true);
     const [buckets,setBuckets]=useState([])
-     useEffect(()=>{
-        if(window.innerWidth < 768){
-          setSidebarOpen(false)
-        }
-      },[window.innerWidth])
+
+    useEffect(() => {
+  const handleResize = () => {
+    if (window.innerWidth < 768) {
+      setSidebarOpen(false);
+    } else {
+      setSidebarOpen(true);
+    }
+  };
+
+  handleResize(); // Run on mount
+  window.addEventListener("resize", handleResize);
+
+  return () => {
+    window.removeEventListener("resize", handleResize);
+  };
+}, []);
+
 
       const  navigate=useNavigate();
-     const fetchData = async () => {
 
+     const fetchData = async () => {
   try {
-    const response = await  axios.get(`${link}/api/audit/bucket/auditor/${localStorage.getItem("id")}`, {
+    const response = await  axios.get(`https://pos.inspiredgrow.in/vps/api/audit/bucket/auditor/${localStorage.getItem("id")}`, {
       headers: {
         Authorization: `Bearer ${localStorage.getItem("token")}`, // Get token from localStorage
       }
@@ -40,18 +52,20 @@ const  UserBucketList=()=> {
   }
 };
     
-useEffect(()=>fetchData(),[])
+useEffect(()=>{
+  fetchData()
+},[])
 
  
   const handleDelete = async (id) => {
-    const conf= window.confirm("Do u want to delete customer")
+    const conf= window.confirm("Do u want to delete bucket")
     if(!conf){
       return ;
     }
   
    
     try {
-      const response = await axios.delete(`${link}/api/audit/${id}`, {
+      const response = await axios.delete(`https://pos.inspiredgrow.in/vps/api/audit/${id}`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
@@ -72,7 +86,7 @@ useEffect(()=>fetchData(),[])
   const handleSubmit=async(e)=>{
     e.preventDefault();
     const auditId=localStorage.getItem("auditId")
-
+     const items={}
     const bucketformat = buckets.reduce((acc, bucket) => {
   const formatted = bucket.items.map(item => ({
     itemId: item.item_id._id,
@@ -82,24 +96,34 @@ useEffect(()=>fetchData(),[])
 }, []);
 
 
-    console.log(bucketformat)
+    bucketformat.forEach(item =>{
+      items[item.itemId] = item.quantity
+    })
+
+    console.log(items)
  try {
-    const response = await  axios.put(`${link}/api/audit/bucket-submission`,{
+    const response = await  axios.put(`https://pos.inspiredgrow.in/vps/api/audit/bucket-submission`,{
       auditId:auditId,
-      buckets:bucketformat
+      items
     }, {
       headers: {
         Authorization: `Bearer ${localStorage.getItem("token")}`, // Get token from localStorage
       }
     })   
-    alert("Buckets submitted")
     console.log(response)
+    alert("Buckets submitted")
+    for(const bucket of buckets){
+       const response = await axios.delete(`https://pos.inspiredgrow.in/vps/api/audit/${bucket._id}`, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      });
+    }
+    fetchData();
   } catch (err) {
     alert("Unable to submit bucket")
     console.log(err);
   }
-    
-    
   }
 
     
@@ -120,14 +144,14 @@ useEffect(()=>fetchData(),[])
             </div>
 
             <nav className="flex flex-wrap items-center justify-center mt-2 text-xs text-gray-500 sm:justify-start sm:text-sm sm:mt-0">
-   <NavLink to="/dashboard" className="flex items-center text-gray-700 no-underline hover:text-cyan-600">
+   <NavLink to="/auditor-dashboard" className="flex items-center text-gray-700 no-underline hover:text-cyan-600">
                             <FaTachometerAlt className="mr-2 text-gray-500 hover:text-cyan-600" /> Home
                           </NavLink>     
                           <NavLink to="/bucket-list" className="flex items-center text-gray-700 no-underline hover:text-cyan-600">
                            &gt; Bucket List
                           </NavLink>    
                           <NavLink to="/bucket-create" className="text-gray-700 no-underline hover:text-cyan-600">
-                           &gt; Add Banner
+                           &gt; Add Bucket
                           </NavLink>
               
             </nav>

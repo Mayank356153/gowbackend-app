@@ -300,7 +300,7 @@ const PurchaseScanner = ({ allItems, addItem, setItemScan, addItemsInBatch }) =>
             </span>
 
             <div className="flex items-center gap-1 bg-gray-100 rounded-full p-0.5">
-              <button
+              <button type="button"
                 onClick={() => handleQuantity(it._id, "minus")}
                 className="p-1 text-gray-600 transition-colors duration-200 rounded-full hover:text-purple-600 active:bg-gray-200 disabled:opacity-50"
                 disabled={item.quantity <= 0}
@@ -310,7 +310,7 @@ const PurchaseScanner = ({ allItems, addItem, setItemScan, addItemsInBatch }) =>
               <span className="text-sm font-medium text-gray-800 min-w-[18px] text-center">
                 {item.quantity}
               </span>
-              <button
+              <button type="button"
                 onClick={() => handleQuantity(it._id, "plus")}
                 className="p-1 text-gray-600 transition-colors duration-200 rounded-full hover:text-purple-600 active:bg-gray-200 disabled:opacity-50"
               >

@@ -75,7 +75,7 @@ const UserLogin = () => {
     if (token) {
       localStorage.setItem("deafultWarehouse",deafultWarehouse);
       localStorage.setItem("token", token);
-      loadPOSData();
+    
       localStorage.setItem("role", role);
       localStorage.setItem("permissions", permissions);
       localStorage.setItem("userId", userId);
@@ -141,7 +141,7 @@ const UserLogin = () => {
       // 1) Save JWT
       localStorage.setItem("token", token);
      await storeToken("token", token)
-     loadPOSData();
+    
   await storeToken("deafultWarehouse",res.data.user.defaultWarehouse || null);
     localStorage.setItem("deafultWarehouse",res.data.user.defaultWarehouse || null);
      // 2) Decode token to pull out id, role id, and stores[]

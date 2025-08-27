@@ -1,4 +1,5 @@
-import React ,{useState,useEffect,useRef, use}from 'react'
+import React ,{useState,useEffect,useRef, useMemo
+}from 'react'
 import Sidebar from '../Sidebar';
 import Navbar from '../Navbar';
 import { Navigate, NavLink, useNavigate } from 'react-router-dom';
@@ -12,6 +13,8 @@ import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 import autoTable from 'jspdf-autotable';
+import { set } from 'date-fns';
+import CompareView from './CompareView';
 
 export default function ItemCompare() {
     const link="https://pos.inspiredgrow.in/vps"
@@ -19,6 +22,7 @@ export default function ItemCompare() {
    const[isSidebarOpen,setSidebarOpen]=useState(true)
    const[loading,setLoading]=useState(true)
    const[allItems,setAllItems]=useState([])
+   
    const[options,setOptions]=useState({
     warehouses:[],
    })
@@ -27,15 +31,21 @@ export default function ItemCompare() {
       setSidebarOpen(false)
     }
    },[])
+   
    const Navigate=useNavigate();
    const[SelectedWarehouse1,setSelectedWarehouse1]=useState("")
    const[SelectedWarehouse2,setSelectedWarehouse2]=useState("")
    const[resultItems,setResultItems]=useState([])
    const[view,setView]=useState(false)
+   const [i,setI]=useState(null)
+   const [selectedItem, setSelectedItem] = useState(null);
+   const [pop, setPop] = useState(false);
+
+   
    const fetchWarehouses=async()=>{
     try {
       setLoading(true)
-      const response = await axios.get(`${link}/api/warehouses`, {
+      const response = await axios.get(`${link}/api/warehouses?scope=mine`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
         }
@@ -46,6 +56,7 @@ export default function ItemCompare() {
       label:warehouse.warehouseName,
       value:warehouse._id
      }))
+    
        setOptions((prev)=>({
         ...prev,
         warehouses:warehouses
@@ -58,104 +69,89 @@ export default function ItemCompare() {
    }
    
 
-   
-   const fetchItems=async()=>{
-    try {
-      setLoading(true)
-      const response = await axios.get(`${link}/api/items`, {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        }
-      });
-     
-   setAllItems(response.data.data)
-    } catch (err) {
-      console.log(err.message);
-    } finally {
-      setLoading(false);
-    }
-   }
-   
+
    useEffect(()=>{
+    
     fetchWarehouses();
-    fetchItems();
+      //  for(const warehouse of options.warehouses){
+      //    fetchItems(warehouse.value);
+      //  }
    },[])
+   
+ const[f1,setF1]=useState([])
+ const[f2,setF2]=useState([])
+      useEffect(()=>{
+        
+      },[SelectedWarehouse1,SelectedWarehouse2])
 
-   
-   const filteredItems1 = allItems.filter((transfer) => {
-    const {
-      warehouse,
-    } = transfer;
-    
-    // Warehouse match
-    const warehouseMatch =  
-      (warehouse && warehouse._id === SelectedWarehouse1);
-    
-   
+
       
-    return warehouseMatch ;
-  });
+const getNonCommonItems = (f1,f2) => {
+  // Create a Set of f2 IDs for fast lookup
+  const ids2 = new Set(f2.map(item => item._id.toString()));
 
-
-  const filteredItems2 = allItems.filter((transfer) => {
-    const {
-      warehouse,
-    } = transfer;
-    
-    // Warehouse match
-    const warehouseMatch =  
-      (warehouse && warehouse._id === SelectedWarehouse2);
-    
-   
-      
-    return warehouseMatch ;
-  });
+  // Return items in f1 that are not in f2
+  return f1.filter(item => !ids2.has(item._id.toString()));
+};
 
   
-  const getNonCommonItems = (filteredItems1, filteredItems2) => {
-    // Get IDs from both arrays
-    const ids1 = new Set(filteredItems1.map(item => item._id.toString()));
-    const ids2 = new Set(filteredItems2.map(item => item._id.toString()));
-  
-    // Items in array1 but not in array2
-    const uniqueToArray1 = filteredItems1.filter(item => 
-      !ids2.has(item._id.toString())
-    );
-  
-  
-  
-    // Combine both sets of unique items
-    return uniqueToArray1;
-  };
-  
-  
-  const handleCompare=(e)=>{
-    e.preventDefault();
-    try {
-      setLoading(true)
-      setView(false)
-      if(!setSelectedWarehouse1 || !SelectedWarehouse2){
-        alert("one of the warehouse is not selected")
-        return;
-      }
-      setResultItems(getNonCommonItems(filteredItems1,filteredItems2))
-      if(getNonCommonItems(filteredItems1,filteredItems2) ==[]) {
-            alert("No item is unique")
-            return;
-      }
-    } catch (error) {
-      console.log("Error in comparing",error.message)
+ const handleCompare = async (e) => {
+  e.preventDefault();
+  try {
+    setLoading(true);
+    setView(false);
+
+    if (!SelectedWarehouse1 || !SelectedWarehouse2) {
+      alert("One of the warehouses is not selected");
+      return;
     }
-    finally{
-      
-      if(setSelectedWarehouse1 && SelectedWarehouse2){
-         setView(true)
-      }
-      setLoading(false)
+
+    // Fetch items directly into local variables
+    const items1 = await fetchItems(SelectedWarehouse1);
+    const items2 = await fetchItems(SelectedWarehouse2);
+
+    // Compute non-common items
+    const uniqueItems = getNonCommonItems(items1, items2);
+
+    setF1(items1);
+    setF2(items2);
+    setResultItems(uniqueItems);
+
+    if (uniqueItems.length === 0) {
+      alert("No item is unique");
+      return;
     }
+  } catch (error) {
+    console.log("Error in comparing", error.message);
+  } finally {
+    setView(true);
+    setLoading(false);
   }
-  useEffect(()=>console.log(filteredItems1),[filteredItems1])
-  useEffect(()=>console.log(filteredItems2),[filteredItems2])
+};
+
+// Update fetchItems to return data without setting state
+const fetchItems = async (warehouseId) => {
+  try {
+    setLoading(true);
+    const response = await axios.get(`${link}/api/items`, {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem("token")}`,
+      },
+      params: {
+        warehouse: warehouseId,
+        inStock: true,
+      },
+    });
+    console.log("Items fetched for warehouse:", warehouseId, response.data.data);
+    return response.data.data;
+  } catch (err) {
+    console.log(err.message);
+    return [];
+  } finally {
+    setLoading(false);
+  }
+};
+
  
  
   const exportToExcel = () => {
@@ -170,7 +166,7 @@ export default function ItemCompare() {
     XLSX.utils.sheet_add_aoa(ws, [["#", "Item Name", "Quantity"]], { origin: -1 });
     
     // Add Warehouse 1 data
-    filteredItems1.forEach((item, index) => {
+    f1.forEach((item, index) => {
       XLSX.utils.sheet_add_aoa(ws, [[index + 1, item.itemName, item.openingStock]], { origin: -1 });
     });
     
@@ -182,7 +178,7 @@ export default function ItemCompare() {
     XLSX.utils.sheet_add_aoa(ws, [["#", "Item Name", "Quantity"]], { origin: -1 });
     
     // Add Warehouse 2 data
-    filteredItems2.forEach((item, index) => {
+    f2.forEach((item, index) => {
       XLSX.utils.sheet_add_aoa(ws, [[index + 1, item.itemName, item.openingStock]], { origin: -1 });
     });
     
@@ -224,7 +220,7 @@ const exportToPDF = () => {
   autoTable(doc,{
     startY: yPos,
     head: [['#', 'Item Name', 'Quantity']],
-    body: filteredItems1.map((item, index) => [index + 1, item.itemName, item.openingStock]),
+    body: f1.map((item, index) => [index + 1, item.itemName, item.openingStock]),
     margin: { top: 10 },
     styles: { fontSize: 10 }
   });
@@ -238,7 +234,7 @@ const exportToPDF = () => {
   autoTable(doc,{
     startY: yPos,
     head: [['#', 'Item Name', 'Quantity']],
-    body: filteredItems2.map((item, index) => [index + 1, item.itemName, item.openingStock]),
+    body: f2.map((item, index) => [index + 1, item.itemName, item.openingStock]),
     margin: { top: 10 },
     styles: { fontSize: 10 }
   });
@@ -267,7 +263,9 @@ const exportToPDF = () => {
 };
 
 
-  
+  if(loading){
+    return <LoadingScreen />
+  }
     return (
       <div className="flex flex-col h-screen">
         <Navbar isSidebarOpen={isSidebarOpen} setSidebarOpen={setSidebarOpen} />
@@ -291,7 +289,11 @@ const exportToPDF = () => {
                 </NavLink>
               </nav>
             </header>
-            
+            {
+               view && i && (
+                    <CompareView warehouse1={SelectedWarehouse1} warehouse2={SelectedWarehouse2} item={i} setView={setI} warehouses={options.warehouses} items={allItems} />
+                )
+            }
             <div className='flex flex-col w-full mx-auto mt-4 bg-white border-t-4 rounded-lg shadow-md border-cyan-600'>
               <div className='w-full h-auto px-2 border-b-2 border-gray-200'>
                 <h4 className='text-gray-700'>Please Enter Valid Information</h4>
@@ -337,6 +339,7 @@ const exportToPDF = () => {
              <div className='flex w-full px-2 py-2 bg-white'>
   <div className='w-full'>
     <h4 className='text-gray-700'>Records Table</h4>
+    <h3>Total Records: {resultItems.length}</h3>
   </div>
   <div className="relative">
     <button 
@@ -387,7 +390,7 @@ const exportToPDF = () => {
 {/* second row */}
                <div className='flex flex-col justify-between w-full gap-2 px-2 py-2 overflow-x-auto md:flex-row'>
                 
-                <div className='w-full h-auto bg-white border-2'>
+                <div className='hidden w-full h-auto bg-white border-2'>
                   <h5 className='text-center'>Item in Warehouse1</h5>
                   <table className="min-w-full gap-2 border-separate">
                     <thead>
@@ -398,30 +401,34 @@ const exportToPDF = () => {
                       </tr>
                     </thead>
                     <tbody>
-                      {/* Add your data rows here */}
+                     
                      
                        {view &&
-                        filteredItems1.length>0 && filteredItems1.map((item,index)=>(
-                          <tr key={index} className='bg-gray-100 border-2 border-black'>
+                        f1.length>0 && f1.map((item,index)=>(
+                          <tr key={index} className='bg-gray-100 border-2 border-black' onClick={()=>{
+                            setSelectedItem(item); setPop(true)
+                          }}>
                             <td className="px-4 py-2">{index+1}</td>
-                            <td className="px-4 py-2">{item.itemName}</td>
-                            <td className="px-4 py-2">{item.openingStock}</td>
+                            <td className="px-4 py-2" onClick={()=>{
+                              setView(true); setI(item)
+                            }}>{item.itemName}</td>
+                            <td className="px-4 py-2">{item.currentStock}</td>
                           </tr>
                         ))
                       }
                       { view &&
-                        filteredItems1.length===0  && view && (
+                        f1.length===0  && view && (
                           <tr className='bg-gray-100 border-2 border-black' >
                           <td className="px-4 py-2 text-center" colSpan='10'><h5>No Data Found</h5></td>
                         </tr>
                         )
-                      }
-                     </tbody>
-                  </table>
+                      } 
+                      </tbody>
+                  </table> 
 
                 </div>
                 
-                <div className='w-full h-auto bg-white border-2'>
+                <div className='hidden w-full bg-white border-2 auto'>
                   <h5 className='text-center'>Item in Warehouse2</h5>
                   <table className="min-w-full gap-2 border-separate">
                     <thead>
@@ -432,20 +439,20 @@ const exportToPDF = () => {
                       </tr>
                     </thead>
                     <tbody>
-                      {/* Add your data rows here */}
+                      
                      
                        {view &&
-                        filteredItems2.length>0 && filteredItems2.map((item,index)=>(
+                        f2.length>0 && f2.map((item,index)=>(
                           <tr key={index} className='bg-gray-100 border-2 border-black'>
                             <td className="px-4 py-2">{index+1}</td>
                             <td className="px-4 py-2">{item.itemName}</td>
-                            <td className="px-4 py-2">{item.openingStock}</td>
+                            <td className="px-4 py-2">{item.currentStock}</td>
                           </tr>
                         ))
                       }
-                      { view &&
-                        filteredItems2.length===0 && view && (
-                          <tr className='bg-gray-100 border-2 border-black' >
+                          { view &&
+                            f2.length===0 && view && (
+                              <tr className='bg-gray-100 border-2 border-black' >
                           <td className="px-4 py-2 text-center" colSpan='10'><h5>No Data Found</h5></td>
                         </tr>
                         )
@@ -453,14 +460,14 @@ const exportToPDF = () => {
                      </tbody>
                   </table>
 
-                </div>
+                </div> 
 
                 <div className='w-full overflow-x-scroll bg-white border-2'>
-                  <h5 className='text-center'>Item Unique</h5>
                   <table className="min-w-full gap-2 border-separate">
                     <thead>
                       <tr>
                         <th className="px-4 py-2 text-sm text-white bg-blue-500">#</th>
+                        <th className="px-4 py-2 text-sm text-white bg-blue-500">Item Image</th>
                         <th className="px-4 py-2 text-sm text-white bg-blue-500">Item Name</th>
                         <th className="px-4 py-2 text-sm text-white bg-blue-500">Warehouse</th>
                         <th className="px-4 py-2 text-sm text-white bg-blue-500">Quantity</th>
@@ -471,11 +478,16 @@ const exportToPDF = () => {
                      
                        {
                         resultItems.length>0 && resultItems.map((item,index)=>(
-                          <tr key={index} className='bg-gray-100 border-2 border-black'>
+                          <tr key={index} className='bg-gray-100 border-2 border-black' >
                             <td className="px-4 py-2">{index+1}</td>
-                            <td className="px-4 py-2">{item.itemName}</td>
+                            <td className="px-4 py-2" onClick={()=>{
+                            setSelectedItem(item); setPop(true)
+                          }}><img src={`${link}/uploads/qr/items/${item.itemImages[0]}`} alt={index+1} /></td>
+                            <td className="px-4 py-2" onClick={()=>{
+                              setView(true); setI(item)
+                            }}>{item.itemName}</td>
                             <td className="px-4 py-2">{item.warehouse?.warehouseName}</td>
-                            <td className="px-4 py-2">{item.openingStock}</td>
+                            <td className="px-4 py-2">{item.currentStock}</td>
                           </tr>
                         ))
                       }
@@ -500,7 +512,50 @@ const exportToPDF = () => {
             </div>
             
     
-        
+         {selectedItem && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70"
+          onClick={() => {
+            setSelectedItem(null);
+          }}
+        >
+          <div
+            className="bg-white rounded shadow-lg max-w-4xl w-full max-h-[90vh] p-4 overflow-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold">
+                {selectedItem.itemName} – images
+              </h3>
+              <button
+                className="text-2xl font-bold text-red-600"
+                onClick={() => {
+                  setSelectedItem(null);
+                }}
+              >
+                ×
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
+              {selectedItem.itemImages.map((fn, idx) => {
+                const url = fn.startsWith("http")
+                  ? fn
+                  : `${link}/uploads/qr/items/${fn}`;
+                return (
+                  <div key={idx} className="relative group">
+                    <img
+                      src={url} loading="lazy"
+                      alt={`${selectedItem.itemName} ${idx + 1}`}
+                      className="object-cover w-full h-64 rounded cursor-pointer"
+                    />
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
            
             
           </div>

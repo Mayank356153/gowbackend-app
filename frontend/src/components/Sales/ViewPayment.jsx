@@ -44,7 +44,7 @@ const ViewPayment = () => {
       });
 
       // Fetch invoices to get the correct totalAmount
-      const invoicesResponse = await axios.get(`${link}/api/pos/invoices`, {
+      const invoicesResponse = await axios.get(`${link}/api/pos/club`, {
         headers: { Authorization: `Bearer ${token}` }
       });
 
@@ -89,7 +89,7 @@ const ViewPayment = () => {
   };
 
   const handleClose = () => {
-    navigate('/sale-list');
+    navigate('/dashboard');
   };
 
   // Calculate due amount, allowing negative values for overpayments

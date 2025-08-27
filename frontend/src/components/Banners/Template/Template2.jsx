@@ -8,7 +8,7 @@ const BannerTemplateTwo = React.forwardRef(({ item }, ref) => (
       </p>
     <div className="absolute top-0 right-0 px-2 py-1 text-xs text-white bg-red-500 rounded-bl-lg">SALE</div>
     <img 
-    src="http://localhost:5000/uploads/1746207961000.png"
+          src={`https://pos.inspiredgrow.in/vps/uploads/qr/items/${item.masterImage}`}
     alt={item.itemName} className="object-contain w-24 h-24 mx-auto my-2" />
     <h3 className="text-base font-bold">{item.itemName}</h3>
     <p className="text-xs text-gray-600">{item.description}</p>

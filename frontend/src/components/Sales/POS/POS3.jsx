@@ -5,6 +5,8 @@ import { App } from '@capacitor/app';
 import { useNavigate } from 'react-router-dom';
 import { FaBoxOpen, FaBox, FaPlus, FaMinus, FaTrash, FaChevronLeft, FaHandPaper, FaLayerGroup, FaMoneyBill, FaCreditCard } from 'react-icons/fa';
 import { Keyboard } from '@capacitor/keyboard';
+import axios from 'axios';
+import { add, set } from 'date-fns';
 // No changes needed for these sub-components
 const Info = ({ label, value }) => (
   <div>
@@ -21,7 +23,7 @@ const Summary = ({ label, value, isGrandTotal = false }) => (
 );
 
 // --- COMPONENT REFACTORED FOR BETTER MOBILE UX ---
-const ItemsList = ({ items,couponCode,setCouponCode, updateItem, removeItem, setSelectedItem ,totalAmount ,totalDiscount}) => (
+const ItemsList = ({ additionalCharges,items,couponCode,setCouponCode, updateItem, removeItem, setSelectedItem ,totalAmount ,totalDiscount,newNote,newAmount,additionalPaymentAmount,setAdditionalPaymentAmount,setNewNote,setNewAmount}) => (
   <section className="overflow-y-auto">
     <div className="divide-y divide-gray-200 ">
       {items.length === 0 ? (
@@ -100,8 +102,74 @@ const ItemsList = ({ items,couponCode,setCouponCode, updateItem, removeItem, set
     
           <Summary label="Subtotal" value={`₹${totalAmount.toFixed(2)}`} />
           <Summary label="Discount" value={`- ₹${totalDiscount.toFixed(2)}`} />
+        {/* Additional Charges Section */}
+<div className="mt-3">
+  <label className="block mb-1 text-xs font-medium text-gray-600">
+    Additional Charges
+  </label>
+
+  {/* Input row: Note + Amount + Add button */}
+  <div className="flex gap-2">
+    <input
+      type="text"
+      value={newNote}
+      onChange={(e) => setNewNote(e.target.value)}
+      placeholder="Note (e.g. Delivery)"
+      className="flex-1 p-2 text-sm border-2 border-gray-300 rounded-md focus:ring-cyan-500 focus:border-cyan-500"
+    />
+    <input
+      type="text"
+      value={newAmount}
+  onChange={(e) => {
+    let val = e.target.value; // use let, so we can reassign
+
+    // if user types "01", "02", ... remove leading zero
+    if (val.length > 1 && val.startsWith("0")) {
+      val = val.replace(/^0+/, ""); // strip all leading zeros
+    }
+
+    setNewAmount(val === "" ? "" : Number(val));
+  }}
+      placeholder="Amount"
+      className="p-2 text-sm border-2 border-gray-300 rounded-md w-28 focus:ring-cyan-500 focus:border-cyan-500"
+    />
+    <button
+      type="button"
+      onClick={() => {
+        if (!newAmount) return;
+        setAdditionalPaymentAmount([
+          ...additionalPaymentAmount,
+          { note: newNote || "Other", amount: Number(newAmount) }
+        ]);
+        setNewNote("");
+        setNewAmount("");
+      }}
+      className="px-3 py-2 text-sm font-bold text-white rounded-md bg-cyan-600 hover:bg-cyan-700"
+    >
+      +
+    </button>
+  </div>
+
+  {/* Show previously added additional charges */}
+  {additionalPaymentAmount.length > 0 && (
+    <div className="mt-3 space-y-2">
+      {additionalPaymentAmount.map((item, index) => (
+        <div
+          key={index}
+          className="flex items-center justify-between p-2 text-sm border rounded-md bg-gray-50"
+        >
+          <span className="text-gray-700">
+            {item.note}  
+          </span>
+          <span className="font-semibold text-gray-900">₹{item.amount}</span>
+        </div>
+      ))}
+    </div>
+  )}
+</div>
+
           <div className="my-2 border-t border-dashed" />
-          <Summary label="Grand Total" value={`₹${(totalAmount - totalDiscount).toFixed(2)}`} isGrandTotal={true} />
+          <Summary label="Grand Total" value={`₹${(totalAmount - totalDiscount+additionalCharges).toFixed(2)}`} isGrandTotal={true} />
 
           <div >
             <label className="block mb-1 text-xs font-medium text-gray-600">Apply Coupon</label>
@@ -119,58 +187,107 @@ const ItemsList = ({ items,couponCode,setCouponCode, updateItem, removeItem, set
 
 
 // --- COMPONENT REFACTORED FOR BETTER MOBILE UX ---
-const ItemDetailModal = ({ selectedItem, allItems, onClose }) => {
+const ItemDetailModal = ({ selectedItem, allItems, onClose, onSave,setItems }) => {
   const item = allItems.find(it => it._id === selectedItem.item);
-  console.log(item);
+  const [salesPrice, setSalesPrice] = useState(item?.salesPrice || 0);
+   console.log(selectedItem)
   if (!item) return null;
 
+  const handlePriceChange = (e) => setSalesPrice(e.target.value);
+
+  const handleSave = async () => {
+    try {
+      if(salesPrice<item.purchasePrice){
+        alert("SALES PRICE CANNOT BE LESS THAN PURCHASE PRICE");
+        return ;
+      }
+         setItems(prevItems => {
+           return prevItems.map(it => {
+             if (it.item === selectedItem.item) {
+               return { ...it, salesPrice:Number(salesPrice),subtotal: Number(salesPrice)*it.quantity};
+             }
+             return it;
+           });
+         });
+         onClose();
+    } catch (error) {
+      console.error("Error updating item:", error);
+    }
+  };
+
   return (
-    // CHANGED: Full-screen modal with flex-col layout for sticky footer
-    <div className="fixed inset-0 z-50 flex flex-col bg-white">
-      <header className="flex items-center justify-between flex-shrink-0 p-4 border-b">
-        <button onClick={onClose} className="p-2 -ml-2 text-gray-600">
+    <div className="fixed inset-0 z-50 flex flex-col overflow-hidden bg-white shadow-xl rounded-t-3xl">
+      {/* Header */}
+      <header className="flex items-center justify-between p-4 text-white border-b bg-cyan-600">
+        <button onClick={onClose} className="p-2">
           <FaChevronLeft size={20} />
         </button>
         <h2 className="text-lg font-semibold">Item Details</h2>
-        <div className="w-6" /> {/* Spacer */}
+        <div className="w-6" />
       </header>
 
-      {/* CHANGED: Scrollable content area */}
-      <main className="flex-grow p-4 overflow-y-auto ">
-        <div className="space-y-6">
-          <div className="flex items-center gap-4">
-            <div className="flex items-center justify-center flex-shrink-0 w-20 h-20 bg-gray-100 rounded-lg">
-              {item.image ? (
-                <img src={item.image} alt="item" className="object-cover w-full h-full rounded-lg" />
-              ) : (
-                <FaBox size={32} className="text-gray-400" />
-              )}
-            </div>
-            <div>
-              <p className="text-xl font-bold">{item.itemName}</p>
-              <p className="text-sm text-gray-500">SKU: {item.sku || 'N/A'}</p>
-              <p className="text-lg font-semibold text-cyan-600">₹{item.salesPrice}</p>
-            </div>
+      {/* Main Content */}
+      <main className="flex-grow p-4 space-y-6 overflow-y-auto">
+        {/* Image & Name */}
+        <div className="flex items-center gap-4">
+          <div className="flex items-center justify-center flex-shrink-0 w-20 h-20 bg-gray-100 rounded-xl">
+            {item.image ? (
+              <img
+                src={item.image}
+                alt="item"
+                className="object-cover w-full h-full rounded-xl"
+              />
+            ) : (
+              <FaBox size={32} className="text-gray-400" />
+            )}
           </div>
-          <div className="grid grid-cols-2 gap-4 text-sm">
-            <Info label="Category" value={item.category?.name || 'N/A'} />
-            <Info label="Brand" value={item.brand?.brandName || 'N/A'} />
-            <Info label="Stock" value={item.currentStock || 0} />
-            <Info label="Barcode" value={item.barcode || item.barcodes?.[0] || 'N/A'} />
+          <div className="flex-1">
+            <p className="text-xl font-bold text-gray-800">{item.itemName}</p>
+            <p className="text-sm text-gray-500">SKU: {item.sku || "N/A"}</p>
           </div>
-          {item.description && (
-            <div>
-              <p className="text-xs font-medium text-gray-500 uppercase">Description</p>
-              <p className="mt-1 text-sm text-gray-700">{item.description}</p>
-            </div>
-          )}
+        </div>
+
+        {/* Quick Info */}
+        <div className="grid grid-cols-2 gap-4 text-sm">
+          <Info label="Category" value={item.category?.name || "N/A"} />
+          <Info label="Brand" value={item.brand?.brandName || "N/A"} />
+          <Info label="Stock" value={item.currentStock || 0} />
+          <Info label="Barcode" value={item.barcode || item.barcodes?.[0] || "N/A"} />
+        </div>
+
+        {/* Description */}
+        {item.description && (
+          <div>
+            <p className="text-xs font-semibold text-gray-400 uppercase">Description</p>
+            <p className="mt-1 text-sm text-gray-700">{item.description}</p>
+          </div>
+        )}
+
+        {/* Sales Price */}
+        <div>
+          <label className="text-sm font-semibold text-gray-500">Sales Price (₹)</label>
+          <input
+            type="number"
+            value={salesPrice}
+            onChange={handlePriceChange}
+            className="w-full p-3 mt-1 text-lg font-semibold border rounded-xl text-cyan-600 focus:outline-none focus:ring-2 focus:ring-cyan-400"
+          />
         </div>
       </main>
 
-      {/* CHANGED: Sticky footer */}
-      <footer className="flex-shrink-0 p-4 bg-white border-t">
-        <button onClick={onClose} className="w-full py-3 font-semibold text-white rounded-lg bg-cyan-600 hover:bg-cyan-700">
+      {/* Footer */}
+      <footer className="flex flex-shrink-0 gap-3 p-4 bg-white border-t">
+        <button
+          onClick={onClose}
+          className="flex-1 py-3 font-semibold text-white transition bg-gray-400 rounded-xl hover:bg-gray-500"
+        >
           Close
+        </button>
+        <button
+          onClick={handleSave}
+          className="flex-1 py-3 font-semibold text-white transition rounded-xl bg-cyan-600 hover:bg-cyan-700"
+        >
+          Save
         </button>
       </footer>
     </div>
@@ -178,7 +295,8 @@ const ItemDetailModal = ({ selectedItem, allItems, onClose }) => {
 };
 
 
-export default function POS3({
+
+export default function POS3({isSubmitting,additionalCharges,setItems,additionalPaymentAmount,setAdditionalPaymentAmount,setIsSubmitting,
 selectedCustomer, selectedWarehouse, 
  allItems,  warehouses, invoiceCode, customers,
   orderPaymentMode, items, updateItem, removeItem, onHold,  onOpenModal,
@@ -188,7 +306,8 @@ selectedCustomer, selectedWarehouse,
   setSelectedAccount, setActiveTab, setAdjustAdvancePayment
 }) {
   const [selectedItem, setSelectedItem] = useState(null);
-
+ const [newNote, setNewNote] = useState("");
+  const [newAmount, setNewAmount] = useState(0);
   useEffect(() => {
     const backHandler = App.addListener('backButton', () => setActiveTab('pos2'));
     return () => backHandler.remove();
@@ -221,50 +340,90 @@ selectedCustomer, selectedWarehouse,
         </section>
 
         {/* Items List */}
-        <ItemsList items={items} couponCode={couponCode} setCouponCode={setCouponCode} totalAmount={totalAmount} totalDiscount={totalDiscount} updateItem={updateItem} removeItem={removeItem} setSelectedItem={setSelectedItem} />
+        <ItemsList additionalCharges={additionalCharges} items={items} setNewAmount={setNewAmount} setNewNote={setNewNote} newNote={newNote} newAmount={newAmount} additionalPaymentAmount={additionalPaymentAmount} setAdditionalPaymentAmount={setAdditionalPaymentAmount} couponCode={couponCode} setCouponCode={setCouponCode} totalAmount={totalAmount} totalDiscount={totalDiscount} updateItem={updateItem} removeItem={removeItem} setSelectedItem={setSelectedItem} />
 
-        {/* Order Summary Section */}
-        {/* <section className="">
-          <Summary label="Subtotal" value={`₹${totalAmount.toFixed(2)}`} />
-          <Summary label="Discount" value={`- ₹${totalDiscount.toFixed(2)}`} />
-          <div className="my-2 border-t border-dashed" />
-          <Summary label="Grand Total" value={`₹${(totalAmount - totalDiscount).toFixed(2)}`} isGrandTotal={true} />
-
-          <div className="mt-4">
-            <label className="block mb-1 text-xs font-medium text-gray-600">Apply Coupon</label>
-            <input
-              type="text"
-              value={couponCode}
-              onChange={(e) => setCouponCode(e.target.value)}
-              placeholder="Enter coupon code"
-              className="w-full p-2 text-sm border-gray-300 rounded-md focus:ring-cyan-500 focus:border-cyan-500"
-            />
-          </div>
-        </section> */}
       </main>
 
       {/* --- CHANGED: STICKY FOOTER FOR ACTIONS --- */}
       <footer className="fixed bottom-0 left-0 right-0 z-10 p-3 bg-white border-t border-gray-200">
           <h6>Grand Total:{`₹${(totalAmount - totalDiscount).toFixed(2)}`}</h6>
-        <div className="grid grid-cols-2 gap-3">
-          <button onClick={onHold} className="flex items-center justify-center gap-2 px-4 py-3 text-sm font-semibold text-yellow-800 bg-yellow-400 rounded-lg">
-            <FaHandPaper /> Hold
-          </button>
-          <button onClick={() => onOpenModal("multiple")} className="flex items-center justify-center gap-2 px-4 py-3 text-sm font-semibold text-white text-blue-800 bg-blue-400 rounded-lg">
-            <FaLayerGroup /> Multiple
-          </button>
-          <button onClick={() => onOpenModal('cash')} className="flex items-center justify-center gap-2 px-4 py-3 text-sm font-semibold text-white bg-green-600 rounded-lg">
-            <FaMoneyBill /> Cash
-          </button>
-          <button onClick={() => onOpenModal('bank')} className="flex items-center justify-center gap-2 px-4 py-3 text-sm font-semibold text-white bg-purple-600 rounded-lg">
-            <FaCreditCard /> Bank
-          </button>
-        </div>
+          <div className="grid grid-cols-2 gap-3">
+  <button
+    onClick={async () => {
+      // Guard clause: Exit immediately if a submission is already in progress.
+      if (isSubmitting) return;
+
+      // Set state to true to prevent further clicks.
+      setIsSubmitting(true);
+
+      try {
+        // Await the asynchronous function call.
+        await onHold();
+      } finally {
+        // Always reset the state to false, regardless of success or failure.
+        setIsSubmitting(false);
+      }
+    }}
+    className="flex items-center justify-center gap-2 px-4 py-3 text-sm font-semibold text-yellow-800 bg-yellow-400 rounded-lg"
+    disabled={isSubmitting}
+  >
+    <FaHandPaper /> Hold
+  </button>
+  <button
+    disabled={isSubmitting}
+    onClick={async () => {
+      if (isSubmitting) return;
+      setIsSubmitting(true);
+      try {
+        await onOpenModal("multiple");
+      } finally {
+        setIsSubmitting(false);
+      }
+    }}
+    className="flex items-center justify-center gap-2 px-4 py-3 text-sm font-semibold text-white text-blue-800 bg-blue-400 rounded-lg"
+  >
+    <FaLayerGroup /> Multiple
+  </button>
+  <button
+    disabled={isSubmitting}
+    onClick={async () => {
+      if (isSubmitting) return;
+      setIsSubmitting(true);
+      try {
+        await onOpenModal("cash");
+      } finally {
+         setTimeout(() => {
+            setIsSubmitting(false);
+          }, 1000);
+      }
+    }}
+    className="flex items-center justify-center gap-2 px-4 py-3 text-sm font-semibold text-white bg-green-600 rounded-lg"
+  >
+    <FaMoneyBill /> Cash
+  </button>
+  <button
+    disabled={isSubmitting}
+    onClick={async () => {
+      if (isSubmitting) return;
+      setIsSubmitting(true);
+      try {
+        await onOpenModal("bank");
+      } finally {
+          setTimeout(() => {
+            setIsSubmitting(false);
+          }, 1000);
+      }
+    }}
+    className="flex items-center justify-center gap-2 px-4 py-3 text-sm font-semibold text-white bg-purple-600 rounded-lg"
+  >
+    <FaCreditCard /> Bank
+  </button>
+</div>
       </footer>
 
 
       {selectedItem && (
-        <ItemDetailModal selectedItem={selectedItem} allItems={allItems} onClose={() => setSelectedItem(null)} />
+        <ItemDetailModal selectedItem={selectedItem} allItems={allItems}  onClose={() => setSelectedItem(null)} setItems={setItems} />
       )}
 
       {isPaymentModalOpen && (

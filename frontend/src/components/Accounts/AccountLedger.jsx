@@ -179,7 +179,7 @@ export default function AccountLedger() {
         <Sidebar />
         <main className="flex-grow p-4 overflow-x-auto bg-gray-50">
           <nav className="flex items-center mb-4 text-sm text-gray-500">
-            <Link to="/account-list" className="flex items-center">
+            <Link to="/account-list1" className="flex items-center">
               <FaTachometerAlt className="mr-1" /> Accounts
             </Link>
             <BiChevronRight className="mx-2" />

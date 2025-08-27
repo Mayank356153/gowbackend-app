@@ -54,6 +54,7 @@ const Navbar = ({ isSidebarOpen, setSidebarOpen }) => {
        console.log("Profile data:", data);
       setUser(data);
         localStorage.setItem("user", JSON.stringify(data));
+        localStorage.setItem("warehouses", JSON.stringify(data.warehouses || []));
       /* NEW — preferred: server already sends storeName */
       if (data.storeName) {
         setStoreName(data.storeName);

@@ -53,7 +53,7 @@ const ClubReportPage = () => {
     const [total, setTotal] = useState(0);
     const [pop,setPop]=useState(false);
     const[view,setView]=useState(false);
-    
+    const [previewItem,setPreviewItem]=useState(null);
     // Filter States
     const [options, setOptions] = useState({ warehouses: [], categories: [], items: [] });
     const [selectedWarehouse, setSelectedWarehouse] = useState("all");
@@ -118,6 +118,8 @@ function generateFlatReport({ sales = [], saleReturns = [], stockTransfers = [] 
             categoryName: details.categoryName,
             mrp: details.mrp || 0,
             salesPrice: details.salesPrice,
+            barcodes: details.barcodes || [],
+            itemImages: details.itemImages || [],
             sale: 0, saleReturn: 0, stockTransferIn: 0, stockTransferOut: 0
           };
         }
@@ -169,10 +171,7 @@ function generateFlatReport({ sales = [], saleReturns = [], stockTransfers = [] 
 }
 
 
-
-    // Initial data fetching
-    useEffect(() => {
-        const fetchInitialData = async () => {
+const fetchInitialData = async () => {
             setLoading(true);
             try {
                 const token = localStorage.getItem("token");
@@ -181,7 +180,7 @@ function generateFlatReport({ sales = [], saleReturns = [], stockTransfers = [] 
                 const [warehousesRes, categoriesRes,  salesRes,stockRes,salesReturnRes] = await Promise.all([
                     axios.get(`${link}/api/warehouses?scope=mine`, { headers }),
                     axios.get(`${link}/api/categories`, { headers }),
-                    axios.get(`${link}/api/pos/invoices`, { headers }),
+                    axios.get(`${link}/api/pos/club`, { headers }),
                     axios.get(`${link}/api/stock-transfers`, { headers }),
                     axios.get(`${link}/api/sales-return`, { headers }),
                     // axios.get(`${link}/api/items`, { headers })
@@ -189,7 +188,9 @@ function generateFlatReport({ sales = [], saleReturns = [], stockTransfers = [] 
                 // setAllItems(itemRes.data.data);
                 const warehouses = warehousesRes.data.data.map(w => ({ label: w.warehouseName, value: w._id ,restricted:w.isRestricted}));
                 const categories = categoriesRes.data.data.map(c => ({ label: c.name, value: c._id }));
-               
+                console.log("Sales",salesRes)
+                console.log("Stock",stockRes)
+                console.log("Returns",salesReturnRes)
                 setOptions({
                     warehouses: [{ label: "All", value: "all" }, ...warehouses],
                     categories: [{ label: "All", value: "all" }, ...categories],
@@ -198,7 +199,7 @@ function generateFlatReport({ sales = [], saleReturns = [], stockTransfers = [] 
                  setStock(stockRes.data.data);
                 setSales(salesRes.data);
                 setReturns(salesReturnRes.data.returns);
-                setFilteredTransfers(salesRes.data);
+                
               
             } catch (err) {
                 console.error("Failed to fetch initial data:", err);
@@ -206,6 +207,8 @@ function generateFlatReport({ sales = [], saleReturns = [], stockTransfers = [] 
                 setLoading(false);
             }
         };
+    // Initial data fetching
+    useEffect(() => {
         fetchInitialData();
     }, []);
 
@@ -225,6 +228,8 @@ function generateFlatReport({ sales = [], saleReturns = [], stockTransfers = [] 
                             categoryId: lineItem.item.category?._id,
                             categoryName: lineItem.item.category?.name,
                             salesPrice: lineItem.item.salesPrice,
+                            barcodes: lineItem.item.barcodes || [],
+                            itemImages: lineItem.item.itemImages || []
                         });
                     }
                 });
@@ -244,91 +249,12 @@ function generateFlatReport({ sales = [], saleReturns = [], stockTransfers = [] 
              
             setReport(flatReport);
             setFinalReport(flatReport);
-           
+           if(selectedWarehouse !=="all" || category !== "all" || (dateFrom && dateTo)) {
+               applyfilter();
+           }
     },[options, sales, returns,stock]);
 
-    // Barcode Scanning Logic
-              // useEffect(() => {
-              //   if (!scanning) return;
             
-              //   const startScanner = async () => {
-              //     if (!videoRef.current) return;
-            
-              //     const codeReader = new BrowserMultiFormatReader();
-              //     codeReaderRef.current = codeReader;
-            
-              //     const tryDecode = async (facingMode) => {
-              //       const constraints = {
-              //         video: {
-              //           facingMode,
-              //           advanced: [
-              //             { width: 1920 },
-              //             { height: 1080 },
-              //             { zoom: 2 }, // not all devices support this
-              //           ],
-              //         },
-              //       };
-            
-              //       return codeReader.decodeFromConstraints(
-              //         constraints,
-              //         videoRef.current,
-              //         (result, error) => {
-              //           if (result) {
-              //             const text = result.getText();
-              //             alert(text);
-              //             setSearchItem(text)  
-              //             window.navigator.vibrate?.(200);
-              //             const beep = new Audio("/beep.mp3");
-              //             beep.play();
-            
-              //             const stream = videoRef.current?.srcObject;
-              //             stream?.getTracks().forEach((track) => track.stop());
-            
-              //             if (codeReaderRef.current?.reset && typeof codeReaderRef.current.reset === "function") {
-              //               codeReaderRef.current.reset();
-              //             }
-            
-              //             setScanning(false);
-              //           }
-            
-              //           if (error && error.name !== "NotFoundException") {
-              //             console.error("Scan error:", error);
-              //           }
-              //         }
-              //       );
-              //     };
-            
-              //     try {
-              //       await tryDecode({ exact: "environment" });
-              //     } catch (error) {
-              //       if (error.name === "OverconstrainedError" || error.name === "NotFoundError") {
-              //         console.warn("Back camera not found. Trying front camera...");
-              //         try {
-              //           await tryDecode("user");
-              //         } catch (fallbackError) {
-              //           console.error("Front camera also failed:", fallbackError);
-              //           alert("No camera found or accessible.");
-              //           setScanning(false);
-              //         }
-              //       } else {
-              //         console.error("Camera access error:", error);
-              //         alert("Camera access error: " + error.message);
-              //         setScanning(false);
-              //       }
-              //     }
-              //   };
-            
-              //   startScanner();
-            
-              //   return () => {
-              //     const stream = videoRef.current?.srcObject;
-              //     stream?.getTracks().forEach((track) => track.stop());
-            
-              //     if (codeReaderRef.current?.reset && typeof codeReaderRef.current.reset === "function") {
-              //       codeReaderRef.current.reset();
-              //     }
-              //   };
-              // }, [scanning]);
 
    const applyfilter = () => {
   const filterreport = report.filter((transfer) => {
@@ -461,11 +387,11 @@ const downloadAsPDF = () => {
                 </header>
                 {
                   pop  && (
-                    <ItemDetailsPopup item={selectedItem} onClose={() => setPop(false)} />
+                    <ItemDetailsPopup selectedWarehouse={selectedWarehouse} item={selectedItem} onClose={() => setPop(false)} />
                   )
                 }
                { view && (
-                    <ClubStockView item={selectedItem} setView={setView} warehouses={options.warehouses} items={allItems} />
+                    <ClubStockView selectedWarehouse={selectedWarehouse} item={selectedItem} setView={setView} warehouses={options.warehouses} items={allItems} />
                 )}
                 {/* Filter Section (Collapsible) */}
                 <div className="bg-white border-t-4 rounded-lg shadow-sm border-cyan-600">
@@ -484,10 +410,6 @@ const downloadAsPDF = () => {
                     <Select className='w-full' options={options.warehouses} onChange={(option) => {setSelectedWarehouse(option.value);setSelectedWarehouseName(option.label)}} value={options.warehouses.find(option => option.value === selectedWarehouse)} />
                 </div>
                 <div>
-                    <label className="block mb-1 text-sm font-medium text-gray-600">Item Type</label>
-                    <Select className='w-full' options={[{ label: "Item", value: "item" }, { label: "Services", value: "services" }]} />
-                </div>
-                <div>
                     <label className="block mb-1 text-sm font-medium text-gray-600">Category</label>
                     <Select className='w-full' options={options.categories} onChange={(option) => setCategory(option.value)} value={options.categories.find(option => option.value === category) || null} />
                 </div>
@@ -503,6 +425,7 @@ const downloadAsPDF = () => {
             
             {/* --- Button Added Here --- */}
             <div className="flex justify-end mt-6">
+              
                 <button 
                     onClick={() => { /* Add your filter logic here */ applyfilter() }} 
                     className="px-5 py-2 font-semibold text-white transition-colors duration-200 rounded-md bg-cyan-600 hover:bg-cyan-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-500"
@@ -519,6 +442,30 @@ const downloadAsPDF = () => {
     {/* Main Header with Export Button */}
     <div className="flex items-center justify-between p-4 border-b border-gray-200">
         <h3 className="text-lg font-semibold text-gray-700">Records</h3>
+         <button
+      type="button"
+      onClick={fetchInitialData}
+      disabled={loading}
+      // title={label}
+      // aria-label={label}
+      className={`inline-flex items-center gap-2 rounded-2xl px-3 py-2 text-sm
+                  bg-white border shadow-sm hover:bg-gray-50 active:scale-[0.98]
+                  disabled:opacity-60 disabled:cursor-not-allowed `}
+    >
+      {/* Icon */}
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        className={`h-4 w-4 ${loading ? "animate-spin" : ""}`}
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+      >
+        <path d="M21 12a9 9 0 1 1-2.64-6.36" />
+        <path d="M21 3v6h-6" />
+      </svg>
+      <span>{loading ? "Refreshing..." : "Refresh"}</span>
+    </button>
         <div className="relative">
             <button onClick={() => setShowExportDropdown(!showExportDropdown)} className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700">
                 <DownloadIcon className="w-4 h-4" />
@@ -565,25 +512,32 @@ const downloadAsPDF = () => {
       (item.stockTransferOut || 0);
   
     if (pendingQty <= 0) return null; // ⛔️ skip rows with no pending qty
-
     return (
       <tr
         key={`${item.saleId}-${index}`}
         className="hover:bg-gray-50"
-        onClick={() => {
+       
+      >
+        <td className="px-4 py-3 text-sm font-medium text-gray-700" onClick={() => {
+          setPreviewItem(item);
+        }}><img src={`${link}/uploads/qr/items/${item.itemImages[0]}`} alt={index+1} /></td>
+        <td className={`px-4 py-3 text-sm font-medium ${selectedItem?.itemName===item.itemName ? 'text-blue-400' : 'text-gray-400'} break-words`}  onClick={() => {
           setView(true);
           setSelectedItem(item);
-        }}
-      >
-        <td className="px-4 py-3 text-sm font-medium text-gray-700">{index + 1}</td>
-        <td className="px-4 py-3 text-sm font-medium text-gray-800 break-words">
+        }}>
           {item.itemName}
         </td>
-        <td className="px-4 py-3 text-sm font-medium text-center text-gray-800">
+        <td className="px-4 py-3 text-sm font-medium text-center text-gray-800"  onClick={() => {
+          setView(true);
+          setSelectedItem(item);
+        }}>
           {pendingQty}
         </td>
-        <td className="px-4 py-3 text-lg font-bold text-blue-600">
-          ₹{item.salesPrice || 0}
+        <td className="px-4 py-3 text-lg font-bold text-blue-600"  onClick={() => {
+          setView(true);
+          setSelectedItem(item);
+        }}>
+          ₹{item.mrp || 0}
         </td>
       </tr>
     );
@@ -610,7 +564,50 @@ const downloadAsPDF = () => {
             
             </main>
             {/* Barcode Scanner Modal */}
-           
+           {previewItem && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70"
+          onClick={() => {
+            setPreviewItem(null);
+          }}
+        >
+          <div
+            className="bg-white rounded shadow-lg max-w-4xl w-full max-h-[90vh] p-4 overflow-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold">
+                {previewItem.itemName} – images
+              </h3>
+              <button
+                className="text-2xl font-bold text-red-600"
+                onClick={() => {
+                  setPreviewItem(null);
+                }}
+              >
+                ×
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
+              {previewItem.itemImages.map((fn, idx) => {
+                const url = fn.startsWith("http")
+                  ? fn
+                  : `${link}/uploads/qr/items/${fn}`;
+                return (
+                  <div key={idx} className="relative group">
+                    <img
+                      src={url} loading="lazy"
+                      alt={`${previewItem.itemName} ${idx + 1}`}
+                      className="object-cover w-full h-64 rounded cursor-pointer"
+                    />
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
         </div>
     );
 };

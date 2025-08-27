@@ -187,35 +187,40 @@ const Sidebar = ({ isSidebarOpen }) => {
               leaveTo="transform opacity-0 -translate-y-2"
             >
               <ul className="pl-4">
+                {hasPermissionFor("users", "Add") && (
                 <li
                   className="flex items-center gap-2 p-2 text-sm cursor-pointer hover:bg-gray-700"
                   onClick={() => navigate("/admin/user/list")}
                 >
                   <FaList />
                   <span>Users List</span>
-                </li>
+                </li>)}
+                {hasPermissionFor("roles", "View") && (
                 <li
                   className="flex items-center gap-2 p-2 text-sm cursor-pointer hover:bg-gray-700"
                   onClick={() => navigate("/admin/role/list")}
                 >
                   <FaUserShield />
                   <span>Roles List</span>
-                </li>
+                </li>)}
 
+               {hasPermissionFor("rider", "View") && (
                 <li
                   className="flex items-center gap-2 p-2 text-sm cursor-pointer hover:bg-gray-700"
                   onClick={() => navigate("/rider/list")}
                 >
                   <FaList />
                   <span>Rider List</span>
-                </li>
-                <li
+                </li>)}
+                {hasPermissionFor("rider_commission", "Add") && (
+                  <li
                   className="flex items-center gap-2 p-2 text-sm cursor-pointer hover:bg-gray-700"
                   onClick={() => navigate("/rider-commission/view")}
-                >
+                  >
                   <FaList />
                   <span>Rider Commission List</span>
                 </li>
+                )}
               </ul>
             </Transition>
           </li>
@@ -293,46 +298,7 @@ const Sidebar = ({ isSidebarOpen }) => {
             </Transition>
           </li>
         )}
-
-{/* 
-        {(isAdmin || hasPermissionFor("sales", "View") ) && (
-          <li>
-            <div
-              className="flex items-center justify-between p-2 cursor-pointer hover:bg-gray-700"
-              onClick={() => handleDropdownToggle("salesLocation")}
-            >
-              <div className="flex items-center space-x-2">
-                <FaCartPlus />
-                <span>Sales Location</span>
-              </div>
-              {dropdowns.salesLocation ? <FaAngleUp /> : <FaAngleDown />}
-            </div>
-            <Transition
-              show={dropdowns.salesLocation}
-              enter="transition-all duration-300 ease-out"
-              enterFrom="transform opacity-0 -translate-y-2"
-              enterTo="transform opacity-100 translate-y-0"
-              leave="transition-all duration-300 ease-in"
-              leaveFrom="transform opacity-100 translate-y-0"
-              leaveTo="transform opacity-0 -translate-y-2"
-            >
-              <ul className="pl-4">
-                {hasPermissionFor("posorders", "Add") && (
-                  <li
-                    className="flex items-center p-2 space-x-2 text-sm cursor-pointer hover:bg-gray-700"
-                    onClick={() => navigate("/pos-main")}
-                  >
-                    <FaCashRegister />
-                    <span>Sales Location</span>
-                  </li>
-                )}
-              </ul>
-            </Transition>
-          </li>
-        )} */}
-
-
-
+        
            <li onClick={() => navigate("/printer-settings")}>
             <div
               className="flex items-center justify-between p-2 cursor-pointer hover:bg-gray-700"
@@ -411,7 +377,7 @@ const Sidebar = ({ isSidebarOpen }) => {
         )} */}
 
         
-                  {(isAdmin || hasPermissionFor("coupon", "View")) && (
+                  {(isAdmin || hasPermissionFor("coupons", "View")) && (
   <li>
     <div
       className="flex items-center justify-between p-2 cursor-pointer hover:bg-gray-700"
@@ -433,7 +399,7 @@ const Sidebar = ({ isSidebarOpen }) => {
       leaveTo="transform opacity-0 -translate-y-2"
     >
       <ul className="pl-4">
-        {hasPermissionFor("customer_coupon", "Add") && (
+        {hasPermissionFor("customercoupons", "Add") && (
           <li
             className="flex items-center p-2 space-x-2 text-sm cursor-pointer hover:bg-gray-700"
             onClick={() => navigate("/customer/coupon/add")}
@@ -442,7 +408,7 @@ const Sidebar = ({ isSidebarOpen }) => {
             <span>Add customer coupon</span>
           </li>
         )}
-        {hasPermissionFor("customer_coupon", "View") && (
+        {hasPermissionFor("customercoupons", "View") && (
           <li
             className="flex items-center p-2 space-x-2 text-sm cursor-pointer hover:bg-gray-700"
             onClick={() => navigate("/customer/coupon/view")}
@@ -475,8 +441,8 @@ const Sidebar = ({ isSidebarOpen }) => {
 )}
 
 {/* Audit feature */}
-    {/* {(isAdmin || hasPermissionFor("audit", "View")) && ( */}
-    {(true) && (
+{/* {(true) && ( */}
+    {(isAdmin || hasPermissionFor("audit", "View")) && (
   <li>
     <div
       className="flex items-center justify-between p-2 cursor-pointer hover:bg-gray-700"
@@ -498,8 +464,8 @@ const Sidebar = ({ isSidebarOpen }) => {
       leaveTo="transform opacity-0 -translate-y-2"
     >
       <ul className="pl-4">
-        {/* {hasPermissionFor("audit", "Add") && ( */}
-        {true && (
+        {/* {true && ( */}
+        {hasPermissionFor("audit", "Add") && (
           <li
             className="flex items-center p-2 space-x-2 text-sm cursor-pointer hover:bg-gray-700"
             onClick={() => navigate("/audit")}
@@ -509,8 +475,7 @@ const Sidebar = ({ isSidebarOpen }) => {
           </li>
         )}
 
-         {/* {hasPermissionFor("audit", "Update") && ( */}
-         {true && (
+         {hasPermissionFor("audit", "edit") && (
           <li
             className="flex items-center p-2 space-x-2 text-sm cursor-pointer hover:bg-gray-700"
             onClick={() => navigate("/audit/open")}
@@ -520,8 +485,7 @@ const Sidebar = ({ isSidebarOpen }) => {
           </li>
         )}
         
-         {/* {hasPermissionFor("audit", "View") && ( */}
-         {true && (
+         {hasPermissionFor("audit", "View") && (
           <li
             className="flex items-center p-2 space-x-2 text-sm cursor-pointer hover:bg-gray-700"
             onClick={() => navigate("/audit/all")}
@@ -530,12 +494,6 @@ const Sidebar = ({ isSidebarOpen }) => {
             <span>Audit List</span>
           </li>
         )}
-
-        
-
-        
-      
-       
       </ul>
     </Transition>
   </li>
@@ -671,8 +629,7 @@ const Sidebar = ({ isSidebarOpen }) => {
 
 
           {/* image management  */}
-  {/* {(isAdmin || hasPermissionFor("image_management", "View")) && ( */}
-  {true && (
+  {(isAdmin || hasPermissionFor("imagemanagement", "View")) && (
           <li>
             <div
               className="flex items-center justify-between p-2 cursor-pointer hover:bg-gray-700"
@@ -694,8 +651,8 @@ const Sidebar = ({ isSidebarOpen }) => {
               leaveTo="transform opacity-0 -translate-y-2"
             >
               <ul className="pl-4">
-                {true && (
-                // {hasPermissionFor("ImageManagement", "Add") && (
+                {/* {hasPermissionFor("ImageManagement", "Add") && ( */}
+                 {hasPermissionFor("ImageManagement", "Add") && (
                   <li
                     className="flex items-center p-2 text-sm cursor-pointer hover:bg-gray-700"
                     onClick={() => navigate("/item/image-management ")}
@@ -704,8 +661,7 @@ const Sidebar = ({ isSidebarOpen }) => {
                     <span>Item Image Management</span>
                   </li>
                 )}
-                {/* {hasPermissionFor("CategoryImageManagemnt", "View") && ( */}
-                {true && (
+                {hasPermissionFor("ImageManagemnt", "Add") && (
                   <li
                     className="flex items-center p-2 text-sm cursor-pointer hover:bg-gray-700"
                     onClick={() => navigate("/category/image-management")}
@@ -714,8 +670,7 @@ const Sidebar = ({ isSidebarOpen }) => {
                     <span>Category Image Management</span>
                   </li>
                 )}
-                {/* {hasPermissionFor("CategoryImageManagemnt", "View") && ( */}
-                {true && (
+                {hasPermissionFor("ImageManagemnt", "Add") && (
                   <li
                     className="flex items-center p-2 text-sm cursor-pointer hover:bg-gray-700"
                     onClick={() => navigate("/subcategory/image-management")}
@@ -724,8 +679,7 @@ const Sidebar = ({ isSidebarOpen }) => {
                     <span>SubCategory Image Management</span>
                   </li>
                 )}
-                 {/* {hasPermissionFor("CategoryImageManagemnt", "View") && ( */}
-                 {true && (
+                 {hasPermissionFor("ImageManagemnt", "Add") && (
                   <li
                     className="flex items-center p-2 text-sm cursor-pointer hover:bg-gray-700"
                     onClick={() => navigate("/subsubcategory/image-management")}
@@ -789,7 +743,7 @@ const Sidebar = ({ isSidebarOpen }) => {
 
 
         {/* Banners Section */}
-        {(isAdmin || hasPermissionFor("banners", "View")) && (
+        {(isAdmin || hasPermissionFor("banner", "View")) && (
           <li>
             <div
               className="flex items-center justify-between p-2 cursor-pointer hover:bg-gray-700"
@@ -811,7 +765,7 @@ const Sidebar = ({ isSidebarOpen }) => {
               leaveTo="transform opacity-0 -translate-y-2"
             >
               <ul className="pl-4">
-                {hasPermissionFor("banners", "Add") && (
+                {hasPermissionFor("banner", "Add") && (
                   <li
                     className="flex items-center p-2 text-sm cursor-pointer hover:bg-gray-700"
                     onClick={() => navigate("/banners/add")}
@@ -821,7 +775,7 @@ const Sidebar = ({ isSidebarOpen }) => {
                   </li>
                 )}
                 
-                {hasPermissionFor("banners", "View") && (
+                {hasPermissionFor("banner", "View") && (
                   <li
                     className="flex items-center p-2 text-sm cursor-pointer hover:bg-gray-700"
                     onClick={() => navigate("/banners/view")}
@@ -830,7 +784,7 @@ const Sidebar = ({ isSidebarOpen }) => {
                     <span>banners List</span>
                   </li>
                 )}
-                {hasPermissionFor("Marketing_Items", "Add") && (
+                {hasPermissionFor("MarketingItems", "Add") && (
                   <li
                     className="flex items-center p-2 text-sm cursor-pointer hover:bg-gray-700"
                     onClick={() => navigate("/marketingitem/add")}
@@ -839,7 +793,7 @@ const Sidebar = ({ isSidebarOpen }) => {
                     <span>Add Marketing Item</span>
                   </li>
                 )}
-                {hasPermissionFor("Marketing_Items", "View") && (
+                {hasPermissionFor("MarketingItems", "View") && (
                   <li
                     className="flex items-center p-2 text-sm cursor-pointer hover:bg-gray-700"
                     onClick={() => navigate("/marketingitem/view")}
@@ -1045,13 +999,15 @@ const Sidebar = ({ isSidebarOpen }) => {
                     <span>Cash Transactions</span>
                   </li>
                 )}
+                                {hasPermissionFor("accounts", "View") && (
+
                   <li
                     className="flex items-center p-2 text-sm cursor-pointer hover:bg-gray-700"
                     onClick={() => navigate("/account/rider/view")}
                   >
                     <FaMoneyBillWave />
                     <span>Rider Account List</span>
-                  </li>
+                  </li>)}
               </ul>
             </Transition>
           </li>

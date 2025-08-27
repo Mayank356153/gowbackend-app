@@ -7,7 +7,7 @@ const BannerTemplateThree = React.forwardRef(({ item }, ref) => (
         shop number 210-211 basement new rishi nagar hisar 125001
       </p>
     <img 
- src="http://localhost:5000/uploads/1746207961000.png"
+          src={`https://pos.inspiredgrow.in/vps/uploads/qr/items/${item.masterImage}`}
       alt={item.itemName} className="w-24 h-auto mx-auto mb-2" />
     <h3 className="text-base font-bold">{item.itemName}</h3>
     <p className="mb-1 text-xs text-gray-600">{item.description}</p>

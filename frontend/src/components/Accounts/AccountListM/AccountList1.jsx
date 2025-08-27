@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, use } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
   FaTrash,
@@ -46,20 +46,40 @@ export default function AccountList1() {
   const storeId = localStorage.getItem("storeId") || "";
   const role    = (localStorage.getItem("role") || "").toLowerCase();
   const isAdmin = role === "admin";
-
+  const [accountIds, setAccountsIds] = useState([]);
   const tableRef = useRef();
-
+ 
+   
+ 
+    const fetchWarehouses = async () => {
+        try {
+            const response = await axios.get(`${API_BASE}/warehouses`,{
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${localStorage.getItem('token')}`
+                  }});
+                  console.log("warehouse")
+            setAccountsIds(response.data.data.filter(w=>JSON.parse(localStorage.getItem("warehouses")).includes(w._id)).map(w => w.cashAccount?._id));
+            
+        } catch (error) {
+            console.error("Error fetching warehouses:", error);
+        }
+     }
+     useEffect(() => {
+       fetchWarehouses();
+  }, []);
 
   /* ───────── 1 – Load accounts & their warehouses ───────── */
   useEffect(() => {
+    
     setLoading(true);
-
+    const userId=localStorage.getItem("userId") || null;
     if (!isAdmin && !storeId) {
       setError("No store ID found. Please log in again.");
       setLoading(false);
       return;
     }
-
+      
     Promise.all([
       axios.get(`${API_BASE}/accounts`),
       axios.get(`${API_BASE}/warehouses`)
@@ -67,9 +87,10 @@ export default function AccountList1() {
       .then(([accRes, whRes]) => {
         const wMap = {};
         (whRes.data.data||[]).forEach(w => wMap[w._id] = w);
-
+        console.log("allaccount",accRes.data.data);
+        console.log("accounts", accRes.data.data.filter(acc=>acc.createdBy?._id===userId || accountIds.includes(acc._id))||[]);
         // for each account, ask which warehouse it uses
-        const ps = (accRes.data.data||[]).map(acc =>
+        const ps = (accRes.data.data.filter(acc=>acc.createdBy?._id===userId || accountIds.includes(acc._id))||[]).map(acc =>
           axios.get(`${API_BASE}/by-cash-account/${acc._id}`)
             .then(r => {
               const wid = r.data.warehouseId;
@@ -88,9 +109,14 @@ export default function AccountList1() {
         );
 
         Promise.all(ps).then(arr => {
+          console.log("arr:", arr);
           const ok = arr.filter(Boolean);
+          console.log("ok:", ok);
           setAccounts(ok);
+          console.log("maya",arr)
+          
           if (!ok.length) setError("No accounts found for your store.");
+          else setError("");
         });
       })
       .catch(err=>{
@@ -98,7 +124,9 @@ export default function AccountList1() {
         setError(err.response?.data?.message||"Failed to load data.");
       })
       .finally(()=>setLoading(false));
-  },[storeId,isAdmin]);
+
+      
+  },[storeId,isAdmin,accountIds]);
 
   /* ───────── 2 – Fetch summary for each account ───────── */
   const isRange = ()=>Boolean(fromDate && toDate);
@@ -135,7 +163,7 @@ export default function AccountList1() {
           params: dateParams({ warehouseId })
         })
         .then(r=>r.data);
-
+     console.log("roooo",row)
       if (isToday()) {
         setTodayLive(t=>({
           ...t,
@@ -245,7 +273,7 @@ export default function AccountList1() {
        )
        }
        {
-        active === "account3" &&(<AccountList3 currentRecords={currentRecords} statsByAcc={statsByAcc} todayLive={todayLive} accWhMap={accWhMap} isToday={isToday}
+        active === "account3" &&(<AccountList3 setOnDate={setOnDate} setToDate={setToDate} setFromDate={setFromDate} filtered={filtered} currentPage={currentPage} entriesPerPage={entriesPerPage} totalPages={totalPages} setCurrentPage={setCurrentPage} currentRecords={currentRecords} statsByAcc={statsByAcc} todayLive={todayLive} accWhMap={accWhMap} isToday={isToday}
            isRange={isRange} fromDate={fromDate} toDate={toDate} onDate={onDate} setSelectedAccount={setSelectedAccount} handleEditVanCash={handleEditVanCash} setActive={setActive} selectedAccount={selectedAccount}  navigate={navigate} safe={safe}
         />) 
        }

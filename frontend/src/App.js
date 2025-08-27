@@ -7,18 +7,18 @@ import { Suspense, lazy } from "react";
 
 import BackButtonHandler from "./BackButtonHandler";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-
+import {QueryClient, QueryClientProvider} from '@tanstack/react-query';
 import SaleLocation from "./components/SaleLocation/SaleLocation.jsx";
 
 // Capacitor plugins
 import { Camera } from '@capacitor/camera';
 import { StatusBar, Style } from '@capacitor/status-bar';
-import { Device } from '@capacitor/device';
 import { Preferences } from '@capacitor/preferences';
 import { Geolocation } from "@capacitor/geolocation";
+import { NativeSettings, AndroidSettings, IOSSettings } from "capacitor-native-settings";
+
 import { BluetoothLe } from '@capacitor-community/bluetooth-le';
 import BluetoothStatus from './plugins/BluetoothStatus';
-
 import { POSContext } from "./context/POSContext.js";
 // Lazily loaded components/pages
 const AdminRegister = lazy(() => import("./pages/AdminRegister"));
@@ -172,9 +172,21 @@ const PrinterSettings = lazy(() => import("./pages/PrinterSettings"));
 const Print = lazy(() => import("./components/Sales/POS/Print"));
 const ClubBillReport = lazy(() => import("./components/Reports/ClubReport"));
 const AccountList1 = lazy(() => import("./components/Accounts/AccountListM/AccountList1"));
-function App() {
-    const{ available,loadPOSData } = useContext(POSContext);
+const NewItem = lazy(() => import("./components/Items/NewItem"));
+const StockAnalyser = lazy(() => import ("./components/Stock/StockAnalyser/StockAnalyser.jsx"));
 
+const queryClient=new QueryClient();
+
+function App() {
+
+
+
+
+
+    const{ available,loadPOSData } = useContext(POSContext);
+useEffect(()=>{
+  loadPOSData();
+},[])
   const [isOn, setIsOn] = useState(false);
 useEffect(() => {
   // Initial Bluetooth status check
@@ -207,11 +219,7 @@ useEffect(() => {
 
   return () => clearInterval(interval);
 }, []); // Empty dependency array is fine here since this runs on mount/unmount
- useEffect(() => {
-   if(!available){
-     loadPOSData();
-   }
- }, [])
+
 
 useEffect(() => {
   const connectToDevice = (device) => {
@@ -263,13 +271,32 @@ useEffect(() => {
   };
 
   const requestLocationPermission = async () => {
-    try {
-      const status = await Geolocation.requestPermissions();
-      console.log('Location permission:', status);
-    } catch (err) {
-      console.error('Location permission error:', err);
+  try {
+    // Step 1: Permission request
+    const status = await Geolocation.requestPermissions();
+    console.log("Location permission:", status);
+
+    if (status.location === 'granted' || status.coarseLocation === 'granted') {
+      try {
+        // Step 2: Current location fetch
+        const pos = await Geolocation.getCurrentPosition({ enableHighAccuracy: true });
+        console.log("Current Location:", pos.coords);
+      } catch (err) {
+        console.warn("GPS might be OFF. Redirecting to settings...");
+        
+        // Step 3: GPS OFF → open settings
+        await NativeSettings.open({
+          optionAndroid: AndroidSettings.Location,
+          optionIOS: IOSSettings.App, // iOS: app settings only
+        });
+      }
+    } else {
+      console.warn("Permission denied by user.");
     }
-  };
+  } catch (err) {
+    console.error("Location permission error:", err);
+  }
+};
 
   const requestBluetoothPermission = async () => {
     try {
@@ -283,9 +310,10 @@ useEffect(() => {
 
   const configureStatusBar = async () => {
     try {
-      await StatusBar.setStyle({ style: Style.Dark });
-      await StatusBar.setBackgroundColor({ color: '#ffffff' }); // use hex code
-      await StatusBar.show();
+      
+StatusBar.setBackgroundColor({ color: '#FF6200EE' }); // Same as XML color
+StatusBar.setStyle({ style: Style.Light }); // or Style.Dark depending on text color
+StatusBar.setOverlaysWebView({ overlay: false });
     } catch (error) {
       console.warn('StatusBar plugin not available:', error);
     }
@@ -308,6 +336,7 @@ useEffect(() => {
 }, []);
   return (
     // <AppProviders>
+      <QueryClientProvider client={queryClient}>
     <Router>
         <BackButtonHandler />
          <Suspense fallback={<div style={{ padding: 24 }}>Loading…</div>}>
@@ -349,6 +378,7 @@ useEffect(() => {
         <Route path="/customer/import" element={<ImportCustomer />} />
         <Route path="/supplier/import" element={<ImportSupplier />} />
         <Route path="/items/add" element={<AddItem />} />
+        <Route path="/items/new" element={<NewItem />} />
         <Route path="/services/add" element={<AddService />} />
         <Route path="/add-update-services" element={<AddUpdateServices />} />
         <Route path="/item-list" element={<ItemList />} />
@@ -430,6 +460,7 @@ useEffect(() => {
         <Route path="/stock-adjustment" element={<AddStockAdjustment />} />
         <Route path="/adjustment-list" element={<AdjustmentList />} />
         <Route path="/stock-transfer" element={<AddStockTransfer />} />
+        <Route path="/stock-analyser" element={<StockAnalyser />} />
         <Route path="/transfer-list" element={<TransferList />} />
         <Route path="/expense-list" element={<ExpenseList />} />
         <Route path="/add-expense" element={<AddExpense />} />
@@ -487,7 +518,7 @@ useEffect(() => {
       </Routes>
       </Suspense>
     </Router>
-    // </AppProviders>
+          </QueryClientProvider>
   );
 }
 

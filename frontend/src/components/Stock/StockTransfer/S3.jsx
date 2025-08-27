@@ -6,7 +6,7 @@ import { App } from '@capacitor/app';
 import {Keyboard} from '@capacitor/keyboard';
 // Main Component
 export default function S3({
-    formData,
+    formData,isSubmitting,setIsSubmitting,  
     setActiveTab,
     selectedItems,
     setSelectedItems,
@@ -112,7 +112,7 @@ export default function S3({
                     <button type="button" onClick={() => navigate("/transfer-list")} className="flex-1 px-4 py-3 text-sm font-medium text-gray-700 bg-gray-100 rounded-xl hover:bg-gray-200">
                         Cancel
                     </button>
-                    <button type="submit" className="flex-1 px-4 py-3 text-sm font-medium text-white bg-green-600 rounded-xl hover:bg-green-700">
+                    <button disabled={isSubmitting} type="submit" className="flex-1 px-4 py-3 text-sm font-medium text-white bg-green-600 rounded-xl hover:bg-green-700">
                         {id ? "Update Transfer" : "Save Transfer"}
                     </button>
                 </div>

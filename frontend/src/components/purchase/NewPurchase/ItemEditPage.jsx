@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { App } from '@capacitor/app';
+import axios from 'axios';
 const ItemEditPage = ({ item,edit,setEdit,id,setFormData,formData }) => {
   const [form, setForm] = useState({
     expiryDate: '',
@@ -28,6 +29,11 @@ useEffect(() => {
 
 const hasPermissionFor = (module, action) => {
     const localPermissions = JSON.parse(localStorage.getItem('permissions')) || [];
+    console.log("permisssion",localPermissions.some(
+      (perm) =>
+        perm.module.toLowerCase() === module.toLowerCase() &&
+        perm.actions.map((a) => a.toLowerCase()).includes(action.toLowerCase())
+    ))
     return localPermissions.some(
       (perm) =>
         perm.module.toLowerCase() === module.toLowerCase() &&
@@ -62,7 +68,7 @@ const hasPermissionFor = (module, action) => {
     setForm(updatedForm);
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit =async (e) => {
     e.preventDefault();
     if(form.salesPrice<form.purchasePrice){
       alert("Sales Price cannot be less than Purchase Price");
@@ -78,6 +84,15 @@ const hasPermissionFor = (module, action) => {
     items: updateditem, 
   }))
   
+    const res= await axios.put("https://pos.inspiredgrow.in/vps/api/items/updateFromPurchase",{
+      itemId:id,
+      ...form
+     },{
+      headers:{
+        Authorization: `Bearer ${localStorage.getItem("token")}`,
+      }
+     })
+         console.log("Item updated successfully:", res.data);
   setForm({
     expiryDate: '',
     mrp: 0,
@@ -146,7 +161,7 @@ const hasPermissionFor = (module, action) => {
       <div>
         <label className="block mb-1 text-xs font-medium text-gray-600">Sales Price</label>
         <input
-          type="number" 
+          type="number" readOnly={!hasPermissionFor('Items', 'Edit') || !hasPermissionFor('Sales', 'Edit') }
           value={form.salesPrice}
           onChange={(e) => handleChange('salesPrice', e.target.value)}
           className="w-full px-2 py-1.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500/50 transition-colors duration-200"

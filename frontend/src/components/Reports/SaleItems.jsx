@@ -57,7 +57,7 @@ const SaleItemReportPage = () => {
     const [searchItemName, setSearchItemName] = useState("");
     const [dateFrom, setDateFrom] = useState("");
     const [dateTo, setDateTo] = useState("");
-    
+    const [selectedCustomer, setSelectedCustomer] = useState("all");
     // UI States
     const [result, setResult] = useState(""); // For item search dropdown
     const [scanning, setScanning] = useState(false);
@@ -77,20 +77,20 @@ const SaleItemReportPage = () => {
                 const token = localStorage.getItem("token");
                 const headers = { Authorization: `Bearer ${token}` };
 
-                const [warehousesRes, categoriesRes,  salesRes] = await Promise.all([
+                const [warehousesRes, categoriesRes, customerRes, salesRes] = await Promise.all([
                     axios.get(`${link}/api/warehouses`, { headers }),
                     axios.get(`${link}/api/categories`, { headers }),
-                    
+                    axios.get(`${link}/api/customer-data/all`, { headers }),
                     axios.get(`${link}/api/pos/invoices`, { headers })
                 ]);
 
                 const warehouses = warehousesRes.data.data.map(w => ({ label: w.warehouseName, value: w._id }));
                 const categories = categoriesRes.data.data.map(c => ({ label: c.name, value: c._id }));
-
+                const cutomers=customerRes.data.map(c => ({ label: c.customerName, value: c._id }))
                 setOptions({
                     warehouses: [{ label: "All", value: "all" }, ...warehouses],
                     categories: [{ label: "All", value: "all" }, ...categories],
-                    
+                    customers : [{ label: "All", value: "all" }, ...cutomers]
                 });
                 setSales(salesRes.data);
             } catch (err) {
@@ -190,12 +190,13 @@ const SaleItemReportPage = () => {
 
        const applyfilter = () => {
   const result = sales.filter((transfer) => {
-    const { warehouse, items, saleDate: date } = transfer;
+    const { warehouse, items, saleDate: date,customer } = transfer;
 
     const warehouseMatch = selectedWarehouse === "all" || warehouse._id === selectedWarehouse;
 
     const categoryMatch = category === "all" || items.some((it) => it.item?.category?._id === category);
-
+    const customerMatch = selectedCustomer === "all" || customer._id === selectedCustomer;
+    
     const itemMatch =
       searchItem === "all" || searchItem === "" ||
       items.some((it) =>
@@ -210,7 +211,7 @@ const SaleItemReportPage = () => {
 
     const dateInRange = (!fromDateObj || dateObj >= fromDateObj) && (!toDateObj || dateObj <= toDateObj);
 
-    return warehouseMatch && categoryMatch && itemMatch && dateInRange;
+    return warehouseMatch && categoryMatch && itemMatch && dateInRange && customerMatch;
   });
 
   setFilteredTransfers(result); // Only updates on Apply
@@ -345,9 +346,10 @@ const exportToExcel = () => {
                                     <label className="block mb-1 text-sm font-medium text-gray-600">Warehouse</label>
                                    <Select className='w-full' options={options.warehouses} onChange={(option)=>setSelectedWarehouse(option.value)} value={options.warehouses.find(option => option.value===selectedWarehouse)}/>
                                 </div>
-                                <div>
-                                    <label className="block mb-1 text-sm font-medium text-gray-600">Item Type</label>
-                                   <Select className='w-full' options={[{label:"Item",value:"item"},{label:"Services",value:"services"}]} />  
+
+                                 <div>
+                                    <label className="block mb-1 text-sm font-medium text-gray-600">Customers</label>
+                                   <Select className='w-full' options={options.customers} onChange={(option)=>setSelectedCustomer(option.value)} value={options.customers.find(option => option.value===selectedCustomer)}/>
                                 </div>
                                 <div>
                                     <label className="block mb-1 text-sm font-medium text-gray-600">Category</label>
@@ -397,29 +399,23 @@ const exportToExcel = () => {
   <table className="min-w-full bg-white border border-gray-200 rounded-lg">
     <thead className="text-white bg-blue-500">
       <tr>
-        <th className="py-3 text-xs font-medium tracking-wider text-left text-white uppercase">
-          Sale Code
+        <th className="py-3 text-xs font-medium tracking-wider text-center text-white uppercase">
+          #
         </th>
-        <th className="py-3 text-xs font-medium tracking-wider text-left text-white uppercase ">
-          Customer
-        </th>
-        <th className="py-3 text-xs font-medium tracking-wider text-left text-white uppercase ">
-          Item
-        </th>
-        <th className="py-3 text-xs font-medium tracking-wider text-left text-white uppercase ">
-          Category
-        </th>
-        <th className="py-3 text-xs font-medium tracking-wider text-left text-white uppercase ">
+        <th className="py-3 text-xs font-medium tracking-wider text-center text-white uppercase ">
           Date
         </th>
-        <th className="py-3 text-xs font-medium tracking-wider text-left text-white uppercase ">
-          Qty
+        <th className="py-3 text-xs font-medium tracking-wider text-center text-white uppercase ">
+          Item Name
         </th>
-        <th className="py-3 text-xs font-medium tracking-wider text-left text-white uppercase ">
-          Rate
+        <th className="px-2 py-3 text-xs font-medium tracking-wider text-center text-white uppercase">
+          MRP
         </th>
-        <th className="py-3 text-xs font-medium tracking-wider text-left text-white uppercase ">
-          Subtotal
+         <th className="px-2 py-3 text-xs font-medium tracking-wider text-center text-white uppercase">
+          Sale Price
+        </th>
+         <th className="px-2 py-3 text-xs font-medium tracking-wider text-center text-white uppercase">
+          SaleCode
         </th>
       </tr>
     </thead>
@@ -429,18 +425,16 @@ const exportToExcel = () => {
       {
 
       if(item.item === null || item.item === undefined) {
-        return null; // Skip rendering if item is null or undefined
+        return null; 
       }
      return (
         <tr key={`${item.saleId}-${index}`}>
-          <td className="py-4 text-sm text-gray-800 border-1">{item.saleCode}</td>
-          <td className="py-4 text-sm text-gray-800 ">{item.customerName}</td>
-          <td className="py-4 text-sm font-bold text-gray-900 ">{item.item.itemName || "NA"}</td>
-          <td className="py-4 text-sm text-gray-800 ">{item.item.category.name}</td>
-          <td className="py-4 text-sm text-gray-800 ">{new Date(item.saleDate).toLocaleDateString()}</td>
-          <td className="py-4 text-sm font-medium text-gray-800">{item.quantity}</td>
-          <td className="py-4 text-sm font-medium text-gray-800 ">₹{item.price?.toFixed(2)}</td>
-          <td className="py-4 text-lg font-bold text-blue-600 ">₹{item.subtotal?.toFixed(2)}</td>
+          <td className="px-2 py-4 text-sm text-center text-gray-800 border-1">{index+1}</td>
+          <td className="px-2 py-4 text-sm text-center text-gray-800">{new Date(item.saleDate).toLocaleDateString()}</td>
+          <td className="px-2 py-4 text-sm text-center text-gray-800">{item.item?.itemName}</td>
+          <td className="px-2 py-4 text-sm font-medium text-center text-gray-800">{item.item?.mrp}</td>
+          <td className="px-2 py-4 text-sm font-medium text-center text-gray-800">{item.item?.salesPrice}</td>
+          <td className="px-2 py-4 text-sm font-medium text-center text-gray-800">{item.saleCode}</td>
         </tr>
       )})}
 

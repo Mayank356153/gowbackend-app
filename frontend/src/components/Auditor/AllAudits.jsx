@@ -90,127 +90,127 @@ const  AllAudits=()=> {
      
      
   return (
-    <div className="flex flex-col h-screen">
-      <Navbar isSidebarOpen={isSidebarOpen} setSidebarOpen={setSidebarOpen} />
-      <div className="flex w-full">
+//     <div className="flex flex-col h-screen">
+//       <Navbar isSidebarOpen={isSidebarOpen} setSidebarOpen={setSidebarOpen} />
+//       <div className="flex w-full">
  
-          <div>
-        <Sidebar isSidebarOpen={isSidebarOpen} />
-          </div>
+//           <div>
+//         <Sidebar isSidebarOpen={isSidebarOpen} />
+//           </div>
           
-           {/* Content */}
-         <div className={`w-full flex flex-col p-2 md:p-2  `}>
-          <header className="flex flex-col items-center justify-between p-4 rounded-md shadow sm:flex-row">
-            <div className="flex items-center gap-1 text-center sm:flex-row sm:text-left">
-              <h1 className="text-lg font-semibold truncate sm:text-xl">Audit List</h1>
-              {/* <span className="text-xs text-gray-600 sm:text-sm">Add/Update Banner</span> */}
-            </div>
+//            {/* Content */}
+//          <div className={`w-full flex flex-col p-2 md:p-2  `}>
+//           <header className="flex flex-col items-center justify-between p-4 rounded-md shadow sm:flex-row">
+//             <div className="flex items-center gap-1 text-center sm:flex-row sm:text-left">
+//               <h1 className="text-lg font-semibold truncate sm:text-xl">Audit List</h1>
+//               {/* <span className="text-xs text-gray-600 sm:text-sm">Add/Update Banner</span> */}
+//             </div>
 
-            <nav className="flex flex-wrap items-center justify-center mt-2 text-xs text-gray-500 sm:justify-start sm:text-sm sm:mt-0">
-   <NavLink to="/dashboard" className="flex items-center text-gray-700 no-underline hover:text-cyan-600">
-                            <FaTachometerAlt className="mr-2 text-gray-500 hover:text-cyan-600" /> Home
-                          </NavLink>     
-                          <NavLink to="/banners/view" className="flex items-center text-gray-700 no-underline hover:text-cyan-600">
-                           &gt; Start Audit
-                          </NavLink>    
-                          <NavLink to="/banners/add" className="text-gray-700 no-underline hover:text-cyan-600">
-                           &gt; Audit List
-                          </NavLink>
+//             <nav className="flex flex-wrap items-center justify-center mt-2 text-xs text-gray-500 sm:justify-start sm:text-sm sm:mt-0">
+//    <NavLink to="/dashboard" className="flex items-center text-gray-700 no-underline hover:text-cyan-600">
+//                             <FaTachometerAlt className="mr-2 text-gray-500 hover:text-cyan-600" /> Home
+//                           </NavLink>     
+//                           <NavLink to="/banners/view" className="flex items-center text-gray-700 no-underline hover:text-cyan-600">
+//                            &gt; Start Audit
+//                           </NavLink>    
+//                           <NavLink to="/banners/add" className="text-gray-700 no-underline hover:text-cyan-600">
+//                            &gt; Audit List
+//                           </NavLink>
               
-            </nav>
-          </header>
-           {
-            comparison && <ViewItems  audit={items} onClose={()=>{setComparison(false)}} sidebarOpen={isSidebarOpen}/>
-            // <AuditComparison auditItems={items} onClose={()=>setComparison(false)}/>
-          } 
+//             </nav>
+//           </header>
+//            {
+//             comparison && <ViewItems  audit={items} onClose={()=>{setComparison(false)}} sidebarOpen={isSidebarOpen}/>
+//             // <AuditComparison auditItems={items} onClose={()=>setComparison(false)}/>
+//           } 
 
-          <div className="p-4 mt-1 bg-white border-t-4 rounded-lg shadow-md border-cyan-500">
+//           <div className="p-4 mt-1 bg-white border-t-4 rounded-lg shadow-md border-cyan-500">
             
         
-              <div className="overflow-x-auto border border-gray-200 rounded-lg shadow-sm">
-  {/* Desktop Table */}
-  <table className="min-w-full divide-y divide-gray-200 ">
-    <thead className="bg-gray-50">
-      <tr>
-        <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">
-          Audit ID
-        </th>
-        <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">
-          Total Items
-        </th>
-        <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">
-          Actions
-        </th>
-      </tr>
-    </thead>
-    <tbody className="hidden bg-white divide-y divide-gray-200 md:table">
-      {audits.map((audit) => (
-        <tr key={audit._id}>
-          <td className="px-6 py-4 text-sm font-medium text-gray-900 whitespace-nowrap">
-            {audit._id}
-          </td>
-          <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-            {audit.finalUnit?.length || 0} items
-          </td>
-          <td className="px-6 py-4 text-sm font-medium whitespace-nowrap">
-            <button
-              className="mr-4 text-indigo-600 hover:text-indigo-900"
-              onClick={() => {
-                setItems(audit);
-                setComparison(true);
-              }}
-            >
-              View Comparison
-            </button>
-            <button
-              className="text-red-600 hover:text-red-900"
-              onClick={() => handleDelete(audit._id)}
-            >
-              Delete
-            </button>
-          </td>
-        </tr>
-      ))}
-    </tbody>
-  </table>
+//               <div className="overflow-x-auto border border-gray-200 rounded-lg shadow-sm">
+//   {/* Desktop Table */}
+//   <table className="min-w-full divide-y divide-gray-200 ">
+//     <thead className="bg-gray-50">
+//       <tr>
+//         <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">
+//           Audit ID
+//         </th>
+//         <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">
+//           Total Items
+//         </th>
+//         <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">
+//           Actions
+//         </th>
+//       </tr>
+//     </thead>
+//     <tbody className="hidden bg-white divide-y divide-gray-200 md:table">
+//       {audits.map((audit) => (
+//         <tr key={audit._id}>
+//           <td className="px-6 py-4 text-sm font-medium text-gray-900 whitespace-nowrap">
+//             {audit._id}
+//           </td>
+//           <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+//             {audit.finalUnit?.length || 0} items
+//           </td>
+//           <td className="px-6 py-4 text-sm font-medium whitespace-nowrap">
+//             <button
+//               className="mr-4 text-indigo-600 hover:text-indigo-900"
+//               onClick={() => {
+//                 setItems(audit);
+//                 setComparison(true);
+//               }}
+//             >
+//               View Comparison
+//             </button>
+//             <button
+//               className="text-red-600 hover:text-red-900"
+//               onClick={() => handleDelete(audit._id)}
+//             >
+//               Delete
+//             </button>
+//           </td>
+//         </tr>
+//       ))}
+//     </tbody>
+//   </table>
 
-  {/* Mobile Cards */}
-  <div className="p-4 space-y-4 md:hidden">
-    {audits.map((audit) => (
-      <div
-        key={audit._id}
-        className="p-4 bg-white border border-gray-200 rounded-lg shadow-sm"
-      >
-        <div className="mb-2 text-sm font-medium text-gray-700">Audit ID:</div>
-        <div className="mb-1 text-base font-semibold text-gray-900 break-all">
-          {audit._id}
-        </div>
+//   {/* Mobile Cards */}
+//   <div className="p-4 space-y-4 md:hidden">
+//     {audits.map((audit) => (
+//       <div
+//         key={audit._id}
+//         className="p-4 bg-white border border-gray-200 rounded-lg shadow-sm"
+//       >
+//         <div className="mb-2 text-sm font-medium text-gray-700">Audit ID:</div>
+//         <div className="mb-1 text-base font-semibold text-gray-900 break-all">
+//           {audit._id}
+//         </div>
 
-        <div className="mb-3 text-sm text-gray-600">
-          Total Items: {audit.finalUnit?.length || 0}
-        </div>
+//         <div className="mb-3 text-sm text-gray-600">
+//           Total Items: {audit.finalUnit?.length || 0}
+//         </div>
 
-        <div className="flex justify-start space-x-4">
-          <button
-            className="text-sm text-indigo-600 hover:text-indigo-900"
-            onClick={() => {
-              setItems(audit);
-              setComparison(true);
-            }}
-          >
-            View
-          </button>
-          <button
-            className="text-sm text-red-600 hover:text-red-900"
-            onClick={() => handleDelete(audit._id)}
-          >
-            Delete
-          </button>
-        </div>
-      </div>
-    ))}
-  </div>
-</div>
+//         <div className="flex justify-start space-x-4">
+//           <button
+//             className="text-sm text-indigo-600 hover:text-indigo-900"
+//             onClick={() => {
+//               setItems(audit);
+//               setComparison(true);
+//             }}
+//           >
+//             View
+//           </button>
+//           <button
+//             className="text-sm text-red-600 hover:text-red-900"
+//             onClick={() => handleDelete(audit._id)}
+//           >
+//             Delete
+//           </button>
+//         </div>
+//       </div>
+//     ))}
+//   </div>
+// </div>
  
  
 
@@ -218,12 +218,138 @@ const  AllAudits=()=> {
          
                 
                  
-            </div>
+//             </div>
             
-          </div>
+//           </div>
+//         </div>
+//       </div>
+<div className="flex flex-col h-screen bg-gray-50">
+  <Navbar isSidebarOpen={isSidebarOpen} setSidebarOpen={setSidebarOpen} />
+
+  <div className="flex flex-1 w-full">
+    {/* Sidebar */}
+    <Sidebar isSidebarOpen={isSidebarOpen} />
+
+    {/* Content */}
+    <div className="flex-1 p-4 md:p-6">
+      {/* Header */}
+      <header className="flex flex-col gap-4 p-4 bg-white rounded-lg shadow-md md:flex-row md:items-center md:justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-800">Audit List</h1>
+          <p className="text-sm text-gray-500">Manage and review audit records</p>
+        </div>
+
+        {/* Breadcrumb */}
+        <nav className="flex flex-wrap items-center gap-2 text-sm text-gray-500">
+          <NavLink
+            to="/dashboard"
+            className="flex items-center hover:text-cyan-600"
+          >
+            <FaTachometerAlt className="mr-1" /> Home
+          </NavLink>
+          <span>{'>'}</span>
+          <NavLink to="/banners/view" className="hover:text-cyan-600">
+            Start Audit
+          </NavLink>
+          <span>{'>'}</span>
+          <NavLink to="/banners/add" className="hover:text-cyan-600">
+            Audit List
+          </NavLink>
+        </nav>
+      </header>
+
+      {/* Audit Table / Cards */}
+      <div className="p-4 mt-4 bg-white border-t-4 rounded-lg shadow-md border-cyan-500">
+        {/* Desktop Table */}
+        <div className="hidden overflow-x-auto border border-gray-200 rounded-lg shadow-sm md:block">
+          <table className="min-w-full text-sm text-left text-gray-600">
+            <thead className="text-xs text-gray-700 uppercase bg-gray-100">
+              <tr>
+                <th className="px-6 py-3">Audit ID</th>
+                <th className="px-6 py-3">Total Items</th>
+                <th className="px-6 py-3 text-center">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {audits.map((audit) => (
+                <tr key={audit._id} className="hover:bg-gray-50">
+                  <td className="px-6 py-4 font-medium text-gray-900 break-all">
+                    {audit._id}
+                  </td>
+                  <td className="px-6 py-4">{audit.finalUnit?.length || 0} items</td>
+                  <td className="px-6 py-4 space-x-3 text-center">
+                    <button
+                      className="px-3 py-1 text-sm text-indigo-600 border border-indigo-600 rounded hover:bg-indigo-50"
+                      onClick={() => {
+                        setItems(audit);
+                        setComparison(true);
+                      }}
+                    >
+                      View
+                    </button>
+                    <button
+                      className="px-3 py-1 text-sm text-red-600 border border-red-600 rounded hover:bg-red-50"
+                      onClick={() => handleDelete(audit._id)}
+                    >
+                      Delete
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Mobile Cards */}
+        <div className="space-y-4 md:hidden">
+          {audits.map((audit) => (
+            <div
+              key={audit._id}
+              className="p-4 bg-white border border-gray-200 rounded-lg shadow-sm"
+            >
+              <div className="text-xs font-semibold text-gray-500">Audit ID</div>
+              <div className="mb-2 text-sm font-medium text-gray-900 break-all">
+                {audit._id}
+              </div>
+              <div className="mb-3 text-xs text-gray-500">
+                Total Items: {audit.finalUnit?.length || 0}
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  className="flex-1 px-3 py-1 text-sm text-center text-indigo-600 border border-indigo-600 rounded hover:bg-indigo-50"
+                  onClick={() => {
+                    setItems(audit);
+                    setComparison(true);
+                  }}
+                >
+                  View
+                </button>
+                <button
+                  className="flex-1 px-3 py-1 text-sm text-center text-red-600 border border-red-600 rounded hover:bg-red-50"
+                  onClick={() => handleDelete(audit._id)}
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
-  )
+
+      {/* Comparison Modal */}
+      {comparison && (
+        <ViewItems
+          audit={items}
+          onClose={() => setComparison(false)}
+          sidebarOpen={isSidebarOpen}
+        />
+      )}
+    </div>
+  </div>
+</div>
+  
+)
 }
 
 export default AllAudits

@@ -31,11 +31,13 @@ import {Geolocation} from "@capacitor/geolocation";
 import { POSContext } from "../../../context/POSContext";
 import { set } from "date-fns";
 
+
 function buildInvoiceHTML(order, payments = [], store, cust, rows, sellerName = "–", setPrint, setActiveTab) {
   const {
     logo, storeName, tagline, address, gst, phone, email
   } = store;
 
+  console.log({ order, payments, store, cust, rows, sellerName });
   const today = new Date(order.createdAt || Date.now());
   const totalQuantity = rows.reduce((sum, r) => sum + r.quantity, 0);
 
@@ -100,33 +102,41 @@ function buildInvoiceHTML(order, payments = [], store, cust, rows, sellerName = 
   // setActiveTab("print");
 }
 
-
-
-
-
-
 export default function POSM() {
+  const [params] = useSearchParams();
   const link="https://pos.inspiredgrow.in/vps"
   const [location, setLocation] = useState(null);
   const {posData,loadPOSData}=useContext(POSContext);
-
-  useEffect(() => {
-    const getLocation = async () => {
-      try {
-      
-        const permission = await Geolocation.requestPermissions();
-    const position = await Geolocation.getCurrentPosition();
-
-    const { latitude, longitude } = position.coords;
-          setLocation([ latitude, longitude ]);
-      } catch (err) {
-        console.error('Location error:', err);
-      }
-    };
-
-    getLocation();
-  }, []);
+  const [editId, setEditId] = useState(null);
+let watchId=""
   
+  
+    const getLocation = async () => {
+  try {
+    const permission = await Geolocation.requestPermissions();
+    console.log("Permission:", permission);
+
+    const position = await Geolocation.getCurrentPosition({
+      enableHighAccuracy: true,
+      timeout: 10000,
+    });
+
+    if (position?.coords) {
+      const { latitude, longitude } = position.coords;
+      console.log("Got location:", latitude, longitude);
+      return [longitude, latitude]; // GeoJSON expects [lng, lat]
+    }
+
+    return [0, 0]; // fallback
+  } catch (err) {
+    console.error("Error getting location:", err);
+    return [0, 0]; // fallback
+  }
+};
+
+
+    
+
    useEffect(() => {
       const request = async () => {
         await Camera.requestPermissions({
@@ -135,10 +145,9 @@ export default function POSM() {
         }); // Ask Android to show prompt
       };
       request();
+      setEditId(params.get("id") || null);
     }, []);
   const navigate = useNavigate();
-  const [params] = useSearchParams();
-  const editId = params.get("id");
  const[activeTab,setActiveTab]=useState("pos1")
  const [matchedItems, setMatchedItems] = React.useState([]);
   // ─── STATE ─────────────────────────────────────────────────────────
@@ -146,10 +155,10 @@ export default function POSM() {
   const [loadingUser, setLoadingUser] = useState(false);
   const [isLoadingEdit, setIsLoadingEdit] = useState(false);
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
-
+  const[isSubmitting,setIsSubmitting]=useState(false)
   const [warehouses, setWarehouses] = useState([]);
   const [selectedWarehouse, setSelectedWarehouse] = useState("");
-
+ const[additionalCharges,setAdditionalCharges]=useState(0)
   const [customers, setCustomers] = useState([]);
   const [selectedCustomer, setSelectedCustomer] = useState("");
 
@@ -180,7 +189,7 @@ export default function POSM() {
   const [couponCode, setCouponCode] = useState("");
   const [adjustAdvancePayment, setAdjustAdvancePayment] = useState(false);
   const [advancePaymentAmount, setAdvancePaymentAmount] = useState(0);
-
+  const [additionalPaymentAmount, setAdditionalPaymentAmount] = useState([]);
   const [heldInvoices, setHeldInvoices] = useState([]);
   const [showHoldList, setShowHoldList] = useState(false);
   const [currentOrderId, setCurrentOrderId] = useState("");
@@ -202,33 +211,6 @@ export default function POSM() {
   const authHeaders = () => ({
     headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
   });
-    useEffect(() => {
-       loadPOSData();
-    },[])
-  useEffect(()=>{
-    if(!posData || !posData.items || !posData.customers || !posData.warehouses){
-      console.log("POS Data not loaded yet, waiting...");
-      return;
-    }
-    console.log("POS Data:", posData);
-    
-    setItemG(posData.items || []);
-    
-    const cust=(posData.customers || []);
-     if (Array.isArray(cust)) {
-      setCustomers(cust);
-      if (!editId && cust.length) {
-        // find or default to the first customer
-        const walkIn = cust.find(c => c.customerName.toLowerCase() === "walk-in customer");
-        setSelectedCustomer((walkIn?._id) || cust[0]._id);
-      }
-    } else {
-      setCustomers([]);
-    }
-    
-    setWarehouses(posData.warehouses || []);
-  },[posData])
-
   
   const getPaymentTypeId = (name) =>
     paymentTypes.find((pt) => pt.paymentTypeName?.toLowerCase() === name.toLowerCase())?._id;
@@ -288,6 +270,7 @@ useEffect(() => {
     setSelectedWarehouse(inv.warehouse._id);
 
     // 2️⃣ wait for the items to come back
+     await fetchItems(inv.warehouse._id);
 
     // 3️⃣ only then remember the order to edit
     setOrderToEdit(inv);
@@ -295,109 +278,119 @@ useEffect(() => {
 
         .catch(console.error)
         .finally(() => setIsLoadingEdit(false));
-    } else {
+    } 
+    
+    else {
       loadNextInvoiceCode();
+      
       setSelectedWarehouse(localStorage.getItem("deafultWarehouse") || null);
     }
   }, [editId]);
- 
+
   
-async function fetchLookups() {
-    // ── 1) Warehouses ─────────────────────────────────────
-//     try {
-//       const { data } = await axios.get(
-//         `${link}/api/warehouses`,
-//         authHeaders()
-//       );
-//       const list = data.data || data.warehouses || [];
-//       if (Array.isArray(list)) {
-//   setWarehouses(list);
-// } else {
-//   setWarehouses([]);
-// }
+  useEffect(() => {
+  fetchItems(selectedWarehouse, !!editId); // Pass editId as isEditMode
+}, [selectedWarehouse, editId]);
 
-//     } catch (err) {
-//       console.error("❌ failed to load warehouses", err);
-//       setWarehouses([]);
-//     }
+ 
+ async function fetchLookups() {
+  const cached = JSON.parse(localStorage.getItem("lookups"));
+  if (cached) {
+    setWarehouses(cached.warehouses || []);
+    setCustomers(cached.customers || []);
+    setAccounts(cached.accounts || []);
+    setPaymentTypes(cached.paymentTypes || []);
+    setTerminals(cached.terminals || []);
+  }
 
-  // ── 2) Customers ──────────────────────────────────────
-  // try {
-  //   const { data } = await axios.get(
-  //     `${link}/api/customer-data/all`,
-  //     authHeaders()
-  //   );
-  //   const cust = data.data || data || [];
-  //   if (Array.isArray(cust)) {
-  //     setCustomers(cust);
-  //     if (!editId && cust.length) {
-  //       // find or default to the first customer
-  //       const walkIn = cust.find(c => c.customerName.toLowerCase() === "walk-in customer");
-  //       setSelectedCustomer((walkIn?._id) || cust[0]._id);
-  //     }
-  //   } else {
-  //     setCustomers([]);
-  //   }
-  // } catch (err) {
-  //   console.error("❌ failed to load customers", err);
-  //   setCustomers([]);
-  // }
-
-  // ── 3) Accounts ───────────────────────────────────────
   try {
-    const { data } = await axios.get(
-      `${link}/api/accounts`,
-      authHeaders()
-    );
-    const accts = data.data || data || [];
-    if (Array.isArray(accts)) {
-      setAccounts(accts);
-      if (!editId && accts.length) {
-        setSelectedAccount(accts[0]._id);
-      }
-    } else {
-      setAccounts([]);
+    const [wareRes, custRes, accRes, payRes, termRes] = await Promise.all([
+      axios.get(`${link}/api/warehouses?scope=mine`, authHeaders()),
+      axios.get(`${link}/api/customer-data/all`, authHeaders()),
+      axios.get(`${link}/api/accounts`, authHeaders()),
+      axios.get(`${link}/api/payment-types`, authHeaders()),
+      axios.get(`${link}/api/terminals`, authHeaders()),
+    ]);
+    console.log(wareRes,custRes,accRes,payRes,termRes)
+    const lookups = {
+      warehouses: wareRes.data.data || [],
+      customers: custRes.data || [],
+      accounts: accRes.data.data || [],
+      paymentTypes: payRes.data.data || [],
+      terminals: termRes.data.data || [],
+    };
+    if (!editId && lookups.customers.length) { // find or default to the first customer
+      const walkIn = lookups.customers.find(c => c.customerName.toLowerCase() === "walk-in customer");
+      setSelectedCustomer((walkIn?._id) || lookups.customers [0]._id);
     }
-  } catch (err) {
-    console.error("❌ failed to load accounts", err);
-    setAccounts([]);
-  }
+    console.log(lookups)
+    setWarehouses(lookups.warehouses);
+    setCustomers(lookups.customers);
+    setAccounts(lookups.accounts);
+    setPaymentTypes(lookups.paymentTypes);
+    setTerminals(lookups.terminals);
 
-  // ── 4) Payment Types ───────────────────────────────────
-  try {
-    const { data } = await axios.get(
-      `${link}/api/payment-types`,
-      authHeaders()
-    );
-    console.log("Payment types data:", data);
-    setPaymentTypes(data.data || data || []);
+    localStorage.setItem("lookups", JSON.stringify(lookups));
   } catch (err) {
-    console.error("❌ failed to load payment types", err);
-    setPaymentTypes([]);
-  }
-
-  // ── 5) Terminals ──────────────────────────────────────
-  try {
-    const { data } = await axios.get(
-      `${link}/api/terminals`,
-      authHeaders()
-    );
-    setTerminals(data.data || data || []);
-  } catch (err) {
-    console.error("❌ failed to load terminals", err);
-    setTerminals([]);
+    console.error("❌ lookup fetch error", err);
   }
 }
 
 
-useEffect(()=>{
-  if(!selectedWarehouse){
+  async function fetchItems(warehouseId = selectedWarehouse, isEditMode = !!editId) {
+  if (!warehouseId) {
     setAllItems([]);
     return;
-  } 
-  const it=itemsG.filter((i) => i.warehouse?._id === selectedWarehouse);
-  setAllItems(it);
-},[selectedWarehouse,itemsG]);
+  }
+
+  try {
+    const params = {
+      warehouse: warehouseId,
+    };
+    if (!editId) {
+      params.inStock = true;
+    }
+
+   const { data } = await axios.get(
+      `${link}/api/items`,
+      { headers: authHeaders().headers, params }
+    );
+    const rawItems = data.data || [];
+
+    const flatItems = rawItems
+      .filter(it => it._id && it.warehouse?._id)
+      .map(it => {
+        const isVariant = Boolean(it.parentItemId);
+        return {
+          ...it,
+          parentId:   isVariant ? it.parentItemId : it._id,
+          variantId:  isVariant ? it._id          : null,
+          itemName:   isVariant ? `${it.itemName} / ${it.variantName || "Variant"}` : it.itemName,
+          barcode:    it.barcode  || "",
+          barcodes:   it.barcodes || [],
+          itemCode:   it.itemCode || "",
+          isPackLot: false                     // <— normal items
+        };
+      });
+
+      console.log(flatItems)
+    /* ---------------- combine & store ---------------- */
+    setAllItems([...flatItems]);
+  } catch (err) {
+    console.error("Fetch items error:", err.message);
+  }
+}
+
+// useEffect(()=>{
+//   if(!selectedWarehouse){
+//     setAllItems([]);
+//     return;
+//   } 
+  
+//   const it=itemsG.filter((i) => i.warehouse?._id === selectedWarehouse);
+//   console.log(it)
+//   setAllItems(it);
+// },[selectedWarehouse,itemsG]);
 
 
   async function loadNextInvoiceCode() {
@@ -588,10 +581,12 @@ useEffect(()=>{
       amt += i.subtotal ;
       disc += i.discount || 0;
     });
+    const totaladdititonal= additionalPaymentAmount.reduce((sum, p) => sum + (parseFloat(p.amount) || 0), 0);
+    setAdditionalCharges(totaladdititonal);
     setQuantity(qty);
     setTotalAmount(amt);
     setTotalDiscount(disc);
-  }, [items]);
+  }, [items,additionalPaymentAmount]);
   
 useEffect(() => {
   const q = searchItemCode.trim();
@@ -674,109 +669,9 @@ useEffect(() => {
 //   // }
 // }, [warehouses, defaultWarehouse, editId]);
 
- const videoRef       = useRef(null);
-  const codeReaderRef  = useRef(null);
  
 
-  
-const startScanner = async () => {
-  if (!selectedWarehouse) {
-    alert("Please select a warehouse before scanning.");
-    return;
-  }
-  // Request Camera Permission on Android
-  const permission = await Camera.requestPermissions(); // or checkPermissions()
-  console.log(permission)
-  if (permission.camera !== 'granted') {
-    alert('Camera permission is required');
-    return ;
-  }
-  const codeReader = new BrowserMultiFormatReader();
-  codeReaderRef.current = codeReader;
 
-  const decode = (facingMode) =>
-    
-    codeReader.decodeFromConstraints(
-      { video: { facingMode } },
-      videoRef.current,
-      async (result, err) => {
-        if (result) {
-           const text = result.getText() 
-        console.log("Scanned barcode:", text);
-          
-        const match = allItems.find(
-          (i) =>
-            i.itemCode === text ||
-            i.barcodes?.includes(text) ||
-            i.itemName.toLowerCase() === text.toLowerCase()
-        );
-
-        if (match) {
-        setMatchedItems((prev) => {
-  const existingIndex = prev.findIndex((item) => item.item === match._id);
-
-  if (existingIndex !== -1) {
-    // Existing item: increment quantity and play different sound
-    const updatedItems = [...prev];
-    updatedItems[existingIndex] = {
-      ...updatedItems[existingIndex],
-      quantity: updatedItems[existingIndex].quantity + 1,
-    };
-    playSound("/sounds/item-exists.mp3");
-    return updatedItems;
-  } else {
-    // New item: add and play add sound
-    playSound("/sounds/item-added.mp3");
-    return [
-      ...prev,
-      {
-        ...match,
-        quantity: 1,
-        item: match._id,
-      },
-    ];
-  }
-});
-
-
-         // Wait a bit then scan again
-            setTimeout(() => {
-              codeReader.reset(); // very important to reset before new scan
-              decode(facingMode); // recursively call decode
-            }, 5000); // 800ms delay before next scan
-        }}
-
-        if (err && err.name !== 'NotFoundException') {
-          console.error("Scan error:", err);
-        }
-      }
-    );
-    
-   console.log(videoRef)
-  try {
-    await decode({ exact: "environment" }); // Try back camera first
-  } catch {
-    try {
-      await decode("user"); // Fallback to front camera
-    } catch (e) {
-      console.error("Camera error:", e);
-      stopScanner();
-    }
-  }
-};
-
-
-
-const stopScanner = () => {
-  // Stop camera tracks
-  const tracks = videoRef.current?.srcObject?.getTracks();
-  if (tracks) {
-    tracks.forEach((t) => t.stop());
-  }
-
-  codeReaderRef.current?.reset?.();
-  setMatchedItems([])
-};
 
 function applyOfferLogic(itemList) {
   return itemList.map((item) => {
@@ -796,7 +691,7 @@ function applyOfferLogic(itemList) {
 
     return {
       ...item,
-      subtotal: quantity * salesPrice - discount,
+      subtotal: quantity * salesPrice
     };
   });
 }
@@ -808,7 +703,11 @@ function addItem(it) {
     console.error("Invalid item, missing parentId:", it);
     return;
   }
-
+ if(it.currentStock<=0){
+  alert("Item out of stock");
+  setSearchItemCode("");
+  return;
+ }
   const parentExists = allItems.some(
     (ai) => ai._id === it.parentId && !ai.variantId
   );
@@ -847,7 +746,7 @@ function addItem(it) {
       updated[existingIdx] = {
         ...existing,
         quantity: newQty,
-        subtotal: newQty * existing.salesPrice - (existing.discount || 0),
+        subtotal: newQty * existing.salesPrice - ( 0),
       };
 
       const updatedWithOffer = applyOfferLogic(updated); // 🔁 OFFER HERE
@@ -874,14 +773,14 @@ function addItem(it) {
         it.currentStock != null ? it.currentStock : it.openingStock || 0,
       salesPrice: it.salesPrice || 0,
       quantity: quantityToAdd,
-      discount: it.discount || 0,
+      discount:  0,
       tax: it.tax?._id || null,
       taxRate: it.tax?.taxPercentage || 0,
       unit: it.unit || null,
       mrp: it.mrp || 0,
       expiryDate: it.expiryDate || null,
       subtotal:
-        quantityToAdd * (it.salesPrice || 0) - (it.discount || 0),
+        quantityToAdd * (it.salesPrice || 0) - (0),
     };
 
     if (newItem.salesPrice <= 0) {
@@ -904,7 +803,9 @@ function addItemsInBatch(matchedItems) {
       console.error("Invalid item, missing parentId:", it);
       continue;
     }
-
+    if(it.currentStock<=0){
+      continue;
+    }
     const parentExists = allItems.some(
       (ai) => ai._id === it.parentId && !ai.variantId
     );
@@ -940,7 +841,7 @@ function addItemsInBatch(matchedItems) {
         updated[existingIdx] = {
           ...existing,
           quantity: newQty,
-          subtotal: newQty * existing.salesPrice - (existing.discount || 0),
+          subtotal: newQty * existing.salesPrice - (0),
         };
       }
       continue;
@@ -960,14 +861,14 @@ function addItemsInBatch(matchedItems) {
           it.currentStock != null ? it.currentStock : it.openingStock || 0,
         salesPrice: it.salesPrice || 0,
         quantity: quantityToAdd,
-        discount: it.discount || 0,
+        discount:  0,
         tax: it.tax?._id || null,
         taxRate: it.tax?.taxPercentage || 0,
         unit: it.unit || null,
         mrp: it.mrp || 0,
         expiryDate: it.expiryDate || null,
         subtotal:
-          quantityToAdd * (it.salesPrice || 0) - (it.discount || 0),
+          quantityToAdd * (it.salesPrice || 0) - (0),
       };
 
       if (newItem.salesPrice <= 0) {
@@ -1134,7 +1035,7 @@ function updateItem(idx, field, val) {
   };
 
   // ─── PAYMENT / ORDER LOGIC ──────────────────────────────────────────
-  function buildPayload({ status, payments, paymentMode }) {
+ function buildPayload({l, status, payments, paymentMode }) {
     console.log("Building payload with:", {
       selectedWarehouse,
       selectedCustomer,
@@ -1153,7 +1054,7 @@ function updateItem(idx, field, val) {
     if (!selectedAccount) {
       throw new Error("Account is required");
     }
-
+   console.log("Please fill all required fields");
     const validItems = items
       .map((it) => {
         const isValid = allItems.some(
@@ -1195,14 +1096,18 @@ function updateItem(idx, field, val) {
     if (validItems.length === 0) {
       throw new Error("No valid items to save. Please add valid items to the order.");
     }
-
+    
+    const totalOther=additionalPaymentAmount.reduce((sum, p) => sum + (p.amount || 0), 0);
+  
     const payload = {
-      location:location,
+      location:l,
       warehouse: selectedWarehouse,
       customer: selectedCustomer,
       account: selectedAccount,
       items: validItems,
-      totalAmount: totalAmount - totalDiscount,
+      additionalCharges: additionalCharges,
+      additionalPayment: additionalPaymentAmount,
+      totalAmount: totalAmount - totalDiscount + additionalCharges,
       totalDiscount,
       couponCode: couponCode || undefined,
       payments,
@@ -1213,6 +1118,7 @@ function updateItem(idx, field, val) {
       adjustAdvancePayment,
       advancePaymentAmount,
     };
+
     console.log("Generated payload:", payload);
     return payload;
   }
@@ -1227,7 +1133,7 @@ function updateItem(idx, field, val) {
      console.log("Order saved:", data);
     /* ---- 3️⃣ Build the final invoice HTML ---- */
     const custObj = customers.find(c => c._id === selectedCustomer) || {};
-    
+     
     const r= buildInvoiceHTML(
       data.order,
       payload.payments,
@@ -1242,9 +1148,8 @@ function updateItem(idx, field, val) {
     setActiveTab("print")
     /* ---- 5️⃣ House-keeping ---- */
     setInvoiceCode(data.order.saleCode);
-    // resetForm();
-    // fetchHeld();
-    Swal.fire("Saved!", "", "success");
+    resetForm();
+    fetchHeld();
   } catch (err) {
     // if (previewWin) previewWin.close();   // don’t leave a blank tab
     console.error("Send order error details:", err);
@@ -1254,6 +1159,8 @@ function updateItem(idx, field, val) {
 
   function resetForm() {
     setItems([]);
+    setAdditionalCharges(0);
+    setAdditionalPaymentAmount([]);
     setQuantity(0);
     setTotalAmount(0);
     setTotalDiscount(0);
@@ -1282,23 +1189,23 @@ function updateItem(idx, field, val) {
     confirmButtonText: "Yes, Hold",
   });
   if (!isConfirmed) return;           // user aborted
-
   // 1️⃣  Basic validation (unchanged) --------------
   if (!selectedWarehouse || !selectedCustomer || !selectedAccount) {
     Swal.fire("Missing data", "Warehouse, customer and account are required.", "warning");
     return;
   }
-
+  
   // 2️⃣  Find Hold payment type --------------------
   const pt = getPaymentTypeId("Hold");
   if (!pt) {
     Swal.fire("Config error", "Payment type 'Hold' is missing.", "error");
     return;
   }
-
+  const a = await getLocation();;
+  
   // 3️⃣  Build payload (your code) -----------------
   const payload = {
-    location: location,
+    location: a,
     warehouse: selectedWarehouse,
     customer: selectedCustomer,
     account: selectedAccount,
@@ -1329,9 +1236,10 @@ function updateItem(idx, field, val) {
     advancePaymentAmount,
     couponCode: couponCode || undefined,
   };
-
+  
   // 4️⃣  POST / PUT exactly as before --------------
   try {
+    
     const token = localStorage.getItem("token");
     if (currentOrderId) {
       await axios.put(`${link}/api/pos/${currentOrderId}`, payload, { headers: { Authorization: `Bearer ${token}` } });
@@ -1347,10 +1255,7 @@ function updateItem(idx, field, val) {
 }
 
   
-  function onOpenModal(mode) {
-
-
-    
+  async function onOpenModal(mode) {
     if (!editId || mode === "multiple") {
       if (!selectedWarehouse || !selectedCustomer || !selectedAccount) {
         alert("Please select a warehouse, customer, and account before proceeding with payment.");
@@ -1377,7 +1282,7 @@ function updateItem(idx, field, val) {
 
       const payment = {
         paymentType: paymentTypeId,
-        amount: totalAmount - totalDiscount,
+        amount: totalAmount - totalDiscount+additionalCharges,
         paymentNote: `${mode.charAt(0).toUpperCase() + mode.slice(1)} payment`,
       };
 
@@ -1386,10 +1291,11 @@ function updateItem(idx, field, val) {
           payment.terminal = terminals[0]._id;
         }
       }
-
+      const p=await getLocation();
       try {
         sendOrder(
           buildPayload({
+            l:p,
             status: "Completed",
             payments: [payment],
             paymentMode: mode,
@@ -1400,6 +1306,8 @@ function updateItem(idx, field, val) {
       } catch (err) {
         alert(err.message);
       }
+    
+      
     } else {
       setPaymentMode(mode);
       setIsPaymentModalOpen(true);
@@ -1438,11 +1346,6 @@ function updateItem(idx, field, val) {
     await deletePosTransaction(id);
   }
 
-  // function handleLogout() {
-  //   localStorage.clear();
-  //   navigate("/");
-  //   window.location.reload();
-  // }
 
   function toggleFullScreen() {
     if (!document.fullscreenElement) {
@@ -1458,9 +1361,9 @@ function updateItem(idx, field, val) {
     totalPrice: totalAmount,
     discount: totalDiscount,
     couponDiscount: 0,
-    totalPayable: totalAmount - totalDiscount,
+    totalPayable: totalAmount - totalDiscount + additionalCharges,
     totalPaying: 0,
-    balance: totalAmount - totalDiscount,
+    balance: totalAmount - totalDiscount + additionalCharges,
     changeReturn: 0,
   };
 
@@ -1562,16 +1465,16 @@ function updateItem(idx, field, val) {
       <div className="flex flex-col bg-white lg:flex-row">
            {activeTab==="pos1" && <POS1 selectedWarehouse={selectedWarehouse} setSelectedWarehouse={setSelectedWarehouse} warehouses={warehouses} invoiceCode={invoiceCode} selectedCustomer={selectedCustomer} setSelectedCustomer={setSelectedCustomer}
                        customers={customers} setActiveTab={setActiveTab}  
-                         startScanner={startScanner}   filteredItems={filteredItems} scanning={scanning} setScanning={setScanning} videoRef={videoRef} orderPaymentMode={orderPaymentMode}    
+                           filteredItems={filteredItems} scanning={scanning} setScanning={setScanning}  orderPaymentMode={orderPaymentMode}    
                           previousBalance={previousBalance}
            />}
-           {activeTab==="pos2" && <POS2 addItemsInBatch={addItemsInBatch} matchedItems={matchedItems} setMatchedItems={setMatchedItems}  searchItemCode={searchItemCode} setActiveTab={setActiveTab} setSearchItemCode={setSearchItemCode} updateItem={updateItem} removeItem={removeItem} items={items} setItems={setItems} stopScanner={stopScanner}
-                                            allItems={allItems}  codeReaderRef={codeReaderRef} addItem={addItem} startScanner={startScanner} setScanning={setScanning} selectedWarehouse={selectedWarehouse}  filteredItems={filteredItems} scanning={scanning} videoRef={videoRef} orderPaymentMode={orderPaymentMode}    
+           {activeTab==="pos2" && <POS2 addItemsInBatch={addItemsInBatch} matchedItems={matchedItems} setMatchedItems={setMatchedItems}  searchItemCode={searchItemCode} setActiveTab={setActiveTab} setSearchItemCode={setSearchItemCode} updateItem={updateItem} removeItem={removeItem} items={items} setItems={setItems} 
+                                            allItems={allItems} addItem={addItem}  setScanning={setScanning} selectedWarehouse={selectedWarehouse}  filteredItems={filteredItems} scanning={scanning} orderPaymentMode={orderPaymentMode}    
            />}
-           {activeTab==="pos3" && <POS3 allItems={allItems} showHoldList={showHoldList} heldInvoices={heldInvoices} handleEditInvoice={handleEditInvoice}
+           {activeTab==="pos3" && <POS3 additionalCharges={additionalCharges} additionalPaymentAmount={additionalPaymentAmount} setAdditionalPaymentAmount={setAdditionalPaymentAmount} setItems={setItems} isSubmitting={isSubmitting} setIsSubmitting={setIsSubmitting} allItems={allItems} showHoldList={showHoldList} heldInvoices={heldInvoices} handleEditInvoice={handleEditInvoice}
            handleDeleteInvoice={handleDeleteInvoice} selectedWarehouse={selectedWarehouse} warehouses={warehouses} setSelectedWarehouse={setSelectedWarehouse}  setActiveTab={setActiveTab}
            invoiceCode={invoiceCode} selectedCustomer={selectedCustomer} setSelectedCustomer={setSelectedCustomer} searchItemCode={searchItemCode} setSearchItemCode={setSearchItemCode}  addItem={addItem}
-           filteredItems={filteredItems} startScanner={startScanner} scanning={scanning} videoRef={videoRef} codeReaderRef={codeReaderRef} setScanning={setScanning} orderPaymentMode={orderPaymentMode} items={items} updateItem={updateItem} removeItem={removeItem}
+           filteredItems={filteredItems}  scanning={scanning} setScanning={setScanning} orderPaymentMode={orderPaymentMode} items={items} updateItem={updateItem} removeItem={removeItem}
            onHold={onHold} previousBalance={previousBalance} buttonStyles={buttonStyles} onOpenModal={onOpenModal} quantity={quantity} totalAmount={totalAmount} totalDiscount={totalDiscount} couponCode={couponCode} setCouponCode={setCouponCode}
            isPaymentModalOpen={isPaymentModalOpen} PaymentModal={PaymentModal} setIsPaymentModalOpen={setIsPaymentModalOpen} paymentTypes={paymentTypes} accounts={accounts} terminals={terminals} advancePaymentAmount={advancePaymentAmount} selectedAccount={selectedAccount} setSelectedAccount={setSelectedAccount}
            paymentSummary={paymentSummary} sendOrder={sendOrder} buildPayload={buildPayload} currentOrderId={currentOrderId} setAdjustAdvancePayment={setAdjustAdvancePayment} customers={customers}

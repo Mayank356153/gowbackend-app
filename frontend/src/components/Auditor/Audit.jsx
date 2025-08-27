@@ -80,7 +80,6 @@ const  Audit=()=> {
      useEffect(() => {
          if(!formData.storeId) return;
 
-             console.log(allstore, formData.storeId);
              const storeExists=allstore.find(store => store._id === formData.storeId);
 
 
@@ -88,8 +87,8 @@ const  Audit=()=> {
              if(!storeExists){
                  alert("Store not found, please select a valid store.");
                  return;}
-                 
-         const filteredWarehouses = allwarehouse.filter(warehouse => warehouse._id === storeExists.warehouse);
+
+         const filteredWarehouses = allwarehouse.filter(warehouse => warehouse.store == formData.storeId);
           if(filteredWarehouses.length === 0){
               alert("No warehouses found for the selected store.");
               return;
@@ -148,9 +147,6 @@ const handleSubmit = async (e) => {
    } catch (error) {
     console.log("Error submitting audit:", error);
    }
-
-
-
 }
 
 
